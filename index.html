@@ -1,229 +1,183 @@
-<link rel="manifest" href="/ROXCHAT/manifest.json">
-import Foundation
-// --- Models ---
-struct User {
-	var name: String
-	var password: String
-	var profilePic: String
-	var lastPassChange: Date
-	var stories: [Story] = []
-}
-struct Story {
-	var url: String
-	var timestamp: Date
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roxchat - Social Media</title>
+    <link rel="manifest" href="./manifest.json">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; max-width: 400px; margin-bottom: 20px; }
+        input, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #075e54; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #054c43; }
+        .hidden { display: none; }
+        .post, .notification { background: #fafafa; border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 4px; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 400px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
 
-	var isExpired: Bool {
-		return Date().timeIntervalSince(timestamp) > (24 * 60 * 60)
-	}
-}
-struct Comment {
-	var user: String
-	var text: String
-}
-struct Post {
-	var id: Int
-	var author: String
-	var caption: String
-	var likes: [String]
-	var comments: [Comment]
-}
-struct Message {
-	var sender: String
-	var receiver: String
-	var text: String
-	var time: String
-}
-struct NotificationItem {
-	var user: String
-	var message: String
-	var isRead: Bool
-}
-struct FriendRequest {
-	var from: String
-	var to: String
-}
-// --- Main RoxChat Class ---
-class RoxChat {
-	let appName = "ROXCHAT"
-	var currentUser: String? = nil
-	var users: [User] = []
-	var posts: [Post] = []
-	var friendsList: [String] = []
-	var friendRequests: [FriendRequest] = []
-	var allMessages: [Message] = []
-	var blockedUsers: [String] = []
-	var notifications: [NotificationItem] = []
-	var otpStorage: [String: (code: String, expires: Date)] = [:]
-	// --- User & Auth ---
-	func login(username: String, password: String) {
-		if let user = users.first(where: { $0.name == username }), user.password == password {
-			currentUser = username
-			print("Login successful! Welcome: \(username)")
-		} else {
-			print("Error: Invalid username or password.")
-		}
-	}
-	func logout() {
-		if let user = currentUser {
-			print("Goodbye, \(user)")
-			currentUser = nil
-		} else {
-			print("No user is currently logged in.")
-		}
-	}
-	func createAccount(name: String, password: String) {
-		let newUser = User(name: name, password: password, profilePic: "default.png", lastPassChange: Date())
-		users.append(newUser)
-		print("Account created for \(name)")
-	}
-	func changePassword(username: String, oldPassword: String, newPassword: String) {
-		if let index = users.firstIndex(where: { $0.name == username }), users[index].password == oldPassword {
-			users[index].password = newPassword
-			users[index].lastPassChange = Date()
-			print("Password changed successfully!")
-		} else {
-			print("Error: Invalid credentials.")
-		}
-	}
-	// --- OTP System ---
-	func sendOTP(identifier: String) {
-		let otp = String(Int.random(in: 100000...999999))
-		let expiryTime = Date().addingTimeInterval(5 * 60)
-		otpStorage[identifier] = (code: otp, expires: expiryTime)
-		print("OTP sent to \(identifier): \(otp)")
-	}
-	func verifyOTP(identifier: String, enteredOTP: String) -> Bool {
-		if let data = otpStorage[identifier], data.code == enteredOTP, Date() < data.expires {
-			print("Verification Successful!")
-			return true
-		}
-		print("Error: Invalid or expired OTP.")
-		return false
-	}
-	// --- Friend Request System ---
-	func sendFriendRequest(to username: String) {
-		guard let current = currentUser else { return }
-		if !friendsList.contains(username) && !blockedUsers.contains(username) {
-			friendRequests.append(FriendRequest(from: current, to: username))
-			addNotification(userName: username, message: "\(current) sent you a friend request.")
-			print("Friend request sent to \(username)")
-		} else {
-			print("Error: Cannot send request.")
-		}
-	}
-	func acceptFriendRequest(from username: String) {
-		guard let current = currentUser else { return }
-		if let index = friendRequests.firstIndex(where: { $0.from == username && $0.to == current }) {
-			friendRequests.remove(at: index)
-			friendsList.append(username)
-			addNotification(userName: username, message: "\(current) accepted your friend request.")
-			print("You are now friends with \(username)")
-		} else {
-			print("Error: Request not found.")
-		}
-	}
-	// --- Post System ---
-	@discardableResult
-	func createPost(author: String, caption: String) -> Post {
-		let newPost = Post(id: Int(Date().timeIntervalSince1970), author: author, caption: caption, likes: [], comments: [])
-		posts.append(newPost)
-		print("Post created by \(author)")
-		return newPost
-	}
-	func editPost(postId: Int, userName: String, newCaption: String) {
-		if let index = posts.firstIndex(where: { $0.id == postId && $0.author == userName }) {
-			posts[index].caption = newCaption
-			print("Post updated successfully.")
-		} else {
-			print("Error: Unauthorized or post not found.")
-		}
-	}
-	func deletePost(postId: Int, userName: String) {
-		if let index = posts.firstIndex(where: { $0.id == postId && $0.author == userName }) {
-			posts.remove(at: index)
-			print("Post deleted successfully.")
-		} else {
-			print("Error: Unauthorized or post not found.")
-		}
-	}
-	func addComment(postId: Int, userName: String, text: String) {
-		if let index = posts.firstIndex(where: { $0.id == postId }) {
-			posts[index].comments.append(Comment(user: userName, text: text))
-			addNotification(userName: posts[index].author, message: "\(userName) commented: \(text)")
-			print("Comment added by \(userName)")
-		}
-	}
-	func likePost(postId: Int, userName: String) {
-		if let index = posts.firstIndex(where: { $0.id == postId }), !posts[index].likes.contains(userName) {
-			posts[index].likes.append(userName)
-			addNotification(userName: posts[index].author, message: "\(userName) liked your post.")
-			print("Post liked by \(userName)")
-		}
-	}
-	// --- Story System ---
-	func addStory(userName: String, url: String) {
-		if let index = users.firstIndex(where: { $0.name == userName }) {
-			let newStory = Story(url: url, timestamp: Date())
-			users[index].stories.append(newStory)
-			print("Story added successfully for \(userName)!")
-		}
-	}
-	func getActiveStories(for userName: String) -> [Story] {
-		if let user = users.first(where: { $0.name == userName }) {
-			return user.stories.filter { !$0.isExpired }
-		}
-		return []
-	}
-	// --- Notification & Chat ---
-	func addNotification(userName: String, message: String) {
-		notifications.append(NotificationItem(user: userName, message: message, isRead: false))
-	}
-	func markNotificationAsRead() {
-		for i in 0..<notifications.count {
-			notifications[i].isRead = true
-		}
-		print("All notifications marked as read.")
-	}
-	func sendMessage(sender: String, receiver: String, text: String) {
-		if friendsList.contains(receiver) && !blockedUsers.contains(receiver) {
-			let formatter = DateFormatter()
-			formatter.timeStyle = .medium
-			let timeString = formatter.string(from: Date())
-			allMessages.append(Message(sender: sender, receiver: receiver, text: text, time: timeString))
-			addNotification(userName: receiver, message: "\(sender) sent a message.")
-			print("Message sent to \(receiver): \(text)")
-		} else {
-			print("Error: Cannot send message. Users are not friends or user is blocked.")
-		}
-	}
-	func getChatHistory(with friend: String) -> [Message] {
-		guard let current = currentUser else { return [] }
-		return allMessages.filter { ($0.sender == current && $0.receiver == friend) || ($0.sender == friend && $0.receiver == current) }
-	}
-	// --- Settings & Security ---
-	func removeFriend(friendName: String) {
-		friendsList.removeAll { $0 == friendName }
-		print("\(friendName) removed from friends.")
-	}
-	func updateProfilePic(userName: String, newPicUrl: String) {
-		if let index = users.firstIndex(where: { $0.name == userName }) {
-			users[index].profilePic = newPicUrl
-			print("Profile picture updated to \(newPicUrl)!")
-		} else {
-			print("Error: User not found.")
-		}
-	}
-	func blockUser(userToBlock: String) {
-		blockedUsers.append(userToBlock)
-		friendsList.removeAll { $0 == userToBlock }
-		print("\(userToBlock) blocked successfully.")
-	}
-}
-// --- Usage Example ---
-let myApp = RoxChat()
-myApp.createAccount(name: "sawad", password: "353222")
-myApp.login(username: "sawad", password: "353222")
-myApp.updateProfilePic(userName: "sawad", newPicUrl: "sawad_dp.jpg")
-myApp.addStory(userName: "sawad", url: "story1.jpg")
-let activeStories = myApp.getActiveStories(for: "sawad")
-print("Active stories count: \(activeStories.count)")
+    <!-- Auth Section -->
+    <div id="auth-container" class="container">
+        <h2>Roxchat Login / Register</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="handleCreateAccount()">Create Account</button>
+        <button onclick="handleLogin()">Login</button>
+    </div>
+
+    <!-- Main App Section -->
+    <div id="app-container" class="container hidden">
+        <div class="header-bar">
+            <h3 id="welcome-user">Welcome</h3>
+            <button onclick="handleLogout()" style="width: auto; padding: 5px 10px; background: #d9534f;">Logout</button>
+        </div>
+
+        <hr>
+        <h4>Create Post</h4>
+        <input type="text" id="post-caption" placeholder="What's on your mind?">
+        <button onclick="handleCreatePost()">Post</button>
+
+        <h4>Feed</h4>
+        <div id="feed-container"></div>
+
+        <h4>Notifications</h4>
+        <div id="notification-container"></div>
+    </div>
+
+    <script>
+        // --- RoxChat Core Logic (Converted from Swift) ---
+        class RoxChatApp {
+            constructor() {
+                this.users = [];
+                this.currentUser = null;
+                this.posts = [];
+                this.notifications = [];
+                this.friendRequests = [];
+                this.messages = [];
+            }
+
+            createAccount(username, password) {
+                if (this.users.find(u => u.username === username)) {
+                    alert("User already exists!");
+                    return false;
+                }
+                this.users.push({ username, password, profilePic: "default.png", stories: [] });
+                alert("Account created successfully for " + username);
+                return true;
+            }
+
+            login(username, password) {
+                const user = this.users.find(u => u.username === username && u.password === password);
+                if (user) {
+                    this.currentUser = user;
+                    alert("Login successful! Welcome " + username);
+                    return true;
+                }
+                alert("Error: Invalid username or password.");
+                return false;
+            }
+
+            logout() {
+                this.currentUser = null;
+                alert("Logged out successfully.");
+            }
+
+            createPost(caption) {
+                if (!this.currentUser) return;
+                const newPost = {
+                    id: Date.now(),
+                    author: this.currentUser.username,
+                    caption: caption,
+                    likes: [],
+                    comments: []
+                };
+                this.posts.unshift(newPost);
+                this.addNotification(this.currentUser.username, "You created a new post.");
+            }
+
+            likePost(postId) {
+                if (!this.currentUser) return;
+                const post = this.posts.find(p => p.id === postId);
+                if (post && !post.likes.includes(this.currentUser.username)) {
+                    post.likes.push(this.currentUser.username);
+                    this.addNotification(post.author, `${this.currentUser.username} liked your post.`);
+                }
+            }
+
+            addNotification(user, message) {
+                this.notifications.unshift({ user, message, isRead: false });
+            }
+        }
+
+        const myApp = new RoxChatApp();
+
+        // --- UI Controllers ---
+        function handleCreateAccount() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            if(u && p) myApp.createAccount(u, p);
+            else alert("Please fill all fields");
+        }
+
+        function handleLogin() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            if (myApp.login(u, p)) {
+                document.getElementById('auth-container').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                document.getElementById('welcome-user').textContent = "Hello, " + u;
+                updateUI();
+            }
+        }
+
+        function handleLogout() {
+            myApp.logout();
+            document.getElementById('auth-container').classList.remove('hidden');
+            document.getElementById('app-container').classList.add('hidden');
+        }
+
+        function handleCreatePost() {
+            const caption = document.getElementById('post-caption').value;
+            if (caption) {
+                myApp.createPost(caption);
+                document.getElementById('post-caption').value = '';
+                updateUI();
+            }
+        }
+
+        function handleLike(postId) {
+            myApp.likePost(postId);
+            updateUI();
+        }
+
+        function updateUI() {
+            // Render Feed
+            const feed = document.getElementById('feed-container');
+            feed.innerHTML = '';
+            myApp.posts.forEach(post => {
+                feed.innerHTML += `
+                    <div class="post">
+                        <strong>@${post.author}</strong>
+                        <p>${post.caption}</p>
+                        <button onclick="handleLike(${post.id})" style="width: auto; padding: 5px 10px;">❤️ Like (${post.likes.length})</button>
+                    </div>
+                `;
+            });
+
+            // Render Notifications
+            const notif = document.getElementById('notification-container');
+            notif.innerHTML = '';
+            myApp.notifications.forEach(n => {
+                notif.innerHTML += `<div class="notification"><small>${n.message}</small></div>`;
+            });
+        }
+
+        // Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').then(() => console.log('Service Worker Registered'));
+        }
+    </script>
+</body>
+</html>
