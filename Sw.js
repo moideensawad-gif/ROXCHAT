@@ -1,0 +1,25 @@
+const CACHE_NAME = 'roxchat-cache-v1';
+const urlsToCache = [
+  './index.html',
+  './manifest.json',
+  './Icon-192.png',
+  './Icon-512.png'
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        return cache.addAll(urlsToCache);
+      })
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        return response || fetch(event.request);
+      })
+  );
+});
