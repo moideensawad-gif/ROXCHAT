@@ -1,13 +1,13 @@
 {
-    "background_color": "#ffffff",
-    "dir": "ltr",
-    "display": "standalone",
-    "name": "Roxchat",
-    "orientation": "any",
-    "scope": "/",
-    "short_name": "Roxchat",
-    "start_url": "/",
-    "theme_color": "#ffffff",
-    "id": "Roxchat",
-    "description": "Roxchat web application"
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Roxchat",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Roxchat",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "id": "Roxchat",
+  "description": "Roxchat web application"
 }
