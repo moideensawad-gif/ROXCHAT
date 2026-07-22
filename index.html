@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Roxchat – Full Social Media App</title>
+    <title>Roxchat – Voice & Chat Online</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Firebase SDKs & Initialization -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, doc, updateDate, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAaqyhWJg8QmFzB4xKR5sJT8UetZEqZGrs",
@@ -114,7 +114,7 @@
 
         <!-- TAB 1: FEED & STORIES -->
         <div id="tab-feed" class="container" style="border:none; background:transparent; padding:0;">
-            <!-- Story Section (24h Auto-expire filter) -->
+            <!-- Story Section -->
             <div class="container">
                 <h4>Create Story (24h Limit)</h4>
                 <input type="text" id="story-url" placeholder="Story Image URL...">
@@ -122,11 +122,20 @@
                 <div id="stories-container" style="display:flex; gap:10px; overflow-x:auto; margin-top:10px;"></div>
             </div>
 
-            <!-- Post Section -->
+            <!-- Post Section with Voice Note -->
             <div class="container">
-                <h4>Create Post</h4>
+                <h4>Create Post / Voice Note</h4>
                 <textarea id="post-caption" placeholder="What's on your mind?"></textarea>
                 <input type="text" id="post-media-url" placeholder="Image URL (Optional)...">
+                
+                <!-- Voice Recorder Controls -->
+                <div style="margin: 8px 0; display:flex; gap:10px;">
+                    <button type="button" onclick="startVoiceRecord()" style="background:#333;"><i class="fa-solid fa-microphone"></i> Record</button>
+                    <button type="button" onclick="stopVoiceRecord()" style="background:red;" id="stop-rec-btn" class="hidden"><i class="fa-solid fa-stop"></i> Stop</button>
+                </div>
+                <p id="rec-status" style="font-size:12px; color:gray;"></p>
+                <audio id="audio-preview" controls class="hidden" style="width:100%; margin:5px 0;"></audio>
+
                 <button onclick="handleCreatePost()">Share Post</button>
             </div>
             
@@ -160,6 +169,10 @@
     </div>
 
     <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let recordedAudioBlobUrl = "";
+
         function toggleDarkMode() {
             let current = document.body.getAttribute('data-theme');
             let next = current === 'dark' ? 'light' : 'dark';
@@ -211,19 +224,58 @@
             if(tab === 'profile') document.getElementById('tab-profile').classList.remove('hidden');
         }
 
-        // --- POSTS & LIKES ---
+        // --- VOICE RECORDER FUNCTIONS ---
+        async function startVoiceRecord() {
+            audioChunks = [];
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    recordedAudioBlobUrl = URL.createObjectURL(audioBlob);
+                    const preview = document.getElementById('audio-preview');
+                    preview.src = recordedAudioBlobUrl;
+                    preview.classList.remove('hidden');
+                    document.getElementById('rec-status').innerText = "Voice recorded successfully! You can play it below.";
+                };
+                mediaRecorder.start();
+                document.getElementById('rec-status').innerText = "Recording voice...";
+                document.getElementById('stop-rec-btn').classList.remove('hidden');
+            } catch (err) {
+                alert("Microphone permission denied or not supported.");
+            }
+        }
+
+        function stopVoiceRecord() {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                document.getElementById('stop-rec-btn').classList.add('hidden');
+            }
+        }
+
+        // --- POSTS & VOICE NOTES ---
         async function handleCreatePost() {
             const caption = document.getElementById('post-caption').value;
             const mediaUrl = document.getElementById('post-media-url').value;
             const user = window.firebaseAuth.currentUser;
-            if(!caption && !mediaUrl) return alert("Write something!");
+            
+            if(!caption && !mediaUrl && !recordedAudioBlobUrl) return alert("Write something or record a voice note!");
 
             try {
                 await window.fbAddDoc(window.fbCollection(window.firebaseDb, "posts"), {
-                    author: user.email, caption, mediaUrl, likes: [], timestamp: Date.now()
+                    author: user.email, 
+                    caption, 
+                    mediaUrl, 
+                    audioUrl: recordedAudioBlobUrl || "", 
+                    likes: [], 
+                    timestamp: Date.now()
                 });
                 document.getElementById('post-caption').value = '';
                 document.getElementById('post-media-url').value = '';
+                document.getElementById('audio-preview').classList.add('hidden');
+                document.getElementById('rec-status').innerText = '';
+                recordedAudioBlobUrl = "";
                 loadPosts();
             } catch(e) { alert(e.message); }
         }
@@ -237,11 +289,13 @@
                 const post = docSnap.data();
                 const postId = docSnap.id;
                 let media = post.mediaUrl ? `<img src="${post.mediaUrl}" class="post-media">` : '';
+                let audio = post.audioUrl ? `<audio controls src="${post.audioUrl}" style="width:100%; margin-top:8px;"></audio>` : '';
                 container.innerHTML += `
                     <div class="post">
                         <div style="font-weight:bold; margin-bottom:5px;">@${post.author.split('@')[0]}</div>
                         <p>${post.caption}</p>
                         ${media}
+                        ${audio}
                         <div style="margin-top:8px; font-size:14px; color:gray;">❤️ ${post.likes ? post.likes.length : 0} Likes</div>
                         <button onclick="likePost('${postId}')" style="margin-top:5px; padding:6px; font-size:12px;">Like Post</button>
                     </div>
@@ -258,7 +312,7 @@
             loadPosts();
         }
 
-        // --- STORIES (24 Hours Auto Filter) ---
+        // --- STORIES ---
         async function handleCreateStory() {
             const url = document.getElementById('story-url').value;
             const user = window.firebaseAuth.currentUser;
@@ -280,7 +334,6 @@
 
             snapshot.forEach((docSnap) => {
                 const story = docSnap.data();
-                // 24 മണിക്കൂർ കഴിഞ്ഞവ ഓട്ടോമാറ്റിക് ആയി ഒഴിവാക്കുന്നു (Filter out old stories)
                 if ((now - story.timestamp) < twentyFourHours) {
                     container.innerHTML += `
                         <div style="text-align:center;">
@@ -292,7 +345,7 @@
             });
         }
 
-        // --- REALTIME CHAT / INBOX ---
+        // --- REALTIME CHAT ---
         async function sendChatMessage() {
             const text = document.getElementById('chat-input').value;
             const user = window.firebaseAuth.currentUser;
