@@ -43,7 +43,7 @@
         import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "YOUR_REAL_API_KEY",
+            apiKey: "YOUR_REAL_API_KEY", // <--- ഇവിടെ നിങ്ങളുടെ ഫയർബേസ് ഒറിജിനൽ എപിഐ കീ നൽകുക
             authDomain: "roxchat-529a0.firebaseapp.com",
             projectId: "roxchat-529a0",
             storageBucket: "roxchat-529a0.appspot.com",
@@ -80,7 +80,7 @@
         });
     </script>
 
-    <!-- Service Worker & App Logic -->
+    <!-- Service Worker & App Logic (JavaScript) -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
