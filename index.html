@@ -89,6 +89,20 @@
         let currentTab = 'home';
         let activeChatUser = null; 
 
+        function getTopHeaderHTML() {
+            return `
+                <div class="flex justify-between items-center mb-6 px-4 pt-4">
+                    <h1 class="text-2xl brand-font text-yellow-400">Roxchat</h1>
+                    <div class="flex items-center space-x-4 text-xl">
+                        <button onclick="alert('Add Story feature coming soon!')" class="text-zinc-300 hover:text-yellow-400 transition" title="Add Story"><i class="fa-solid fa-plus-circle"></i></button>
+                        <button onclick="renderNotifications()" class="text-zinc-300 hover:text-yellow-400 transition relative" title="Notifications">
+                            <i class="fa-solid fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
         function switchTab(tab) {
             currentTab = tab;
             activeChatUser = null; 
@@ -184,22 +198,13 @@
 
         async function renderHome() {
             document.getElementById('app').innerHTML = `
-                <div class="p-4">
-                    <!-- Top Header with Brand, Add Story, and Notifications -->
-                    <div class="flex justify-between items-center mb-6">
-                        <h1 class="text-2xl brand-font text-yellow-400">Roxchat</h1>
-                        <div class="flex items-center space-x-4 text-xl">
-                            <button onclick="alert('Add Story feature coming soon!')" class="text-zinc-300 hover:text-yellow-400 transition" title="Add Story"><i class="fa-solid fa-plus-circle"></i></button>
-                            <button onclick="renderNotifications()" class="text-zinc-300 hover:text-yellow-400 transition relative" title="Notifications">
-                                <i class="fa-solid fa-heart"></i>
-                            </button>
-                        </div>
-                    </div>
+                <div>
+                    ${getTopHeaderHTML()}
+                    <div class="p-4 text-center text-zinc-400">Welcome to Roxchat Home!</div>
                 </div>
             `;
         }
 
-        // Notification Page Rendering
         async function renderNotifications() {
             const appDiv = document.getElementById('app');
             appDiv.innerHTML = `
@@ -224,7 +229,7 @@
                 const notifList = document.getElementById('notifList');
                 
                 if (snapshot.empty) {
-                    notifList.innerHTML = `<div class="text-center text-zinc-500 text-sm py-10">No notifications yet. Likes, comments, and messages will appear here.</div>`;
+                    notifList.innerHTML = `<div class="text-center text-zinc-500 text-sm py-10">No notifications yet.</div>`;
                     return;
                 }
 
@@ -255,11 +260,19 @@
 
         async function renderExplore() {
             const appDiv = document.getElementById('app');
-            appDiv.innerHTML = `<div class="p-4 text-center text-zinc-400">Loading users...</div>`;
+            appDiv.innerHTML = `
+                <div>
+                    ${getTopHeaderHTML()}
+                    <div class="p-4 pt-0">
+                        <h2 class="text-xl font-bold mb-4 text-yellow-400">Explore Users</h2>
+                        <div id="exploreUsersList" class="space-y-3 text-center text-zinc-400">Loading users...</div>
+                    </div>
+                </div>
+            `;
             
             try {
                 const querySnapshot = await window.getDocs(window.collection(window.db, "users"));
-                let usersHTML = `<div class="p-4"><h2 class="text-xl font-bold mb-4 text-yellow-400">Explore Users</h2><div class="space-y-3">`;
+                let usersHTML = `<div class="space-y-3">`;
                 
                 querySnapshot.forEach((docSnap) => {
                     const userData = docSnap.data();
@@ -267,7 +280,7 @@
                         usersHTML += `
                             <div onclick="openChatRoom('${userData.uid}', '${userData.username}')" class="flex items-center justify-between bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl cursor-pointer hover:border-yellow-400 transition">
                                 <div class="flex items-center space-x-3">
-                                    <img src="${userData.avatar}" class="w-10 h-10 rounded-full bg-zinc-800">
+                                    <img src="${userData.avatar}" class="w-10 h-10 rounded-full bg-zinc-800 object-cover">
                                     <span class="font-semibold text-white">${userData.username}</span>
                                 </div>
                                 <i class="fa-solid fa-comments text-yellow-400 text-lg"></i>
@@ -276,8 +289,8 @@
                     }
                 });
                 
-                usersHTML += `</div></div>`;
-                appDiv.innerHTML = usersHTML;
+                usersHTML += `</div>`;
+                document.getElementById('exploreUsersList').innerHTML = usersHTML;
             } catch (error) {
                 console.error("Error loading users:", error);
             }
@@ -286,11 +299,14 @@
         async function renderChatInboxList() {
             const appDiv = document.getElementById('app');
             appDiv.innerHTML = `
-                <div class="p-4">
-                    <h2 class="text-xl font-bold mb-4 text-yellow-400">Messages</h2>
-                    <div class="bg-zinc-900/50 border border-zinc-800 p-6 rounded-xl text-center text-zinc-400 text-sm">
-                        <p class="mb-3">To chat with someone, go to the Explore tab and select a user.</p>
-                        <button onclick="switchTab('explore')" class="bg-yellow-400 text-black px-4 py-2 rounded-xl font-bold text-xs">Explore Users</button>
+                <div>
+                    ${getTopHeaderHTML()}
+                    <div class="p-4 pt-0">
+                        <h2 class="text-xl font-bold mb-4 text-yellow-400">Messages</h2>
+                        <div class="bg-zinc-900/50 border border-zinc-800 p-6 rounded-xl text-center text-zinc-400 text-sm">
+                            <p class="mb-3">To chat with someone, go to the Explore tab and select a user.</p>
+                            <button onclick="switchTab('explore')" class="bg-yellow-400 text-black px-4 py-2 rounded-xl font-bold text-xs">Explore Users</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -328,18 +344,15 @@
             if (!text) return;
             
             try {
-                // Send message to chat room
                 await window.addDoc(window.collection(window.db, "chats", chatId, "messages"), {
                     sender: window.auth.currentUser.uid,
                     text: text,
                     timestamp: window.serverTimestamp()
                 });
 
-                // Fetch current user details for notification
                 const userDoc = await window.getDoc(window.doc(window.db, "users", window.auth.currentUser.uid));
                 const senderUsername = userDoc.exists() ? userDoc.data().username : "Someone";
 
-                // Add notification for message recipient
                 await window.addDoc(window.collection(window.db, "notifications"), {
                     receiverUid: peerUid,
                     senderUid: window.auth.currentUser.uid,
@@ -385,11 +398,122 @@
         }
 
         function renderReels() {
-            document.getElementById('app').innerHTML = `<div class="p-4 text-zinc-400 text-center">Reels page coming soon!</div>`;
+            document.getElementById('app').innerHTML = `
+                <div>
+                    ${getTopHeaderHTML()}
+                    <div class="p-4 text-zinc-400 text-center">Reels page coming soon!</div>
+                </div>
+            `;
         }
 
-        function renderProfile() {
-            document.getElementById('app').innerHTML = `<div class="p-4 text-zinc-400 text-center">Profile page coming soon!</div>`;
+        async function renderProfile() {
+            const appDiv = document.getElementById('app');
+            appDiv.innerHTML = `
+                <div>
+                    ${getTopHeaderHTML()}
+                    <div id="profileContent" class="p-4 text-center text-zinc-400">Loading profile...</div>
+                </div>
+            `;
+
+            try {
+                const userDoc = await window.getDoc(window.doc(window.db, "users", window.auth.currentUser.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    document.getElementById('profileContent').innerHTML = `
+                        <div class="flex flex-col items-center mt-2">
+                            <div class="relative group mb-3">
+                                <img src="${userData.avatar}" class="w-24 h-24 rounded-full border-2 border-yellow-400 bg-zinc-800 object-cover">
+                            </div>
+                            
+                            <!-- Edit Form -->
+                            <div class="w-full max-w-xs space-y-3 mt-2 text-left">
+                                <div>
+                                    <label class="text-xs text-zinc-400 ml-1">Username</label>
+                                    <input type="text" id="editUsername" value="${userData.username}" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-zinc-400 ml-1">Avatar Image URL</label>
+                                    <input type="text" id="editAvatar" value="${userData.avatar}" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400" placeholder="Paste image link here">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-zinc-400 ml-1">Bio</label>
+                                    <textarea id="editBio" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 resize-none h-16">${userData.bio || ''}</textarea>
+                                </div>
+                                <button onclick="saveProfileChanges()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-sm transition shadow-md">Save Changes</button>
+                            </div>
+                            
+                            <!-- Application Settings & Branding Section at the Bottom of Profile -->
+                            <div class="w-full max-w-xs mt-8 pt-6 border-t border-zinc-800/80 text-left">
+                                <h3 class="text-sm font-bold text-yellow-400 mb-3 uppercase tracking-wider flex items-center space-x-2">
+                                    <i class="fa-solid fa-gear"></i> <span>App Settings</span>
+                                </h3>
+                                
+                                <div class="space-y-2 mb-6">
+                                    <div class="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm">
+                                        <span class="text-zinc-300">Dark Mode</span>
+                                        <span class="text-xs text-yellow-400 font-semibold bg-yellow-400/10 px-2 py-1 rounded">Always On</span>
+                                    </div>
+                                    <div class="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm">
+                                        <span class="text-zinc-300">Push Notifications</span>
+                                        <input type="checkbox" checked class="accent-yellow-400 w-4 h-4 cursor-pointer" onclick="alert('Notification setting updated!')">
+                                    </div>
+                                    <div class="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm cursor-pointer hover:border-yellow-400 transition" onclick="alert('Roxchat v1.0.0 - Built with Firebase & Tailwind CSS')">
+                                        <span class="text-zinc-300">App Version</span>
+                                        <span class="text-xs text-zinc-400">v1.0.0</span>
+                                    </div>
+                                </div>
+
+                                <!-- App Logo Branding & Logout at the bottom -->
+                                <div class="text-center bg-zinc-950 border border-zinc-900 p-4 rounded-2xl mb-4">
+                                    <h1 class="text-2xl brand-font text-yellow-400 mb-1">Roxchat</h1>
+                                    <p class="text-[11px] text-zinc-500 mb-4">Secure & Fast Social Connection</p>
+                                    <button onclick="handleLogout()" class="w-full bg-zinc-900 border border-zinc-800 text-red-400 py-2.5 rounded-xl font-bold text-sm hover:border-red-500 transition flex items-center justify-center space-x-2">
+                                        <i class="fa-solid fa-right-from-bracket"></i>
+                                        <span>Log Out</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('profileContent').innerHTML = `<div class="text-red-500 text-sm">User profile not found.</div>`;
+                }
+            } catch (e) {
+                console.error("Error loading profile:", e);
+                document.getElementById('profileContent').innerHTML = `<div class="text-red-500 text-sm">Failed to load profile.</div>`;
+            }
+        }
+
+        async function saveProfileChanges() {
+            const newUsername = document.getElementById('editUsername').value.trim().toLowerCase();
+            const newAvatar = document.getElementById('editAvatar').value.trim();
+            const newBio = document.getElementById('editBio').value.trim();
+
+            if (!newUsername) {
+                alert("Username cannot be empty!");
+                return;
+            }
+
+            try {
+                const userRef = window.doc(window.db, "users", window.auth.currentUser.uid);
+                await window.updateDoc(userRef, {
+                    username: newUsername,
+                    avatar: newAvatar,
+                    bio: newBio
+                });
+                alert("Profile updated successfully!");
+                renderProfile();
+            } catch (e) {
+                alert("Error updating profile: " + e.message);
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await window.signOut(window.auth);
+            } catch (e) {
+                alert("Logout Error: " + e.message);
+            }
         }
     </script>
 </body>
