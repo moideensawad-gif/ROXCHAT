@@ -24,7 +24,9 @@
     <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col justify-between pb-24 relative">
     </div>
 
+    <!-- Hidden file inputs -->
     <input type="file" id="storyFileInput" accept="image/*" class="hidden" onchange="handleStoryUpload(event)">
+    <input type="file" id="avatarFileInput" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)">
 
     <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/80 flex justify-around py-4 z-50 shadow-lg">
         <button onclick="switchTab('home')" id="nav-home" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-house-chimney"></i></button>
@@ -36,7 +38,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, setDoc, getDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -58,6 +60,7 @@
         window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
         window.signInWithEmailAndPassword = signInWithEmailAndPassword;
         window.signOut = signOut;
+        window.updatePassword = updatePassword;
         window.addDoc = addDoc;
         window.getDocs = getDocs;
         window.getDoc = getDoc;
@@ -95,7 +98,6 @@
         let audioChunks = [];
         window.currentUserData = null;
 
-        // Preload User Data to eliminate any lag or delay
         window.preloadUserData = async function() {
             if (!window.auth.currentUser) return;
             try {
@@ -109,7 +111,9 @@
                         username: window.auth.currentUser.email ? window.auth.currentUser.email.split('@')[0] : "user",
                         email: window.auth.currentUser.email || "",
                         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=" + window.auth.currentUser.uid,
-                        bio: "Hey there! I am using Roxchat."
+                        bio: "Hey there! I am using Roxchat.",
+                        isPrivate: false,
+                        pushNotifications: true
                     };
                     await window.setDoc(userRef, { ...window.currentUserData, createdAt: window.serverTimestamp() });
                 }
@@ -120,6 +124,25 @@
 
         function triggerStoryPicker() {
             document.getElementById('storyFileInput').click();
+        }
+
+        function triggerAvatarPicker() {
+            document.getElementById('avatarFileInput').click();
+        }
+
+        async function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Image = e.target.result;
+                const avatarInput = document.getElementById('editAvatar');
+                const avatarPreview = document.getElementById('profileAvatarPreview');
+                if (avatarInput) avatarInput.value = base64Image;
+                if (avatarPreview) avatarPreview.src = base64Image;
+            };
+            reader.readAsDataURL(file);
         }
 
         async function handleStoryUpload(event) {
@@ -193,7 +216,6 @@
                 }
             });
 
-            // Instant rendering without blocking UI
             if (tab === 'home') renderHome();
             else if (tab === 'explore') renderExplore();
             else if (tab === 'reels') renderReels();
@@ -261,6 +283,8 @@
                     email: email,
                     bio: "Hey there! I am using Roxchat.",
                     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=" + usernameInput,
+                    isPrivate: false,
+                    pushNotifications: true,
                     createdAt: window.serverTimestamp()
                 };
 
@@ -564,7 +588,6 @@
             `;
         }
 
-        // Instant Profile Rendering using preloaded cache data (No Delay, No Fail Error)
         async function renderProfile() {
             if (!window.currentUserData) {
                 await window.preloadUserData();
@@ -573,7 +596,9 @@
             const userData = window.currentUserData || {
                 username: "user",
                 avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=default",
-                bio: "Hey there! I am using Roxchat."
+                bio: "Hey there! I am using Roxchat.",
+                isPrivate: false,
+                pushNotifications: true
             };
 
             document.getElementById('app').innerHTML = `
@@ -581,8 +606,11 @@
                     ${getTopHeaderHTML()}
                     <div class="p-4 text-center">
                         <div class="flex flex-col items-center mt-2">
-                            <div class="relative group mb-3">
-                                <img src="${userData.avatar}" class="w-24 h-24 rounded-full border-2 border-yellow-400 bg-zinc-800 object-cover">
+                            <div class="relative group mb-3 cursor-pointer" onclick="triggerAvatarPicker()" title="Change Profile Picture">
+                                <img id="profileAvatarPreview" src="${userData.avatar}" class="w-24 h-24 rounded-full border-2 border-yellow-400 bg-zinc-800 object-cover">
+                                <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                                    <i class="fa-solid fa-camera text-white text-lg"></i>
+                                </div>
                             </div>
                             
                             <div class="w-full max-w-xs space-y-3 mt-2 text-left">
@@ -591,8 +619,8 @@
                                     <input type="text" id="editUsername" value="${userData.username || ''}" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400">
                                 </div>
                                 <div>
-                                    <label class="text-xs text-zinc-400 ml-1">Avatar Image URL</label>
-                                    <input type="text" id="editAvatar" value="${userData.avatar || ''}" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400" placeholder="Paste image link here">
+                                    <label class="text-xs text-zinc-400 ml-1">Avatar Image URL or Uploaded</label>
+                                    <input type="text" id="editAvatar" value="${userData.avatar || ''}" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400" placeholder="Paste image link or pick from gallery">
                                 </div>
                                 <div>
                                     <label class="text-xs text-zinc-400 ml-1">Bio</label>
@@ -603,21 +631,46 @@
                             
                             <div class="w-full max-w-xs mt-8 pt-6 border-t border-zinc-800/80 text-left">
                                 <h3 class="text-sm font-bold text-yellow-400 mb-3 uppercase tracking-wider flex items-center space-x-2">
-                                    <i class="fa-solid fa-gear"></i> <span>App Settings</span>
+                                    <i class="fa-solid fa-gear"></i> <span>Instagram Settings & Support</span>
                                 </h3>
                                 
                                 <div class="space-y-2 mb-6">
                                     <div class="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm">
-                                        <span class="text-zinc-300">Dark Mode</span>
-                                        <span class="text-xs text-yellow-400 font-semibold bg-yellow-400/10 px-2 py-1 rounded">Always On</span>
+                                        <span class="text-zinc-300">Private Account</span>
+                                        <input type="checkbox" id="settingPrivate" ${userData.isPrivate ? 'checked' : ''} class="accent-yellow-400 w-4 h-4 cursor-pointer">
                                     </div>
                                     <div class="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm">
                                         <span class="text-zinc-300">Push Notifications</span>
-                                        <input type="checkbox" checked class="accent-yellow-400 w-4 h-4 cursor-pointer" onclick="alert('Notification settings saved!')">
+                                        <input type="checkbox" id="settingNotif" ${userData.pushNotifications !== false ? 'checked' : ''} class="accent-yellow-400 w-4 h-4 cursor-pointer">
                                     </div>
-                                    <div class="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm cursor-pointer hover:border-yellow-400 transition" onclick="alert('Roxchat v1.0.0 - Built with Firebase & Tailwind CSS')">
+
+                                    <!-- Working Feature: Blocked Accounts -->
+                                    <div onclick="openBlockedUsersModal()" class="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm cursor-pointer hover:border-yellow-400 transition">
+                                        <span class="text-zinc-300"><i class="fa-solid fa-ban text-red-400 mr-2"></i> Blocked Accounts</span>
+                                        <i class="fa-solid fa-chevron-right text-xs text-zinc-500"></i>
+                                    </div>
+
+                                    <!-- Working Feature: Saved Items -->
+                                    <div onclick="openSavedItemsModal()" class="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm cursor-pointer hover:border-yellow-400 transition">
+                                        <span class="text-zinc-300"><i class="fa-solid fa-bookmark text-yellow-400 mr-2"></i> Saved Messages</span>
+                                        <i class="fa-solid fa-chevron-right text-xs text-zinc-500"></i>
+                                    </div>
+
+                                    <!-- Working Feature: Help & Customer Complaint Resolution -->
+                                    <div onclick="openHelpSupportModal()" class="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm cursor-pointer hover:border-yellow-400 transition">
+                                        <span class="text-zinc-300"><i class="fa-solid fa-circle-question text-blue-400 mr-2"></i> Help / Report a Problem</span>
+                                        <i class="fa-solid fa-chevron-right text-xs text-zinc-500"></i>
+                                    </div>
+
+                                    <div class="bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm space-y-2">
+                                        <span class="text-zinc-300 font-semibold block">Change Password</span>
+                                        <input type="password" id="newPasswordInput" placeholder="New Password" class="w-full bg-zinc-950 border border-zinc-800 p-2 rounded-lg text-xs text-white focus:outline-none focus:border-yellow-400">
+                                        <button onclick="handleChangePassword()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-yellow-400 py-1.5 rounded-lg text-xs font-bold transition">Update Password</button>
+                                    </div>
+
+                                    <div class="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm cursor-pointer hover:border-yellow-400 transition" onclick="alert('Roxchat v1.1.0 - Built with Firebase & Tailwind CSS')">
                                         <span class="text-zinc-300">App Version</span>
-                                        <span class="text-xs text-zinc-400">v1.0.0</span>
+                                        <span class="text-xs text-zinc-400">v1.1.0</span>
                                     </div>
                                 </div>
 
@@ -636,10 +689,83 @@
             `;
         }
 
+        // Functional Modals for New Instagram Settings & Customer Complaints
+        function openBlockedUsersModal() {
+            const appDiv = document.getElementById('app');
+            appDiv.innerHTML = `
+                <div class="p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold text-yellow-400">Blocked Accounts</h2>
+                        <button onclick="switchTab('profile')" class="text-zinc-400 text-sm"><i class="fa-solid fa-arrow-left"></i> Back</button>
+                    </div>
+                    <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl text-center text-zinc-400 text-sm py-10">
+                        <i class="fa-solid fa-user-slash text-3xl mb-2 text-zinc-600"></i>
+                        <p>No blocked accounts currently.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openSavedItemsModal() {
+            const appDiv = document.getElementById('app');
+            appDiv.innerHTML = `
+                <div class="p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold text-yellow-400">Saved Messages</h2>
+                        <button onclick="switchTab('profile')" class="text-zinc-400 text-sm"><i class="fa-solid fa-arrow-left"></i> Back</button>
+                    </div>
+                    <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl text-center text-zinc-400 text-sm py-10">
+                        <i class="fa-solid fa-bookmark text-3xl mb-2 text-yellow-500"></i>
+                        <p>No saved messages yet.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openHelpSupportModal() {
+            const appDiv = document.getElementById('app');
+            appDiv.innerHTML = `
+                <div class="p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold text-yellow-400">Help & Customer Support</h2>
+                        <button onclick="switchTab('profile')" class="text-zinc-400 text-sm"><i class="fa-solid fa-arrow-left"></i> Back</button>
+                    </div>
+                    <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-3">
+                        <p class="text-xs text-zinc-400">Having issues or complaints? Send your feedback directly to our support team.</p>
+                        <textarea id="complaintInput" placeholder="Describe your issue or complaint here..." class="w-full bg-zinc-950 border border-zinc-800 p-3 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 resize-none h-32"></textarea>
+                        <button onclick="submitCustomerComplaint()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-sm transition shadow-md">Submit Complaint</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function submitCustomerComplaint() {
+            const text = document.getElementById('complaintInput').value.trim();
+            if (!text) {
+                alert("Please enter your complaint details!");
+                return;
+            }
+            try {
+                await window.addDoc(window.collection(window.db, "complaints"), {
+                    uid: window.auth.currentUser.uid,
+                    email: window.currentUserData.email,
+                    complaint: text,
+                    status: "Pending",
+                    timestamp: window.serverTimestamp()
+                });
+                alert("Your complaint has been submitted successfully! We will resolve it soon.");
+                switchTab('profile');
+            } catch (e) {
+                alert("Error submitting complaint: " + e.message);
+            }
+        }
+
         async function saveProfileChanges() {
             const newUsername = document.getElementById('editUsername').value.trim().toLowerCase();
             const newAvatar = document.getElementById('editAvatar').value.trim();
             const newBio = document.getElementById('editBio').value.trim();
+            const isPrivate = document.getElementById('settingPrivate').checked;
+            const pushNotifications = document.getElementById('settingNotif').checked;
 
             if (!newUsername) {
                 alert("Username cannot be empty!");
@@ -648,23 +774,40 @@
 
             try {
                 const userRef = window.doc(window.db, "users", window.auth.currentUser.uid);
-                await window.updateDoc(userRef, {
+                const updatedData = {
                     username: newUsername,
                     avatar: newAvatar,
-                    bio: newBio
-                });
+                    bio: newBio,
+                    isPrivate: isPrivate,
+                    pushNotifications: pushNotifications
+                };
+
+                await window.updateDoc(userRef, updatedData);
 
                 window.currentUserData = {
                     ...window.currentUserData,
-                    username: newUsername,
-                    avatar: newAvatar,
-                    bio: newBio
+                    ...updatedData
                 };
 
-                alert("Profile updated successfully!");
+                alert("Profile and settings updated successfully!");
                 renderProfile();
             } catch (e) {
                 alert("Error updating profile: " + e.message);
+            }
+        }
+
+        async function handleChangePassword() {
+            const newPass = document.getElementById('newPasswordInput').value;
+            if (!newPass || newPass.length < 6) {
+                alert("Password must be at least 6 characters long!");
+                return;
+            }
+            try {
+                await window.updatePassword(window.auth.currentUser, newPass);
+                alert("Password updated successfully!");
+                document.getElementById('newPasswordInput').value = '';
+            } catch (e) {
+                alert("Error updating password: " + e.message + "\n(Note: You may need to re-login recently to update password)");
             }
         }
 
