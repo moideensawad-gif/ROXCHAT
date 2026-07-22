@@ -24,6 +24,9 @@
     <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col justify-between pb-24 relative">
     </div>
 
+    <!-- Hidden File Input for Story Upload -->
+    <input type="file" id="storyFileInput" accept="image/*" class="hidden" onchange="handleStoryUpload(event)">
+
     <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/80 flex justify-around py-4 z-50 shadow-lg">
         <button onclick="switchTab('home')" id="nav-home" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-house-chimney"></i></button>
         <button onclick="switchTab('chat')" id="nav-chat" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-comments"></i></button>
@@ -89,13 +92,42 @@
         let currentTab = 'home';
         let mediaRecorder = null;
         let audioChunks = [];
+        let currentUserData = null;
+
+        function triggerStoryPicker() {
+            document.getElementById('storyFileInput').click();
+        }
+
+        async function handleStoryUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Image = e.target.result;
+                try {
+                    await window.addDoc(window.collection(window.db, "stories"), {
+                        uid: window.auth.currentUser.uid,
+                        username: currentUserData ? currentUserData.username : "User",
+                        avatar: currentUserData ? currentUserData.avatar : "https://api.dicebear.com/7.x/avataaars/svg?seed=user",
+                        imageUrl: base64Image,
+                        createdAt: window.serverTimestamp()
+                    });
+                    alert("Story Posted Successfully!");
+                    renderHome();
+                } catch (err) {
+                    alert("Failed to post story: " + err.message);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
 
         function getTopHeaderHTML() {
             return `
                 <div class="flex justify-between items-center mb-4 px-4 pt-4">
                     <h1 class="text-2xl brand-font text-yellow-400">Roxchat</h1>
                     <div class="flex items-center space-x-4 text-xl">
-                        <button onclick="alert('Add Story feature coming soon!')" class="text-zinc-300 hover:text-yellow-400 transition" title="Add Story"><i class="fa-solid fa-plus-circle"></i></button>
+                        <button onclick="triggerStoryPicker()" class="text-zinc-300 hover:text-yellow-400 transition" title="Add Story"><i class="fa-solid fa-plus-circle"></i></button>
                         <button onclick="renderNotifications()" class="text-zinc-300 hover:text-yellow-400 transition relative" title="Notifications">
                             <i class="fa-solid fa-heart"></i>
                         </button>
@@ -104,42 +136,53 @@
             `;
         }
 
-        function getStoriesBarHTML() {
-            return `
+        async function getStoriesBarHTML() {
+            let storiesHTML = `
                 <div class="flex space-x-3 overflow-x-auto no-scrollbar px-4 mb-4 py-1">
-                    <div class="flex flex-col items-center flex-shrink-0 cursor-pointer" onclick="alert('Add your story')">
+                    <div class="flex flex-col items-center flex-shrink-0 cursor-pointer" onclick="triggerStoryPicker()">
                         <div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-500 to-amber-300 relative">
                             <div class="w-full h-full bg-black rounded-full flex items-center justify-center overflow-hidden">
-                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=myuser" class="w-full h-full object-cover">
+                                <img src="${currentUserData && currentUserData.avatar ? currentUserData.avatar : 'https://api.dicebear.com/7.x/avataaars/svg?seed=myuser'}" class="w-full h-full object-cover">
                             </div>
                             <div class="absolute bottom-0 right-0 bg-yellow-400 text-black rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold border-2 border-black">+</div>
                         </div>
                         <span class="text-[11px] text-zinc-300 mt-1">Your Story</span>
                     </div>
-                    <div class="flex flex-col items-center flex-shrink-0 cursor-pointer">
-                        <div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-500 to-amber-300">
-                            <div class="w-full h-full bg-black rounded-full overflow-hidden p-0.5">
-                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=rahul" class="w-full h-full rounded-full object-cover">
+            `;
+
+            try {
+                const q = window.query(window.collection(window.db, "stories"), window.orderBy("createdAt", "desc"));
+                const snapshot = await window.getDocs(q);
+                
+                snapshot.forEach(docSnap => {
+                    const story = docSnap.data();
+                    if (story.uid !== window.auth.currentUser.uid) {
+                        storiesHTML += `
+                            <div class="flex flex-col items-center flex-shrink-0 cursor-pointer" onclick="viewStory('${story.imageUrl}', '${story.username}')">
+                                <div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-500 to-amber-300">
+                                    <div class="w-full h-full bg-black rounded-full overflow-hidden p-0.5">
+                                        <img src="${story.avatar}" class="w-full h-full rounded-full object-cover">
+                                    </div>
+                                </div>
+                                <span class="text-[11px] text-zinc-300 mt-1">${story.username}</span>
                             </div>
-                        </div>
-                        <span class="text-[11px] text-zinc-300 mt-1">rahul</span>
-                    </div>
-                    <div class="flex flex-col items-center flex-shrink-0 cursor-pointer">
-                        <div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-500 to-amber-300">
-                            <div class="w-full h-full bg-black rounded-full overflow-hidden p-0.5">
-                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=ananya" class="w-full h-full rounded-full object-cover">
-                            </div>
-                        </div>
-                        <span class="text-[11px] text-zinc-300 mt-1">ananya</span>
-                    </div>
-                    <div class="flex flex-col items-center flex-shrink-0 cursor-pointer">
-                        <div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-500 to-amber-300">
-                            <div class="w-full h-full bg-black rounded-full overflow-hidden p-0.5">
-                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=arjun" class="w-full h-full rounded-full object-cover">
-                            </div>
-                        </div>
-                        <span class="text-[11px] text-zinc-300 mt-1">arjun</span>
-                    </div>
+                        `;
+                    }
+                });
+            } catch (e) {
+                console.error("Error loading stories:", e);
+            }
+
+            storiesHTML += `</div>`;
+            return storiesHTML;
+        }
+
+        function viewStory(imgUrl, username) {
+            document.getElementById('app').innerHTML = `
+                <div class="relative min-h-screen bg-black flex flex-col justify-center items-center p-4">
+                    <button onclick="switchTab('home')" class="absolute top-4 left-4 text-white text-2xl z-20"><i class="fa-solid fa-xmark"></i></button>
+                    <p class="absolute top-5 text-yellow-400 font-bold z-20">${username}'s Story</p>
+                    <img src="${imgUrl}" class="max-h-[80vh] w-auto rounded-2xl object-contain border border-zinc-800">
                 </div>
             `;
         }
@@ -221,14 +264,17 @@
                 const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
                 const user = userCredential.user;
 
-                await window.setDoc(window.doc(window.db, "users", user.uid), {
+                const newUser = {
                     uid: user.uid,
                     username: usernameInput,
                     email: email,
                     bio: "Hey there! I am using Roxchat.",
                     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=" + usernameInput,
                     createdAt: window.serverTimestamp()
-                });
+                };
+
+                await window.setDoc(window.doc(window.db, "users", user.uid), newUser);
+                currentUserData = newUser;
 
                 switchTab('home');
             } catch (error) {
@@ -236,11 +282,26 @@
             }
         }
 
+        async function fetchCurrentUserData() {
+            if (window.auth.currentUser && !currentUserData) {
+                try {
+                    const userDoc = await window.getDoc(window.doc(window.db, "users", window.auth.currentUser.uid));
+                    if (userDoc.exists()) {
+                        currentUserData = userDoc.data();
+                    }
+                } catch (e) {
+                    console.error("Error fetching user data:", e);
+                }
+            }
+        }
+
         async function renderHome() {
+            await fetchCurrentUserData();
+            const storiesBar = await getStoriesBarHTML();
             document.getElementById('app').innerHTML = `
                 <div>
                     ${getTopHeaderHTML()}
-                    ${getStoriesBarHTML()}
+                    ${storiesBar}
                     <div class="px-4 py-6 text-center text-zinc-500 text-sm">Welcome to Roxchat Home Feed!</div>
                 </div>
             `;
@@ -344,13 +405,50 @@
                     ${getTopHeaderHTML()}
                     <div class="p-4 pt-0">
                         <h2 class="text-xl font-bold mb-4 text-yellow-400">Direct Messages</h2>
-                        <div class="bg-zinc-900/50 border border-zinc-800 p-6 rounded-xl text-center text-zinc-400 text-sm">
-                            <p class="mb-3">Select someone from the Explore tab to start a private chat room.</p>
-                            <button onclick="switchTab('explore')" class="bg-yellow-400 text-black px-4 py-2 rounded-xl font-bold text-xs">Explore Users</button>
-                        </div>
+                        <div id="directUsersList" class="space-y-3">Loading chats...</div>
                     </div>
                 </div>
             `;
+
+            try {
+                const querySnapshot = await window.getDocs(window.collection(window.db, "users"));
+                let usersHTML = `<div class="space-y-3">`;
+                let count = 0;
+                
+                querySnapshot.forEach((docSnap) => {
+                    const userData = docSnap.data();
+                    if(userData.uid !== window.auth.currentUser.uid) {
+                        count++;
+                        usersHTML += `
+                            <div onclick="openChatRoom('${userData.uid}', '${userData.username}')" class="flex items-center justify-between bg-zinc-900/80 border border-zinc-800 p-3.5 rounded-xl cursor-pointer hover:border-yellow-400 transition">
+                                <div class="flex items-center space-x-3">
+                                    <img src="${userData.avatar}" class="w-12 h-12 rounded-full bg-zinc-800 object-cover">
+                                    <div>
+                                        <h4 class="font-bold text-white text-sm">${userData.username}</h4>
+                                        <p class="text-xs text-zinc-400 truncate max-w-[180px]">Tap to open chat</p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-paper-plane text-yellow-400 text-base"></i>
+                            </div>
+                        `;
+                    }
+                });
+                
+                usersHTML += `</div>`;
+
+                if (count === 0) {
+                    usersHTML = `
+                        <div class="bg-zinc-900/50 border border-zinc-800 p-6 rounded-xl text-center text-zinc-400 text-sm">
+                            <p class="mb-3">No active users found to send direct messages.</p>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('directUsersList').innerHTML = usersHTML;
+            } catch (error) {
+                console.error("Error loading direct chat list:", error);
+                document.getElementById('directUsersList').innerHTML = `<div class="text-red-500 text-sm text-center">Failed to load direct messages.</div>`;
+            }
         }
 
         async function openChatRoom(peerUid, peerUsername) {
@@ -360,7 +458,7 @@
             document.getElementById('app').innerHTML = `
                 <div class="flex flex-col h-screen bg-black">
                     <div class="flex items-center justify-between p-4 bg-zinc-950 border-b border-zinc-800">
-                        <button onclick="switchTab('explore')" class="text-zinc-400 text-lg"><i class="fa-solid fa-arrow-left"></i></button>
+                        <button onclick="switchTab('chat')" class="text-zinc-400 text-lg"><i class="fa-solid fa-arrow-left"></i></button>
                         <h2 class="font-bold text-white">${peerUsername}</h2>
                         <div class="w-6"></div>
                     </div>
@@ -400,8 +498,7 @@
 
                 await window.addDoc(window.collection(window.db, "chats", chatId, "messages"), msgData);
 
-                const userDoc = await window.getDoc(window.doc(window.db, "users", window.auth.currentUser.uid));
-                const senderUsername = userDoc.exists() ? userDoc.data().username : "Someone";
+                const senderUsername = currentUserData ? currentUserData.username : "Someone";
 
                 await window.addDoc(window.collection(window.db, "notifications"), {
                     receiverUid: peerUid,
@@ -513,29 +610,29 @@
                 let userData;
                 if (!userDoc.exists()) {
                     userData = {
-                        username: window.auth.currentUser.email.split('@')[0],
+                        uid: window.auth.currentUser.uid,
+                        username: window.auth.currentUser.email ? window.auth.currentUser.email.split('@')[0] : "user",
+                        email: window.auth.currentUser.email || "",
                         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=" + window.auth.currentUser.uid,
                         bio: "Hey there! I am using Roxchat."
                     };
                     await window.setDoc(userRef, {
-                        uid: window.auth.currentUser.uid,
-                        username: userData.username,
-                        email: window.auth.currentUser.email,
-                        bio: userData.bio,
-                        avatar: userData.avatar,
+                        ...userData,
                         createdAt: window.serverTimestamp()
                     });
                 } else {
                     userData = userDoc.data();
                 }
 
+                currentUserData = userData;
+
                 document.getElementById('profileContent').innerHTML = `
                     <div class="flex flex-col items-center mt-2">
                         <div class="relative group mb-3">
-                            <img src="${userData.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'}" class="w-24 h-24 rounded-full border-2 border-yellow-400 bg-zinc-800 object-cover">
+                            <img id="profileImagePreview" src="${userData.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'}" class="w-24 h-24 rounded-full border-2 border-yellow-400 bg-zinc-800 object-cover">
                         </div>
                         
-                        <!-- Edit Form -->
+                        <!-- Edit Profile Form -->
                         <div class="w-full max-w-xs space-y-3 mt-2 text-left">
                             <div>
                                 <label class="text-xs text-zinc-400 ml-1">Username</label>
@@ -552,7 +649,7 @@
                             <button onclick="saveProfileChanges()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-sm transition shadow-md">Save Changes</button>
                         </div>
                         
-                        <!-- Application Settings & Branding Section at the Bottom of Profile -->
+                        <!-- Application Settings & Branding Section -->
                         <div class="w-full max-w-xs mt-8 pt-6 border-t border-zinc-800/80 text-left">
                             <h3 class="text-sm font-bold text-yellow-400 mb-3 uppercase tracking-wider flex items-center space-x-2">
                                 <i class="fa-solid fa-gear"></i> <span>App Settings</span>
@@ -565,7 +662,7 @@
                                 </div>
                                 <div class="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm">
                                     <span class="text-zinc-300">Push Notifications</span>
-                                    <input type="checkbox" checked class="accent-yellow-400 w-4 h-4 cursor-pointer" onclick="alert('Notification setting updated!')">
+                                    <input type="checkbox" checked class="accent-yellow-400 w-4 h-4 cursor-pointer" onclick="alert('Notification settings saved!')">
                                 </div>
                                 <div class="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm cursor-pointer hover:border-yellow-400 transition" onclick="alert('Roxchat v1.0.0 - Built with Firebase & Tailwind CSS')">
                                     <span class="text-zinc-300">App Version</span>
@@ -573,7 +670,7 @@
                                 </div>
                             </div>
 
-                            <!-- App Logo Branding & Logout at the bottom -->
+                            <!-- App Logo & Logout Button at the bottom -->
                             <div class="text-center bg-zinc-950 border border-zinc-900 p-4 rounded-2xl mb-4">
                                 <h1 class="text-2xl brand-font text-yellow-400 mb-1">Roxchat</h1>
                                 <p class="text-[11px] text-zinc-500 mb-4">Secure & Fast Social Connection</p>
@@ -608,6 +705,14 @@
                     avatar: newAvatar,
                     bio: newBio
                 });
+
+                currentUserData = {
+                    ...currentUserData,
+                    username: newUsername,
+                    avatar: newAvatar,
+                    bio: newBio
+                };
+
                 alert("Profile updated successfully!");
                 renderProfile();
             } catch (e) {
@@ -618,6 +723,7 @@
         async function handleLogout() {
             try {
                 await window.signOut(window.auth);
+                currentUserData = null;
             } catch (e) {
                 alert("Logout Error: " + e.message);
             }
