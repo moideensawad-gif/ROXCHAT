@@ -13,86 +13,119 @@
             --white: #ffffff;
             --border-color: #ddd;
             --text-color: #333;
+            --card-bg: #fafafa;
         }
-        body { font-family: Arial, sans-serif; background: var(--bg-color); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; color: var(--text-color); }
+        [data-theme="dark"] {
+            --primary-color: #00a884;
+            --primary-hover: #008f6f;
+            --bg-color: #121212;
+            --white: #1e1e1e;
+            --border-color: #333;
+            --text-color: #e0e0e0;
+            --card-bg: #1e1e1e;
+        }
+        body { font-family: Arial, sans-serif; background: var(--bg-color); margin: 0; padding: 0 0 70px 0; display: flex; flex-direction: column; align-items: center; color: var(--text-color); transition: background 0.3s, color 0.3s; }
         .container { background: var(--white); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; max-width: 450px; margin-bottom: 20px; }
-        input, textarea, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid var(--border-color); border-radius: 4px; box-sizing: border-box; }
-        button { background: var(--primary-color); color: var(--white); border: none; cursor: pointer; font-weight: bold; }
+        input, textarea, select, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid var(--border-color); border-radius: 4px; box-sizing: border-box; background: var(--white); color: var(--text-color); }
+        button { background: var(--primary-color); color: #fff; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background: var(--primary-hover); }
         .hidden { display: none; }
-        .post, .notification, .story-item { background: #fafafa; border: 1px solid var(--border-color); padding: 12px; margin-top: 10px; border-radius: 6px; }
-        .header-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 450px; margin-bottom: 10px; }
-        .comment-section { margin-top: 8px; border-top: 1px dashed #eee; padding-top: 8px; font-size: 14px; }
+        .post, .notification, .story-item, .chat-user-item { background: var(--card-bg); border: 1px solid var(--border-color); padding: 12px; margin-top: 10px; border-radius: 6px; position: relative; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 450px; margin: 15px 0; padding: 0 10px; }
+        .comment-section { margin-top: 8px; border-top: 1px dashed var(--border-color); padding-top: 8px; font-size: 14px; }
         .stories-container { display: flex; gap: 10px; overflow-x: auto; padding: 5px 0; width: 100%; max-width: 450px; margin-bottom: 15px; }
         .story-bubble { min-width: 70px; height: 70px; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer; font-size: 12px; text-align: center; padding: 2px; }
-        .story-inner { background: white; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #333; overflow: hidden; text-overflow: ellipsis; }
-        .nav-tabs { display: flex; justify-content: space-around; background: #fff; padding: 10px 0; border-radius: 6px; margin-bottom: 15px; border: 1px solid var(--border-color); width: 100%; max-width: 450px; }
-        .nav-tabs button { background: none; color: var(--primary-color); border: none; font-weight: bold; cursor: pointer; margin: 0; }
-        .profile-pic-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); margin-bottom: 10px; }
+        .story-inner { background: var(--white); width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-color); overflow: hidden; text-overflow: ellipsis; }
+        
+        /* Bottom Navigation Bar like Instagram/Facebook */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--white); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
+        .bottom-nav-item { background: none; border: none; color: var(--text-color); font-size: 20px; cursor: pointer; display: flex; flex-direction: column; align-items: center; width: auto; margin: 0; padding: 0; position: relative; }
+        .bottom-nav-label { font-size: 10px; margin-top: 2px; }
+
+        .badge { background: #dc3545; color: white; border-radius: 50%; padding: 1px 5px; font-size: 9px; position: absolute; top: -4px; right: -8px; }
+        .profile-pic-preview { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); margin-bottom: 10px; }
         .post-media { width: 100%; max-height: 400px; object-fit: cover; border-radius: 6px; margin-top: 8px; }
+        .emoji-picker { display: flex; flex-wrap: wrap; gap: 5px; background: var(--border-color); padding: 5px; border-radius: 4px; margin-bottom: 5px; }
+        .emoji-btn { background: none; border: none; font-size: 18px; cursor: pointer; width: auto; padding: 2px; margin: 0; }
+        .chat-box { height: 250px; overflow-y: auto; border: 1px solid var(--border-color); padding: 10px; background: var(--card-bg); border-radius: 6px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 6px; }
+        .message-bubble { padding: 8px 12px; border-radius: 8px; max-width: 75%; font-size: 14px; word-break: break-word; }
+        .message-sent { background: #dcf8c6; color: #333; align-self: flex-end; }
+        .message-received { background: var(--white); border: 1px solid var(--border-color); align-self: flex-start; }
     </style>
 </head>
-<body>
+<body data-theme="light">
 
     <!-- Auth Section -->
-    <div id="auth-container" class="container">
+    <div id="auth-container" class="container" style="margin-top: 50px;">
         <h2>Roxchat Register / Login</h2>
         
-        <!-- Register Form -->
         <div id="register-form">
             <h3>Create Account</h3>
+            <select id="reg-type" onchange="toggleRegInputType()">
+                <option value="email">Use Gmail / Email</option>
+                <option value="phone">Use Phone Number</option>
+            </select>
+            <input type="text" id="reg-identifier" placeholder="Enter Email Address">
             <input type="text" id="reg-username" placeholder="Username">
             <input type="password" id="reg-password" placeholder="Password">
             <textarea id="reg-bio" placeholder="Write a short bio..."></textarea>
-            <label style="font-size: 13px; color: #666;">Profile Picture Link (URL):</label>
+            <label style="font-size: 13px;">Profile Picture Link (URL):</label>
             <input type="text" id="reg-pic" placeholder="https://example.com/image.jpg">
             <button onclick="handleCreateAccount()">Register</button>
-            <p style="text-align: center; font-size: 14px; cursor: pointer; color: #075e54;" onclick="toggleAuthMode()">Already have an account? Login</p>
+            <p style="text-align: center; font-size: 14px; cursor: pointer; color: var(--primary-color);" onclick="toggleAuthMode()">Already have an account? Login</p>
         </div>
 
-        <!-- Login Form -->
         <div id="login-form" class="hidden">
             <h3>Login</h3>
-            <input type="text" id="login-username" placeholder="Username">
+            <input type="text" id="login-username" placeholder="Username, Email or Phone">
             <input type="password" id="login-password" placeholder="Password">
             <button onclick="handleLogin()">Login</button>
-            <p style="text-align: center; font-size: 14px; cursor: pointer; color: #075e54;" onclick="toggleAuthMode()">Don't have an account? Register</p>
+            <p style="text-align: center; font-size: 14px; cursor: pointer; color: var(--primary-color);" onclick="toggleAuthMode()">Don't have an account? Register</p>
         </div>
     </div>
 
     <!-- Main App Section -->
-    <div id="app-container" class="container hidden" style="max-width: 450px;">
+    <div id="app-container" class="hidden" style="width: 100%; max-width: 450px; display: flex; flex-direction: column; align-items: center;">
+        
         <div class="header-bar">
-            <h3 id="welcome-user">Welcome</h3>
-            <button onclick="handleLogout()" style="width: auto; padding: 5px 10px; background: #d9534f;">Logout</button>
+            <h2 id="welcome-user" style="margin: 0;">Roxchat</h2>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="toggleDarkMode()" style="width: auto; padding: 5px 8px; background: #6c757d; font-size: 12px;">🌓 Mode</button>
+                <button onclick="switchTab('notifications')" style="width: auto; padding: 5px 8px; background: #17a2b8; font-size: 12px; position: relative;">🔔 <span id="notif-badge" class="badge hidden">0</span></button>
+                <button onclick="handleLogout()" style="width: auto; padding: 5px 8px; background: #d9534f; font-size: 12px;">Logout</button>
+            </div>
         </div>
 
-        <!-- User Profile Card -->
-        <div class="post" style="text-align: center;">
-            <img id="profile-display-pic" class="profile-pic-preview" src="" alt="Profile">
-            <h3 id="profile-display-name" style="margin: 5px 0;"></h3>
-            <p id="profile-display-bio" style="font-size: 14px; color: #666;"></p>
-        </div>
-
-        <div class="nav-tabs">
-            <button onclick="switchTab('feed')">🏠 Feed</button>
-            <button onclick="switchTab('stories')">⭕ Stories</button>
-            <button onclick="switchTab('notifications')">🔔 Alerts</button>
-        </div>
-
-        <!-- Feed Tab -->
-        <div id="tab-feed">
-            <h4>Create Post (Photo / Video)</h4>
-            <textarea id="post-caption" placeholder="Write a caption..."></textarea>
-            <label style="font-size: 13px; color: #666;">Media Link (Image or Video URL):</label>
-            <input type="text" id="post-media-url" placeholder="https://example.com/image.jpg or video.mp4">
-            <button onclick="handleCreatePost()">Post</button>
+        <!-- Feed Tab (Home) -->
+        <div id="tab-feed" class="container" style="width: 100%;">
             <h4>Feed</h4>
+            <input type="text" id="feed-search-input" placeholder="🔍 Search posts by caption or author..." oninput="updateUI()">
             <div id="feed-container"></div>
         </div>
 
+        <!-- Reels Tab -->
+        <div id="tab-reels" class="container hidden" style="width: 100%;">
+            <h4>Shorts & Reels</h4>
+            <input type="text" id="reel-search-input" placeholder="🔍 Search reels..." oninput="updateReelsFeed()">
+            <div id="reels-container"></div>
+        </div>
+
+        <!-- Add Post Tab (Plus) -->
+        <div id="tab-add" class="container hidden" style="width: 100%;">
+            <h4>Create New Post / Reel</h4>
+            <textarea id="post-caption" placeholder="Write a caption..."></textarea>
+            
+            <label style="font-size: 13px; font-weight: bold;">Select Media from Gallery (Photo/Video):</label>
+            <input type="file" id="post-file-input" accept="image/*,video/*">
+
+            <label style="font-size: 13px;">Or Media Link (URL):</label>
+            <input type="text" id="post-media-url" placeholder="https://example.com/image.jpg">
+            
+            <button onclick="handleCreatePost()">Publish Post</button>
+        </div>
+
         <!-- Stories Tab -->
-        <div id="tab-stories" class="hidden">
+        <div id="tab-stories" class="container hidden" style="width: 100%;">
             <h4>Add Story</h4>
             <input type="text" id="story-text" placeholder="Story text/update...">
             <button onclick="handleCreateStory()">Share Story</button>
@@ -101,14 +134,142 @@
             <div id="story-viewer" style="margin-top: 15px; font-weight: bold; text-align: center;"></div>
         </div>
 
+        <!-- Messages / DMs Tab -->
+        <div id="tab-messages" class="container hidden" style="width: 100%;">
+            <div id="dm-list-view">
+                <h4>Direct Messages (DMs)</h4>
+                <input type="text" id="dm-search-input" placeholder="🔍 Search friend username..." oninput="updateMessagesList()">
+                <div id="dm-users-container"></div>
+            </div>
+            <div id="dm-chat-view" class="hidden">
+                <button onclick="backToDmList()" style="width: auto; padding: 4px 8px; font-size: 12px; margin-bottom: 8px;">⬅ Back to Inbox</button>
+                <h4 id="active-chat-title">Chat</h4>
+                <div id="chat-messages-box" class="chat-box"></div>
+                <div id="typing-indicator" style="font-size: 11px; font-style: italic; opacity: 0.7; height: 15px;"></div>
+                
+                <div class="emoji-picker">
+                    <button class="emoji-btn" onclick="insertEmoji('😊')">😊</button>
+                    <button class="emoji-btn" onclick="insertEmoji('😂')">😂</button>
+                    <button class="emoji-btn" onclick="insertEmoji('❤️')">❤️</button>
+                    <button class="emoji-btn" onclick="insertEmoji('👍')">👍</button>
+                    <button class="emoji-btn" onclick="insertEmoji('🔥')">🔥</button>
+                    <button class="emoji-btn" onclick="insertEmoji('🎉')">🎉</button>
+                </div>
+                <input type="text" id="chat-input-text" placeholder="Type a message..." oninput="handleTypingEvent()">
+                <button onclick="handleSendMessage()">Send</button>
+            </div>
+        </div>
+
+        <!-- Profile Tab -->
+        <div id="tab-profile" class="container hidden" style="width: 100%; text-align: center;">
+            <img id="profile-display-pic" class="profile-pic-preview" src="" alt="Profile">
+            <h3 id="profile-display-name" style="margin: 5px 0;"></h3>
+            <p id="profile-display-bio" style="font-size: 14px; opacity: 0.8;"></p>
+            <button onclick="toggleEditProfile()" style="width: auto; padding: 5px 10px; font-size: 12px; background: #6c757d; margin-top: 5px;">Edit Profile ✏️</button>
+            
+            <div id="edit-profile-box" class="hidden" style="margin-top: 10px; text-align: left; border-top: 1px dashed var(--border-color); padding-top: 10px;">
+                <textarea id="edit-bio-input" placeholder="New bio..."></textarea>
+                <input type="text" id="edit-pic-input" placeholder="New profile picture URL...">
+                <button onclick="handleUpdateProfile()" style="padding: 5px; font-size: 12px;">Save Changes</button>
+            </div>
+
+            <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border-color);">
+            <h4>Explore Friends</h4>
+            <input type="text" id="explore-search-input" placeholder="🔍 Search username..." oninput="updateExploreList()">
+            <div id="explore-users-container" style="text-align: left;"></div>
+        </div>
+
         <!-- Notifications Tab -->
-        <div id="tab-notifications" class="hidden">
-            <h4>Notifications</h4>
+        <div id="tab-notifications" class="container hidden" style="width: 100%;">
+            <h4>Follow Requests</h4>
+            <div id="follow-requests-container"></div>
+            <h4>Activity Alerts</h4>
             <div id="notification-container"></div>
+        </div>
+
+        <!-- Bottom Navigation Bar (Instagram/Facebook Style) -->
+        <div id="bottom-nav-bar" class="bottom-nav hidden">
+            <button class="bottom-nav-item" onclick="switchTab('feed')">
+                🏠
+                <span class="bottom-nav-label">Home</span>
+            </button>
+            <button class="bottom-nav-item" onclick="switchTab('reels')">
+                🎬
+                <span class="bottom-nav-label">Reels</span>
+            </button>
+            <button class="bottom-nav-item" onclick="switchTab('add')">
+                ➕
+                <span class="bottom-nav-label">Post</span>
+            </button>
+            <button class="bottom-nav-item" onclick="switchTab('messages')">
+                💬
+                <span class="bottom-nav-label">DM</span>
+                <span id="dm-badge" class="badge hidden">0</span>
+            </button>
+            <button class="bottom-nav-item" onclick="switchTab('profile')">
+                👤
+                <span class="bottom-nav-label">Profile</span>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Share Modal / Popup Choice -->
+    <div id="share-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000;">
+        <div style="background: var(--white); padding: 20px; border-radius: 8px; width: 300px; text-align: center;">
+            <h4>Share Post</h4>
+            <p style="font-size: 13px;">Choose a friend to share this post via DM:</p>
+            <div id="share-friends-list" style="max-height: 150px; overflow-y: auto; text-align: left; margin-bottom: 10px;"></div>
+            <button onclick="closeShareModal()" style="background: #dc3545; padding: 5px 10px; font-size: 12px;">Cancel</button>
         </div>
     </div>
 
     <script>
+        const dbName = "RoxchatMediaDB";
+        let db;
+        let postToShareId = null;
+
+        const dbRequest = indexedDB.open(dbName, 1);
+        dbRequest.onerror = function(event) {
+            console.error("IndexedDB error: " + event.target.errorCode);
+        };
+        dbRequest.onsuccess = function(event) {
+            db = event.target.result;
+            if(window.myApp && typeof window.myApp.loadInitialData === 'function') {
+                window.myApp.loadInitialData();
+            }
+        };
+        dbRequest.onupgradeneeded = function(event) {
+            db = event.target.result;
+            if (!db.objectStoreNames.contains("media")) {
+                db.createObjectStore("media", { keyPath: "id" });
+            }
+        };
+
+        function saveMediaToIndexedDB(id, fileData, callback) {
+            if (!db) { callback(null); return; }
+            const transaction = db.transaction(["media"], "readwrite");
+            const store = transaction.objectStore("media");
+            store.put({ id: id, data: fileData });
+            transaction.oncomplete = function() { callback(id); };
+            transaction.onerror = function() { callback(null); };
+        }
+
+        function getMediaFromIndexedDB(id, callback) {
+            if (!db) { callback(null); return; }
+            const transaction = db.transaction(["media"], "readonly");
+            const store = transaction.objectStore("media");
+            const request = store.get(id);
+            request.onsuccess = function(event) {
+                if (event.target.result) {
+                    callback(event.target.result.data);
+                } else {
+                    callback(null);
+                }
+            };
+            request.onerror = function() { callback(null); };
+        }
+
         class RoxChatApp {
             constructor() {
                 this.users = JSON.parse(localStorage.getItem('rox_users')) || [];
@@ -116,6 +277,14 @@
                 this.posts = JSON.parse(localStorage.getItem('rox_posts')) || [];
                 this.notifications = JSON.parse(localStorage.getItem('rox_notifs')) || [];
                 this.stories = JSON.parse(localStorage.getItem('rox_stories')) || [];
+                this.messages = JSON.parse(localStorage.getItem('rox_messages')) || [];
+                this.followRequests = JSON.parse(localStorage.getItem('rox_follow_reqs')) || [];
+                this.connections = JSON.parse(localStorage.getItem('rox_connections')) || [];
+                this.activeChatUser = null;
+            }
+
+            loadInitialData() {
+                updateUI();
             }
 
             saveData() {
@@ -124,29 +293,50 @@
                 localStorage.setItem('rox_posts', JSON.stringify(this.posts));
                 localStorage.setItem('rox_notifs', JSON.stringify(this.notifications));
                 localStorage.setItem('rox_stories', JSON.stringify(this.stories));
+                localStorage.setItem('rox_messages', JSON.stringify(this.messages));
+                localStorage.setItem('rox_follow_reqs', JSON.stringify(this.followRequests));
+                localStorage.setItem('rox_connections', JSON.stringify(this.connections));
             }
 
-            createAccount(username, password, bio, profilePic) {
+            createAccount(identifier, regType, username, password, bio, profilePic) {
                 if (this.users.find(u => u.username === username)) {
-                    alert("User already exists!");
+                    alert("Username already exists!");
+                    return false;
+                }
+                if (this.users.find(u => u.identifier === identifier)) {
+                    alert("This Email/Phone is already registered!");
                     return false;
                 }
                 const defaultPic = profilePic.trim() !== '' ? profilePic : 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
-                this.users.push({ username, password, bio, profilePic: defaultPic });
+                this.users.push({ identifier, regType, username, password, bio, profilePic: defaultPic });
                 this.saveData();
                 alert("Account created successfully! Please login.");
                 return true;
             }
 
-            login(username, password) {
-                const user = this.users.find(u => u.username === username && u.password === password);
+            login(loginInput, password) {
+                const user = this.users.find(u => (u.username === loginInput || u.identifier === loginInput) && u.password === password);
                 if (user) {
                     this.currentUser = user;
                     this.saveData();
                     return true;
                 }
-                alert("Error: Invalid username or password.");
+                alert("Error: Invalid username/email/phone or password.");
                 return false;
+            }
+
+            updateProfile(newBio, newPic) {
+                if (!this.currentUser) return;
+                if (newBio.trim() !== '') this.currentUser.bio = newBio;
+                if (newPic.trim() !== '') this.currentUser.profilePic = newPic;
+                
+                const userIndex = this.users.findIndex(u => u.username === this.currentUser.username);
+                if (userIndex !== -1) {
+                    this.users[userIndex] = this.currentUser;
+                }
+                this.saveData();
+                alert("Profile updated successfully!");
+                showAppUI(this.currentUser);
             }
 
             logout() {
@@ -154,20 +344,127 @@
                 localStorage.removeItem('rox_current');
             }
 
-            createPost(caption, mediaUrl) {
+            sendFollowRequest(targetUser) {
                 if (!this.currentUser) return;
-                const newPost = {
-                    id: Date.now(),
-                    author: this.currentUser.username,
-                    profilePic: this.currentUser.profilePic,
-                    caption: caption,
-                    mediaUrl: mediaUrl,
-                    likes: [],
-                    comments: []
-                };
-                this.posts.unshift(newPost);
-                this.addNotification(this.currentUser.username, "You created a new post.");
+                const existingReq = this.followRequests.find(r => r.from === this.currentUser.username && r.to === targetUser);
+                if (existingReq) {
+                    alert("Request already sent!");
+                    return;
+                }
+                this.followRequests.push({ from: this.currentUser.username, to: targetUser, status: 'pending' });
+                this.addNotification(targetUser, `${this.currentUser.username} sent you a follow request.`);
                 this.saveData();
+                alert("Follow request sent successfully!");
+                updateUI();
+            }
+
+            acceptFollowRequest(fromUser) {
+                if (!this.currentUser) return;
+                const req = this.followRequests.find(r => r.from === fromUser && r.to === this.currentUser.username);
+                if (req) {
+                    req.status = 'accepted';
+                    this.connections.push({ user1: fromUser, user2: this.currentUser.username });
+                    this.addNotification(fromUser, `${this.currentUser.username} accepted your follow request!`);
+                    this.saveData();
+                    updateUI();
+                }
+            }
+
+            rejectFollowRequest(fromUser) {
+                if (!this.currentUser) return;
+                this.followRequests = this.followRequests.filter(r => !(r.from === fromUser && r.to === this.currentUser.username));
+                this.saveData();
+                updateUI();
+            }
+
+            removeConnection(targetUser) {
+                if (!this.currentUser) return;
+                this.connections = this.connections.filter(c => 
+                    !((c.user1 === this.currentUser.username && c.user2 === targetUser) || 
+                      (c.user1 === targetUser && c.user2 === this.currentUser.username))
+                );
+                this.followRequests = this.followRequests.filter(r => 
+                    !((r.from === this.currentUser.username && r.to === targetUser) || 
+                      (r.from === targetUser && r.to === this.currentUser.username))
+                );
+                this.saveData();
+                alert(`Removed @${targetUser} from connections.`);
+                updateUI();
+            }
+
+            isFriends(userA, userB) {
+                return this.connections.some(c => 
+                    (c.user1 === userA && c.user2 === userB) || 
+                    (c.user1 === userB && c.user2 === userA)
+                );
+            }
+
+            createPost(caption, mediaUrl, fileObj) {
+                if (!this.currentUser) return;
+                const postId = Date.now();
+
+                const saveFinalPost = (finalMediaUrl, isFileStoredLocally) => {
+                    const newPost = {
+                        id: postId,
+                        author: this.currentUser.username,
+                        profilePic: this.currentUser.profilePic,
+                        caption: caption,
+                        mediaUrl: finalMediaUrl,
+                        isLocalFile: isFileStoredLocally,
+                        likes: [],
+                        comments: []
+                    };
+                    this.posts.unshift(newPost);
+                    this.saveData();
+                    updateUI();
+                    switchTab('feed');
+                    alert("Successfully published!");
+                };
+
+                if (fileObj) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const fileDataUrl = e.target.result;
+                        saveMediaToIndexedDB(postId, fileDataUrl, (storedId) => {
+                            if (storedId) {
+                                saveFinalPost(postId, true);
+                            } else {
+                                alert("Error saving file to storage.");
+                            }
+                        });
+                    };
+                    reader.readAsDataURL(fileObj);
+                } else {
+                    saveFinalPost(mediaUrl, false);
+                }
+            }
+
+            deletePost(postId) {
+                if (!this.currentUser) return;
+                this.posts = this.posts.filter(p => p.id !== postId);
+                this.saveData();
+                updateUI();
+            }
+
+            repost(postId) {
+                if (!this.currentUser) return;
+                const original = this.posts.find(p => p.id === postId);
+                if (original) {
+                    const newPost = {
+                        id: Date.now(),
+                        author: this.currentUser.username,
+                        profilePic: this.currentUser.profilePic,
+                        caption: `🔄 Reposted from @${original.author}: ${original.caption}`,
+                        mediaUrl: original.mediaUrl,
+                        isLocalFile: original.isLocalFile,
+                        likes: [],
+                        comments: []
+                    };
+                    this.posts.unshift(newPost);
+                    this.saveData();
+                    updateUI();
+                    alert("Post reposted successfully!");
+                }
             }
 
             likePost(postId) {
@@ -177,9 +474,6 @@
                     const index = post.likes.indexOf(this.currentUser.username);
                     if (index === -1) {
                         post.likes.push(this.currentUser.username);
-                        if (post.author !== this.currentUser.username) {
-                            this.addNotification(post.author, `${this.currentUser.username} liked your post.`);
-                        }
                     } else {
                         post.likes.splice(index, 1);
                     }
@@ -191,18 +485,87 @@
                 if (!this.currentUser || !text.trim()) return;
                 const post = this.posts.find(p => p.id === postId);
                 if (post) {
-                    post.comments.push({ author: this.currentUser.username, text: text });
-                    if (post.author !== this.currentUser.username) {
-                        this.addNotification(post.author, `${this.currentUser.username} commented on your post.`);
-                    }
+                    if(!post.comments) post.comments = [];
+                    post.comments.push({ id: Date.now(), author: this.currentUser.username, text: text, likes: [] });
                     this.saveData();
+                }
+            }
+
+            deleteComment(postId, commentId) {
+                if (!this.currentUser) return;
+                const post = this.posts.find(p => p.id === postId);
+                if (post) {
+                    post.comments = post.comments.filter(c => c.id !== commentId);
+                    this.saveData();
+                    updateUI();
+                }
+            }
+
+            likeComment(postId, commentId) {
+                if (!this.currentUser) return;
+                const post = this.posts.find(p => p.id === postId);
+                if (post) {
+                    const comment = post.comments.find(c => c.id === commentId);
+                    if (comment) {
+                        if (!comment.likes) comment.likes = [];
+                        const index = comment.likes.indexOf(this.currentUser.username);
+                        if (index === -1) {
+                            comment.likes.push(this.currentUser.username);
+                        } else {
+                            comment.likes.splice(index, 1);
+                        }
+                        this.saveData();
+                        updateUI();
+                    }
                 }
             }
 
             createStory(text) {
                 if (!this.currentUser || !text.trim()) return;
-                this.stories.unshift({ id: Date.now(), author: this.currentUser.username, text: text });
+                this.stories.unshift({ id: Date.now(), author: this.currentUser.username, text: text, likes: [] });
                 this.saveData();
+            }
+
+            likeStory(storyId) {
+                if (!this.currentUser) return;
+                const story = this.stories.find(s => s.id === storyId);
+                if (story) {
+                    if (!story.likes) story.likes = [];
+                    const index = story.likes.indexOf(this.currentUser.username);
+                    if (index === -1) {
+                        story.likes.push(this.currentUser.username);
+                    } else {
+                        story.likes.splice(index, 1);
+                    }
+                    this.saveData();
+                    updateUI();
+                    viewStory(story.text, story.author, story.id);
+                }
+            }
+
+            sendMessage(receiver, text) {
+                if (!this.currentUser || !text.trim()) return;
+                const newMessage = {
+                    sender: this.currentUser.username,
+                    receiver: receiver,
+                    text: text,
+                    read: false,
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                };
+                this.messages.push(newMessage);
+                this.saveData();
+            }
+
+            markMessagesAsRead(senderUser) {
+                if (!this.currentUser) return;
+                let updated = false;
+                this.messages.forEach(m => {
+                    if (m.sender === senderUser && m.receiver === this.currentUser.username && !m.read) {
+                        m.read = true;
+                        updated = true;
+                    }
+                });
+                if (updated) this.saveData();
             }
 
             addNotification(user, message) {
@@ -212,31 +575,66 @@
         }
 
         const myApp = new RoxChatApp();
+        window.myApp = myApp;
 
         window.onload = function() {
+            const savedTheme = localStorage.getItem('rox_theme') || 'light';
+            document.body.setAttribute('data-theme', savedTheme);
+
             if (myApp.currentUser) {
                 showAppUI(myApp.currentUser);
             }
         };
 
+        function toggleDarkMode() {
+            const body = document.body;
+            let currentTheme = body.getAttribute('data-theme');
+            let newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('rox_theme', newTheme);
+        }
+
         function toggleAuthMode() {
-            const regForm = document.getElementById('register-form');
-            const loginForm = document.getElementById('login-form');
-            regForm.classList.toggle('hidden');
-            loginForm.classList.toggle('hidden');
+            document.getElementById('register-form').classList.toggle('hidden');
+            document.getElementById('login-form').classList.toggle('hidden');
+        }
+
+        function toggleEditProfile() {
+            document.getElementById('edit-profile-box').classList.toggle('hidden');
+        }
+
+        function handleUpdateProfile() {
+            const bio = document.getElementById('edit-bio-input').value;
+            const pic = document.getElementById('edit-pic-input').value;
+            myApp.updateProfile(bio, pic);
+        }
+
+        function toggleRegInputType() {
+            const type = document.getElementById('reg-type').value;
+            const input = document.getElementById('reg-identifier');
+            if (type === 'email') {
+                input.placeholder = "Enter Email Address (e.g. user@gmail.com)";
+                input.type = "email";
+            } else {
+                input.placeholder = "Enter Phone Number (e.g. 9876543210)";
+                input.type = "tel";
+            }
         }
 
         function handleCreateAccount() {
+            const type = document.getElementById('reg-type').value;
+            const identifier = document.getElementById('reg-identifier').value.trim();
             const u = document.getElementById('reg-username').value.trim();
             const p = document.getElementById('reg-password').value.trim();
             const bio = document.getElementById('reg-bio').value.trim();
             const pic = document.getElementById('reg-pic').value.trim();
-            if(u && p) {
-                if(myApp.createAccount(u, p, bio, pic)) {
+
+            if (identifier && u && p) {
+                if (myApp.createAccount(identifier, type, u, p, bio, pic)) {
                     toggleAuthMode();
                 }
             } else {
-                alert("Please fill username and password fields");
+                alert("Please fill all mandatory fields.");
             }
         }
 
@@ -251,29 +649,35 @@
         function showAppUI(user) {
             document.getElementById('auth-container').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
-            document.getElementById('welcome-user').textContent = "Roxchat";
+            document.getElementById('bottom-nav-bar').classList.remove('hidden');
+            
             document.getElementById('profile-display-name').textContent = "@" + user.username;
             document.getElementById('profile-display-bio').textContent = user.bio || "No bio yet.";
             document.getElementById('profile-display-pic').src = user.profilePic;
-            updateUI();
+            
+            switchTab('feed');
         }
 
         function handleLogout() {
             myApp.logout();
             document.getElementById('auth-container').classList.remove('hidden');
             document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('bottom-nav-bar').classList.add('hidden');
         }
 
         function handleCreatePost() {
             const caption = document.getElementById('post-caption').value;
             const mediaUrl = document.getElementById('post-media-url').value;
-            if (caption || mediaUrl) {
-                myApp.createPost(caption, mediaUrl);
+            const fileInput = document.getElementById('post-file-input');
+            const fileObj = fileInput.files[0];
+
+            if (caption || mediaUrl || fileObj) {
+                myApp.createPost(caption, mediaUrl, fileObj);
                 document.getElementById('post-caption').value = '';
                 document.getElementById('post-media-url').value = '';
-                updateUI();
+                fileInput.value = '';
             } else {
-                alert("Please add a caption or media URL.");
+                alert("Please add a caption, select a media file from gallery, or provide a URL.");
             }
         }
 
@@ -291,6 +695,48 @@
             }
         }
 
+        function openShareModal(postId) {
+            postToShareId = postId;
+            const modal = document.getElementById('share-modal');
+            const listContainer = document.getElementById('share-friends-list');
+            listContainer.innerHTML = '';
+
+            const friendUsers = myApp.users.filter(u => 
+                u.username !== myApp.currentUser.username && 
+                myApp.isFriends(myApp.currentUser.username, u.username)
+            );
+
+            if (friendUsers.length === 0) {
+                listContainer.innerHTML = '<p style="font-size: 12px; opacity: 0.7;">No friends available to share.</p>';
+            } else {
+                friendUsers.forEach(f => {
+                    listContainer.innerHTML += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span>@${f.username}</span>
+                            <button onclick="sharePostToUser('${f.username}')" style="width: auto; padding: 2px 6px; font-size: 11px;">Send</button>
+                        </div>
+                    `;
+                });
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeShareModal() {
+            document.getElementById('share-modal').classList.add('hidden');
+            postToShareId = null;
+        }
+
+        function sharePostToUser(targetUsername) {
+            if (!postToShareId) return;
+            const post = myApp.posts.find(p => p.id === postToShareId);
+            if (post) {
+                const shareText = `Check out this post from @${post.author}: "${post.caption}"`;
+                myApp.sendMessage(targetUsername, shareText);
+                alert(`Post shared to @${targetUsername} via DM!`);
+                closeShareModal();
+            }
+        }
+
         function handleCreateStory() {
             const text = document.getElementById('story-text');
             if (text && text.value) {
@@ -301,49 +747,359 @@
             }
         }
 
-        function viewStory(text, author) {
-            document.getElementById('story-viewer').textContent = `${author}'s Story: "${text}"`;
+        function viewStory(text, author, storyId) {
+            const story = myApp.stories.find(s => s.id === storyId);
+            const isLiked = story && story.likes && story.likes.includes(myApp.currentUser.username);
+            const likesCount = story && story.likes ? story.likes.length : 0;
+
+            document.getElementById('story-viewer').innerHTML = `
+                <div>${author}'s Story: "${text}"</div>
+                <button onclick="myApp.likeStory(${storyId})" style="width: auto; padding: 4px 10px; margin-top: 6px; font-size: 11px; background: ${isLiked ? '#dc3545' : '#6c757d'}">
+                    ❤️ Like Story (${likesCount})
+                </button>
+            `;
         }
 
         function switchTab(tabName) {
             document.getElementById('tab-feed').classList.add('hidden');
+            document.getElementById('tab-reels').classList.add('hidden');
+            document.getElementById('tab-add').classList.add('hidden');
             document.getElementById('tab-stories').classList.add('hidden');
+            document.getElementById('tab-messages').classList.add('hidden');
+            document.getElementById('tab-profile').classList.add('hidden');
             document.getElementById('tab-notifications').classList.add('hidden');
+            
             document.getElementById('tab-' + tabName).classList.remove('hidden');
+            if(tabName === 'messages') {
+                backToDmList();
+            } else if(tabName === 'reels') {
+                updateReelsFeed();
+            }
         }
 
-        function updateUI() {
-            const feed = document.getElementById('feed-container');
-            feed.innerHTML = '';
-            myApp.posts.forEach(post => {
-                let commentsHtml = '';
-                post.comments.forEach(c => {
-                    commentsHtml += `<div><strong>@${c.author}:</strong> ${c.text}</div>`;
-                });
+        function openChat(username) {
+            myApp.activeChatUser = username;
+            myApp.markMessagesAsRead(username);
+            document.getElementById('dm-list-view').classList.add('hidden');
+            document.getElementById('dm-chat-view').classList.remove('hidden');
+            document.getElementById('active-chat-title').textContent = "Chat with @" + username;
+            renderChatMessages();
+            updateMessagesList();
+        }
 
-                const isLiked = myApp.currentUser && post.likes.includes(myApp.currentUser.username);
+        function backToDmList() {
+            myApp.activeChatUser = null;
+            document.getElementById('dm-list-view').classList.remove('hidden');
+            document.getElementById('dm-chat-view').classList.add('hidden');
+            updateMessagesList();
+        }
 
-                // Check if media is video or image based on extension or link
-                let mediaHtml = '';
-                if (post.mediaUrl && post.mediaUrl.trim() !== '') {
-                    if (post.mediaUrl.includes('.mp4') || post.mediaUrl.includes('video')) {
-                        mediaHtml = `<video src="${post.mediaUrl}" controls class="post-media"></video>`;
-                    } else {
-                        mediaHtml = `<img src="${post.mediaUrl}" class="post-media" alt="Post media">`;
-                    }
+        function insertEmoji(emoji) {
+            const input = document.getElementById('chat-input-text');
+            input.value += emoji;
+            input.focus();
+        }
+
+        function handleTypingEvent() {
+            const indicator = document.getElementById('typing-indicator');
+            indicator.textContent = "typing...";
+            setTimeout(() => {
+                indicator.textContent = "";
+            }, 1000);
+        }
+
+        function handleSendMessage() {
+            const input = document.getElementById('chat-input-text');
+            if (input.value.trim() && myApp.activeChatUser) {
+                myApp.sendMessage(myApp.activeChatUser, input.value);
+                input.value = '';
+                renderChatMessages();
+                updateMessagesList();
+            }
+        }
+
+        function renderChatMessages() {
+            const box = document.getElementById('chat-messages-box');
+            box.innerHTML = '';
+            const chatUser = myApp.activeChatUser;
+            const current = myApp.currentUser.username;
+
+            const filteredMsgs = myApp.messages.filter(m => 
+                (m.sender === current && m.receiver === chatUser) || 
+                (m.sender === chatUser && m.receiver === current)
+            );
+
+            filteredMsgs.forEach(m => {
+                const isSent = m.sender === current;
+                box.innerHTML += `
+                    <div class="message-bubble ${isSent ? 'message-sent' : 'message-received'}">
+                        <div>${m.text}</div>
+                        <div style="font-size: 9px; opacity: 0.7; text-align: right; margin-top: 2px;">${m.time}</div>
+                    </div>
+                `;
+            });
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function updateMessagesList() {
+            const container = document.getElementById('dm-users-container');
+            container.innerHTML = '';
+            const searchQuery = document.getElementById('dm-search-input').value.toLowerCase();
+            
+            const friendUsers = myApp.users.filter(u => 
+                u.username !== myApp.currentUser.username && 
+                myApp.isFriends(myApp.currentUser.username, u.username) &&
+                u.username.toLowerCase().includes(searchQuery)
+            );
+
+            let totalUnread = 0;
+            myApp.messages.forEach(m => {
+                if (m.receiver === myApp.currentUser.username && !m.read) {
+                    totalUnread++;
                 }
+            });
 
-                feed.innerHTML += `
+            const dmBadge = document.getElementById('dm-badge');
+            if (totalUnread > 0) {
+                dmBadge.textContent = totalUnread;
+                dmBadge.classList.remove('hidden');
+            } else {
+                dmBadge.classList.add('hidden');
+            }
+            
+            if(friendUsers.length === 0) {
+                container.innerHTML = '<p style="font-size: 13px; opacity: 0.7;">No matching friends found.</p>';
+                return;
+            }
+
+            friendUsers.forEach(u => {
+                const unreadCount = myApp.messages.filter(m => m.sender === u.username && m.receiver === myApp.currentUser.username && !m.read).length;
+                const unreadBadgeHtml = unreadCount > 0 ? `<span style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 50%; font-size: 10px;">${unreadCount}</span>` : '';
+
+                container.innerHTML += `
+                    <div class="chat-user-item" onclick="openChat('${u.username}')" style="cursor: pointer;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center;">
+                                <img src="${u.profilePic}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; margin-right: 10px;">
+                                <div>
+                                    <strong>@${u.username}</strong>
+                                    <div style="font-size: 12px; opacity: 0.7;">Tap to open chat</div>
+                                </div>
+                            </div>
+                            <div>${unreadBadgeHtml}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function updateReelsFeed() {
+            const container = document.getElementById('reels-container');
+            container.innerHTML = '';
+            const searchQuery = document.getElementById('reel-search-input').value.toLowerCase();
+
+            const reelsPosts = myApp.posts.filter(p => p.caption.toLowerCase().includes(searchQuery));
+
+            if(reelsPosts.length === 0) {
+                container.innerHTML = '<p style="font-size: 13px; opacity: 0.7; text-align: center; margin-top: 15px;">No reels/videos available.</p>';
+                return;
+            }
+
+            reelsPosts.forEach(post => {
+                const isLiked = myApp.currentUser && post.likes.includes(myApp.currentUser.username);
+                container.innerHTML += `
                     <div class="post">
                         <div style="display: flex; align-items: center; margin-bottom: 8px;">
                             <img src="${post.profilePic}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; margin-right: 8px;">
                             <strong>@${post.author}</strong>
                         </div>
                         <p>${post.caption}</p>
+                        <div id="reel-media-container-${post.id}">
+                            <p style="font-size: 12px; opacity: 0.6;">Loading reel...</p>
+                        </div>
+                        <div style="display: flex; gap: 5px; margin-top: 8px;">
+                            <button onclick="handleLike(${post.id})" style="width: auto; padding: 5px 10px; background: ${isLiked ? '#dc3545' : 'var(--primary-color)'};">
+                                ❤️ (${post.likes.length})
+                            </button>
+                            <button onclick="openShareModal(${post.id})" style="width: auto; padding: 5px 10px; background: #17a2b8;">
+                                ↗️ Share
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                if (post.isLocalFile) {
+                    getMediaFromIndexedDB(post.id, (fileData) => {
+                        const elem = document.getElementById(`reel-media-container-${post.id}`);
+                        if (elem && fileData) {
+                            elem.innerHTML = `<video src="${fileData}" class="post-media" controls autoplay loop muted></video>`;
+                        }
+                    });
+                } else if (post.mediaUrl) {
+                    const elem = document.getElementById(`reel-media-container-${post.id}`);
+                    if (elem) {
+                        elem.innerHTML = `<video src="${post.mediaUrl}" class="post-media" controls autoplay loop muted></video>`;
+                    }
+                }
+            });
+        }
+
+        function updateExploreList() {
+            const container = document.getElementById('explore-users-container');
+            container.innerHTML = '';
+            const searchQuery = document.getElementById('explore-search-input').value.toLowerCase();
+
+            const otherUsers = myApp.users.filter(u => 
+                u.username !== myApp.currentUser.username && 
+                u.username.toLowerCase().includes(searchQuery)
+            );
+
+            if(otherUsers.length === 0) {
+                container.innerHTML = '<p style="font-size: 13px; opacity: 0.7;">No users found.</p>';
+                return;
+            }
+
+            otherUsers.forEach(u => {
+                const isFriend = myApp.isFriends(myApp.currentUser.username, u.username);
+                const reqSent = myApp.followRequests.find(r => r.from === myApp.currentUser.username && r.to === u.username && r.status === 'pending');
+                
+                let btnHtml = '';
+                if (isFriend) {
+                    btnHtml = `<button onclick="myApp.removeConnection('${u.username}')" style="width: auto; padding: 5px 10px; font-size: 12px; background: #dc3545;">Unfriend ❌</button>`;
+                } else if (reqSent) {
+                    btnHtml = `<span style="font-size: 12px; color: #ffc107; font-weight: bold;">Request Sent ⏳</span>`;
+                } else {
+                    btnHtml = `<button onclick="myApp.sendFollowRequest('${u.username}')" style="width: auto; padding: 5px 10px; font-size: 12px;">Follow ➕</button>`;
+                }
+
+                container.innerHTML += `
+                    <div class="chat-user-item">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center;">
+                                <img src="${u.profilePic}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; margin-right: 10px;">
+                                <strong>@${u.username}</strong>
+                            </div>
+                            <div>${btnHtml}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function updateRequestsList() {
+            const container = document.getElementById('follow-requests-container');
+            container.innerHTML = '';
+            const pendingReqs = myApp.followRequests.filter(r => r.to === myApp.currentUser.username && r.status === 'pending');
+
+            const badge = document.getElementById('notif-badge');
+            if (pendingReqs.length > 0) {
+                badge.textContent = pendingReqs.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            if(pendingReqs.length === 0) {
+                container.innerHTML = '<p style="font-size: 13px; opacity: 0.7;">No pending follow requests.</p>';
+                return;
+            }
+
+            pendingReqs.forEach(r => {
+                container.innerHTML += `
+                    <div class="notification">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div><strong>@${r.from}</strong> wants to connect.</div>
+                            <div>
+                                <button onclick="myApp.acceptFollowRequest('${r.from}')" style="width: auto; padding: 4px 8px; background: #28a745; font-size: 11px;">Accept</button>
+                                <button onclick="myApp.rejectFollowRequest('${r.from}')" style="width: auto; padding: 4px 8px; background: #dc3545; font-size: 11px;">Reject</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function updateUI() {
+            const feed = document.getElementById('feed-container');
+            feed.innerHTML = '';
+            
+            const searchInputElem = document.getElementById('feed-search-input');
+            const searchFilter = searchInputElem ? searchInputElem.value.toLowerCase() : '';
+
+            const filteredPosts = myApp.posts.filter(p => 
+                p.caption.toLowerCase().includes(searchFilter) || 
+                p.author.toLowerCase().includes(searchFilter)
+            );
+
+            if (filteredPosts.length === 0) {
+                feed.innerHTML = '<p style="font-size: 13px; opacity: 0.7; text-align: center; margin-top: 15px;">No posts found.</p>';
+            }
+
+            filteredPosts.forEach(post => {
+                let commentsHtml = '';
+                if(post.comments) {
+                    post.comments.forEach(c => {
+                        const isMyComment = myApp.currentUser && c.author === myApp.currentUser.username;
+                        const commentLiked = myApp.currentUser && c.likes && c.likes.includes(myApp.currentUser.username);
+                        const commentLikesCount = c.likes ? c.likes.length : 0;
+                        
+                        commentsHtml += `
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <div><strong>@${c.author}:</strong> ${c.text} <span style="font-size: 11px; opacity: 0.7;">(${commentLikesCount} ❤️)</span></div>
+                                <div style="display: flex; gap: 4px;">
+                                    <button onclick="myApp.likeComment(${post.id}, ${c.id})" style="width: auto; padding: 2px 5px; font-size: 10px; background: ${commentLiked ? '#dc3545' : '#6c757d'}">Like</button>
+                                    ${isMyComment ? `<button onclick="myApp.deleteComment(${post.id}, ${c.id})" style="width: auto; padding: 2px 5px; font-size: 10px; background: #dc3545;">Del</button>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                const isLiked = myApp.currentUser && post.likes.includes(myApp.currentUser.username);
+                const isMyPost = myApp.currentUser && post.author === myApp.currentUser.username;
+
+                let mediaHtml = '';
+                if (post.isLocalFile) {
+                    getMediaFromIndexedDB(post.id, (fileData) => {
+                        const mediaElementContainer = document.getElementById(`media-container-${post.id}`);
+                        if (mediaElementContainer && fileData) {
+                            if (fileData.startsWith('data:video')) {
+                                mediaElementContainer.innerHTML = `<video src="${fileData}" class="post-media" controls></video>`;
+                            } else {
+                                mediaElementContainer.innerHTML = `<img src="${fileData}" class="post-media" alt="Post media">`;
+                            }
+                        }
+                    });
+                    mediaHtml = `<div id="media-container-${post.id}"><p style="font-size: 12px; opacity: 0.6;">Loading media...</p></div>`;
+                } else if (post.mediaUrl && post.mediaUrl.trim() !== '') {
+                    mediaHtml = `<img src="${post.mediaUrl}" class="post-media" alt="Post media">`;
+                }
+
+                let deleteBtnHtml = '';
+                if (isMyPost) {
+                    deleteBtnHtml = `<button onclick="myApp.deletePost(${post.id})" style="position: absolute; top: 10px; right: 10px; width: auto; padding: 3px 6px; background: #dc3545; font-size: 10px;">Delete</button>`;
+                }
+
+                feed.innerHTML += `
+                    <div class="post">
+                        ${deleteBtnHtml}
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <img src="${post.profilePic}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; margin-right: 8px;">
+                            <strong>@${post.author}</strong>
+                        </div>
+                        <p>${post.caption}</p>
                         ${mediaHtml}
-                        <button onclick="handleLike(${post.id})" style="width: auto; padding: 5px 10px; background: ${isLiked ? '#c9302c' : '#075e54'}; margin-top: 8px;">
-                            ❤️ Like (${post.likes.length})
-                        </button>
+                        <div style="display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap;">
+                            <button onclick="handleLike(${post.id})" style="width: auto; padding: 5px 10px; background: ${isLiked ? '#dc3545' : 'var(--primary-color)'};">
+                                ❤️ (${post.likes.length})
+                            </button>
+                            <button onclick="myApp.repost(${post.id})" style="width: auto; padding: 5px 10px; background: #6c757d;">
+                                🔄 Repost
+                            </button>
+                            <button onclick="openShareModal(${post.id})" style="width: auto; padding: 5px 10px; background: #17a2b8;">
+                                ↗️ DM Share
+                            </button>
+                        </div>
                         <div class="comment-section">
                             <div style="margin-bottom: 5px;"><strong>Comments:</strong></div>
                             ${commentsHtml}
@@ -354,21 +1110,15 @@
                 `;
             });
 
-            const storiesFlex = document.getElementById('stories-flex');
-            storiesFlex.innerHTML = '';
-            myApp.stories.forEach(story => {
-                storiesFlex.innerHTML += `
-                    <div class="story-bubble" onclick="viewStory('${story.text}', '${story.author}')">
-                        <div class="story-inner">${story.author}</div>
-                    </div>
-                `;
-            });
-
             const notif = document.getElementById('notification-container');
             notif.innerHTML = '';
             myApp.notifications.forEach(n => {
                 notif.innerHTML += `<div class="notification"><small>[${n.time}]</small> <div>${n.message}</div></div>`;
             });
+
+            updateMessagesList();
+            updateExploreList();
+            updateRequestsList();
         }
     </script>
 </body>
