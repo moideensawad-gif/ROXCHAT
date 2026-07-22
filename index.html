@@ -571,7 +571,7 @@
                 if (!this.currentUser || !text.trim()) return;
                 this.messages.push({ sender: this.currentUser.username, receiver, text, read: false, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
                 
-                // Smart AI Bot Response Generator
+                // Smart AI Bot Response Generator (Optimized & Fully Handled)
                 if (receiver === "Rox_AI_Bot") {
                     setTimeout(() => {
                         let botReply = "I am Rox AI Bot. You can ask me about creating accounts, adding posts, stories, themes, or navigating the app!";
@@ -579,7 +579,7 @@
 
                         if (t.includes("hello") || t.includes("hi") || t.includes("hey") || t.includes("hai")) {
                             botReply = "Hello there! Welcome to Roxchat. How can I assist you today?";
-                        } else if (t.includes("account") || t.includes("register") || t.includes("signup") || t.includes("sign up") || t.includes("login")) {
+                        } else if (t.includes("account") || t.includes("register") || t.includes("signup") || t.includes("sign up") || t.includes("login") || t.includes("അക്കൗണ്ട്")) {
                             botReply = "To create a new account, go to the Register screen, enter your Email/Phone, Username, and Password, then click Register!";
                         } else if (t.includes("post") || t.includes("upload") || t.includes("share photo")) {
                             botReply = "You can create a new post by clicking the '+' (Post) button in the bottom navigation bar, adding a caption, and selecting your media.";
