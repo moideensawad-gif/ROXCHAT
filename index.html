@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Roxchat</title>
-    <!-- PWABuilder Manifest & Meta Tags -->
-    <meta name="description" content="Roxchat - Instagram Clone App with Firebase">
+    <!-- PWABuilder Manifest & Meta Tags with Custom Icon support -->
+    <meta name="description" content="Roxchat App">
     <meta name="theme-color" content="#000000">
-    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Roxchat%22%2C%22short_name%22%3A%22Roxchat%22%2C%22description%22%3A%22Instagram%20clone%20with%20Firebase%22%2C%22start_url%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%23000000%22%2C%22icons%22%3A%5B%5D%7D">
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Roxchat%22%2C%22short_name%22%3A%22Roxchat%22%2C%22description%22%3A%22Instagram%20clone%20with%20Firebase%22%2C%22start_url%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%23000000%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22YOUR_LOGO_IMAGE_URL_HERE%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2png%22%7D%5D%7D">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -89,7 +89,6 @@
             else if (tab === 'profile') renderProfile();
         }
 
-        // --- LOGIN & SIGNUP SCREEN ---
         function renderLogin(isSignup = false) {
             document.getElementById('app').innerHTML = `
                 <div class="p-8 flex flex-col justify-center min-h-screen">
@@ -131,7 +130,6 @@
             }
         }
 
-        // --- HOME / FEED & STORIES ---
         function renderHome() {
             document.getElementById('app').innerHTML = `
                 <div class="pb-20">
@@ -142,8 +140,6 @@
                             <i class="fa-regular fa-paper-plane cursor-pointer" onclick="switchTab('chat')"></i>
                         </div>
                     </div>
-
-                    <!-- Stories Section -->
                     <div class="flex gap-3 px-4 py-3 overflow-x-auto border-b border-zinc-900 no-scrollbar">
                         <div class="flex flex-col items-center flex-shrink-0 cursor-pointer" onclick="createStory()">
                             <div class="w-16 h-16 rounded-full border-2 border-dashed border-zinc-600 flex items-center justify-center text-lg bg-zinc-900">+</div>
@@ -151,15 +147,11 @@
                         </div>
                         <div id="storiesList" class="flex gap-3"></div>
                     </div>
-
-                    <!-- Post Upload Box -->
                     <div class="p-4 border-b border-zinc-900 bg-zinc-950">
                         <textarea id="postText" placeholder="What's on your mind?" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white text-sm mb-3 resize-none focus:outline-none"></textarea>
                         <input type="text" id="postImgUrl" placeholder="Image URL (Optional)" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-lg text-white text-xs mb-3 focus:outline-none">
                         <button onclick="sharePost()" class="w-full bg-blue-500 hover:bg-blue-600 py-2.5 rounded-lg font-semibold text-sm transition">Share Post</button>
                     </div>
-
-                    <!-- Posts Feed -->
                     <div id="postsFeed" class="divide-y divide-zinc-900">
                         <div class="text-center py-8 text-zinc-500 text-sm">Loading feed...</div>
                     </div>
@@ -235,7 +227,6 @@
             list.innerHTML = html;
         }
 
-        // --- EXPLORE TAB ---
         function renderExplore() {
             document.getElementById('app').innerHTML = `
                 <div class="p-4 pb-20">
@@ -251,7 +242,6 @@
             `;
         }
 
-        // --- REELS TAB ---
         function renderReels() {
             document.getElementById('app').innerHTML = `
                 <div class="h-screen flex flex-col items-center justify-center bg-black text-center p-4 pb-20">
@@ -262,7 +252,6 @@
             `;
         }
 
-        // --- CHAT / INBOX TAB ---
         function renderChat() {
             document.getElementById('app').innerHTML = `
                 <div class="p-4 pb-20 flex flex-col h-screen">
@@ -273,11 +262,9 @@
                         </div>
                         <i class="fa-regular fa-pen-to-square text-xl"></i>
                     </div>
-
                     <div id="chatMessages" class="flex-1 overflow-y-auto space-y-3 mb-4 pr-1">
                         <div class="text-center text-zinc-500 text-xs py-2">Direct Message Inbox</div>
                     </div>
-
                     <div class="sticky bottom-16 bg-black pt-2 pb-2 border-t border-zinc-900 flex items-center gap-2">
                         <input type="text" id="chatInput" placeholder="Message..." class="flex-1 bg-zinc-900 border border-zinc-800 px-4 py-2.5 rounded-full text-sm text-white focus:outline-none">
                         <button id="recordBtn" onclick="toggleInboxRecord()" class="bg-zinc-900 border border-zinc-800 w-10 h-10 rounded-full flex items-center justify-center text-red-500 hover:bg-zinc-800">
@@ -315,7 +302,7 @@
         }
 
         async function sendChatMessage() {
-            const text = document.getElementById('chatInput').value;
+            const text = document.getElementById('chatInput.value');
             if (!text) return;
 
             await window.addDoc(window.collection(window.db, "chats"), {
@@ -355,7 +342,6 @@
             });
         }
 
-        // --- PROFILE TAB ---
         function renderProfile() {
             document.getElementById('app').innerHTML = `
                 <div class="p-4 pb-20">
