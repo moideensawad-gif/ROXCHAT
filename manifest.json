@@ -1,11 +1,11 @@
 {
-  "name": "Roxchat",
+  "name": "Roxchat Social Media",
   "short_name": "Roxchat",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
-  "description": "Roxchat web application",
+  "background_color": "#f0f2f5",
+  "theme_color": "#075e54",
+  "description": "A feature-rich social media PWA built with vanilla web technologies.",
   "icons": [
     {
       "src": "Icon-192.png",
