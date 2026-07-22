@@ -7,13 +7,11 @@
     <meta name="description" content="Custom unique social chat app with Firebase">
     <meta name="theme-color" content="#000000">
     
-    <!-- PWA Manifest & Icons -->
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="./Icon-192.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -24,10 +22,8 @@
 </head>
 <body class="bg-black text-white antialiased selection:bg-yellow-500 selection:text-black">
     <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col justify-between pb-24 relative">
-        <!-- Dynamic App Container -->
     </div>
 
-    <!-- Unique Custom Navigation Bar -->
     <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/80 flex justify-around py-4 z-50 shadow-lg">
         <button onclick="switchTab('home')" id="nav-home" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-house-chimney"></i></button>
         <button onclick="switchTab('chat')" id="nav-chat" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-comments"></i></button>
@@ -36,7 +32,6 @@
         <button onclick="switchTab('profile')" id="nav-profile" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-circle-user"></i></button>
     </nav>
 
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -84,7 +79,6 @@
         });
     </script>
 
-    <!-- Service Worker & App Logic -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -93,15 +87,11 @@
         }
 
         let currentTab = 'home';
-        let mediaRecorder;
-        let audioChunks = [];
-        let recordedAudioBlob = null;
-        let recordingStartTime = 0;
-        let currentLanguage = 'en';
-        let cachedUserData = null;
+        let activeChatUser = null; 
 
         function switchTab(tab) {
             currentTab = tab;
+            activeChatUser = null; 
             const tabs = ['home', 'chat', 'explore', 'reels', 'profile'];
             tabs.forEach(t => {
                 const btn = document.getElementById(`nav-${t}`);
@@ -119,7 +109,7 @@
             if (tab === 'home') renderHome();
             else if (tab === 'explore') renderExplore();
             else if (tab === 'reels') renderReels();
-            else if (tab === 'chat') renderChat();
+            else if (tab === 'chat') renderChatInboxList();
             else if (tab === 'profile') renderProfile();
         }
 
@@ -166,538 +156,167 @@
             if (!usernameInput) return alert("Please enter a username!");
 
             try {
-                const q = window.query(window.collection(window.db, "users"), window.where("name", "==", usernameInput));
+                const q = window.query(window.collection(window.db, "users"), window.where("username", "==", usernameInput));
                 const querySnapshot = await window.getDocs(q);
+                
                 if (!querySnapshot.empty) {
-                    return alert("This username is already taken! Please choose another one.");
+                    alert("Username is already taken. Choose another one.");
+                    return;
                 }
 
-                const res = await window.createUserWithEmailAndPassword(window.auth, email, password);
-                cachedUserData = { 
-                    email: email, 
-                    name: usernameInput,
-                    bio: "Exploring Roxchat ✨",
-                    photo: "",
-                    language: "en"
-                };
-                await window.setDoc(window.doc(window.db, "users", res.user.uid), cachedUserData);
+                const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
+                const user = userCredential.user;
+
+                await window.setDoc(window.doc(window.db, "users", user.uid), {
+                    uid: user.uid,
+                    username: usernameInput,
+                    email: email,
+                    bio: "Hey there! I am using Roxchat.",
+                    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=" + usernameInput,
+                    createdAt: window.serverTimestamp()
+                });
+
+                switchTab('home');
             } catch (error) {
                 alert("Signup Error: " + error.message);
             }
         }
 
-        function renderHome() {
+        async function renderHome() {
             document.getElementById('app').innerHTML = `
-                <div class="pb-16 relative">
-                    <div class="flex justify-between items-center px-4 py-3.5 border-b border-zinc-900 sticky top-0 bg-black/90 backdrop-blur-md z-40">
-                        <h1 class="text-2xl brand-font tracking-wide text-yellow-400">Roxchat</h1>
-                        <div class="flex gap-5 text-xl text-zinc-300 items-center">
-                            <i class="fa-regular fa-square-plus hover:text-yellow-400 cursor-pointer transition text-2xl" onclick="openCreatePostModal()" title="Create Post"></i>
-                            <i class="fa-regular fa-heart hover:text-yellow-400 cursor-pointer transition"></i>
-                            <i class="fa-regular fa-paper-plane hover:text-yellow-400 cursor-pointer transition" onclick="switchTab('chat')"></i>
-                        </div>
+                <div class="p-4">
+                    <div class="flex justify-between items-center mb-6">
+                        <h1 class="text-2xl brand-font text-yellow-400">Roxchat Feed</h1>
+                        <button onclick="window.signOut(window.auth)" class="text-xs bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-zinc-300 hover:text-white">Logout</button>
                     </div>
-                    <div class="flex gap-3 px-4 py-3.5 overflow-x-auto border-b border-zinc-900/80 no-scrollbar bg-zinc-950/30">
-                        <div class="flex flex-col items-center flex-shrink-0 cursor-pointer" onclick="createStory()">
-                            <div class="w-16 h-16 rounded-2xl border-2 border-dashed border-yellow-500/80 flex items-center justify-center text-lg bg-zinc-900 text-yellow-400 shadow-inner">+</div>
-                            <span class="text-[11px] mt-1.5 text-zinc-400 font-medium">Add Story</span>
-                        </div>
-                        <div id="storiesList" class="flex gap-3"></div>
-                    </div>
-                    
-                    <div id="postsFeed" class="divide-y divide-zinc-900/60">
-                        <div class="text-center py-10 text-zinc-500 text-sm">Loading feed...</div>
-                    </div>
-
-                    <!-- Create Post Modal -->
-                    <div id="createPostModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                        <div class="bg-zinc-950 border border-zinc-800 w-full max-w-sm p-5 rounded-2xl shadow-2xl relative">
-                            <div class="flex justify-between items-center mb-4 pb-2 border-b border-zinc-900">
-                                <h3 class="font-bold text-sm text-yellow-400">Create New Post</h3>
-                                <i class="fa-solid fa-xmark text-zinc-400 hover:text-white cursor-pointer text-lg" onclick="closeCreatePostModal()"></i>
-                            </div>
-                            <textarea id="postText" placeholder="Share your thoughts..." class="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white text-sm mb-3 resize-none focus:outline-none focus:border-yellow-400 transition h-28"></textarea>
-                            <input type="text" id="postImgUrl" placeholder="Image Link URL (Optional)" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-white text-xs mb-4 focus:outline-none focus:border-yellow-400 transition">
-                            <button onclick="sharePost()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 rounded-xl font-bold text-sm transition shadow-md shadow-yellow-400/10">Share Post</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            loadPosts();
-            loadStories();
-        }
-
-        function openCreatePostModal() {
-            const modal = document.getElementById('createPostModal');
-            if (modal) modal.classList.remove('hidden');
-        }
-
-        function closeCreatePostModal() {
-            const modal = document.getElementById('createPostModal');
-            if (modal) modal.classList.add('hidden');
-        }
-
-        async function sharePost() {
-            const text = document.getElementById('postText').value;
-            const image = document.getElementById('postImgUrl').value;
-            if (!text && !image) return alert("Please add caption or image!");
-
-            await window.addDoc(window.collection(window.db, "posts"), {
-                text, image, email: window.auth.currentUser.email, createdAt: window.serverTimestamp()
-            });
-            closeCreatePostModal();
-            renderHome();
-        }
-
-        async function loadPosts() {
-            const feed = document.getElementById('postsFeed');
-            const q = window.query(window.collection(window.db, "posts"), window.orderBy("createdAt", "desc"));
-            const querySnapshot = await window.getDocs(q);
-            let html = "";
-            querySnapshot.forEach((doc) => {
-                const p = doc.data();
-                html += `
-                    <div class="py-4 bg-zinc-950/20">
-                        <div class="flex items-center px-4 py-2.5 gap-3">
-                            <div class="w-9 h-9 bg-yellow-400 text-black rounded-xl flex items-center justify-center font-bold text-xs shadow-md">${p.email[0].toUpperCase()}</div>
-                            <span class="text-xs font-semibold tracking-wide text-zinc-200">${p.email.split('@')[0]}</span>
-                        </div>
-                        ${p.image ? `<img src="${p.image}" class="w-full max-h-[420px] object-cover my-2 rounded-lg border-y border-zinc-900">` : ''}
-                        ${p.text ? `<p class="px-4 text-sm my-2 text-zinc-100 leading-relaxed">${p.text}</p>` : ''}
-                        <div class="flex px-4 gap-5 text-xl mt-3 text-zinc-400">
-                            <i class="fa-regular fa-heart hover:text-yellow-400 cursor-pointer transition"></i>
-                            <i class="fa-regular fa-comment hover:text-yellow-400 cursor-pointer transition"></i>
-                            <i class="fa-regular fa-paper-plane hover:text-yellow-400 cursor-pointer transition"></i>
-                        </div>
-                    </div>
-                `;
-            });
-            feed.innerHTML = html || "<p class='text-center text-zinc-500 py-10'>No posts found</p>";
-        }
-
-        async function createStory() {
-            const imgUrl = prompt("Enter Image URL for your Story:");
-            if (imgUrl) {
-                await window.addDoc(window.collection(window.db, "stories"), {
-                    image: imgUrl, email: window.auth.currentUser.email, createdAt: window.serverTimestamp()
-                });
-                loadStories();
-            }
-        }
-
-        async function loadStories() {
-            const list = document.getElementById('storiesList');
-            if (!list) return;
-            const q = window.query(window.collection(window.db, "stories"), window.orderBy("createdAt", "desc"));
-            const snapshot = await window.getDocs(q);
-            let html = "";
-            snapshot.forEach(doc => {
-                const s = doc.data();
-                html += `
-                    <div class="flex flex-col items-center flex-shrink-0 cursor-pointer">
-                        <div class="w-16 h-16 rounded-2xl p-[2px] bg-yellow-400 shadow-lg">
-                            <img src="${s.image}" class="w-full h-full rounded-[14px] object-cover border-2 border-black">
-                        </div>
-                        <span class="text-[11px] mt-1.5 text-zinc-300 truncate w-16 text-center font-medium">${s.email.split('@')[0]}</span>
-                    </div>
-                `;
-            });
-            list.innerHTML = html;
-        }
-
-        function renderExplore() {
-            document.getElementById('app').innerHTML = `
-                <div class="p-4 pb-20">
-                    <div class="mb-4 flex gap-2">
-                        <input type="text" id="searchInput" placeholder="Search users by name..." onkeydown="if(event.key === 'Enter') handleSearch()" class="flex-1 bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">
-                        <button onclick="handleSearch()" class="bg-yellow-400 text-black px-4 py-3 rounded-xl font-bold text-sm shadow-md">Search</button>
-                    </div>
-                    <div id="searchResults" class="grid grid-cols-1 gap-2">
-                        <p class="text-center text-zinc-500 text-xs py-10">Type a username to search</p>
+                    <div class="bg-zinc-900/50 border border-zinc-800 p-4 rounded-xl text-center text-zinc-400 text-sm">
+                        Welcome to Roxchat! Use the Explore tab to find users and start chatting privately.
                     </div>
                 </div>
             `;
         }
 
-        async function handleSearch() {
-            const queryText = document.getElementById('searchInput').value.trim().toLowerCase();
-            const resultsDiv = document.getElementById('searchResults');
-            if (!queryText) return;
-
-            resultsDiv.innerHTML = "<p class='text-center text-zinc-500 text-xs py-4'>Searching...</p>";
+        async function renderExplore() {
+            const appDiv = document.getElementById('app');
+            appDiv.innerHTML = `<div class="p-4 text-center text-zinc-400">Loading users...</div>`;
             
             try {
                 const querySnapshot = await window.getDocs(window.collection(window.db, "users"));
-                let html = "";
-                querySnapshot.forEach((doc) => {
-                    const userData = doc.data();
-                    if (userData.name && userData.name.toLowerCase().includes(queryText)) {
-                        html += `
-                            <div class="bg-zinc-900/80 border border-zinc-800 p-3.5 rounded-xl flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 bg-yellow-400 text-black rounded-xl flex items-center justify-center font-bold text-sm overflow-hidden">
-                                        ${userData.photo ? `<img src="${userData.photo}" class="w-full h-full object-cover">` : userData.name[0].toUpperCase()}
-                                    </div>
-                                    <div>
-                                        <p class="text-xs font-semibold text-zinc-200">${userData.name}</p>
-                                        <p class="text-[11px] text-zinc-400">${userData.bio || 'No bio'}</p>
-                                    </div>
+                let usersHTML = `<div class="p-4"><h2 class="text-xl font-bold mb-4 text-yellow-400">Explore Users</h2><div class="space-y-3">`;
+                
+                querySnapshot.forEach((docSnap) => {
+                    const userData = docSnap.data();
+                    if(userData.uid !== window.auth.currentUser.uid) {
+                        usersHTML += `
+                            <div onclick="openChatRoom('${userData.uid}', '${userData.username}')" class="flex items-center justify-between bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl cursor-pointer hover:border-yellow-400 transition">
+                                <div class="flex items-center space-x-3">
+                                    <img src="${userData.avatar}" class="w-10 h-10 rounded-full bg-zinc-800">
+                                    <span class="font-semibold text-white">${userData.username}</span>
                                 </div>
+                                <i class="fa-solid fa-comments text-yellow-400 text-lg"></i>
                             </div>
                         `;
                     }
                 });
-                resultsDiv.innerHTML = html || "<p class='text-center text-zinc-500 text-xs py-10'>No users found</p>";
+                
+                usersHTML += `</div></div>`;
+                appDiv.innerHTML = usersHTML;
             } catch (error) {
-                resultsDiv.innerHTML = "<p class='text-center text-red-500 text-xs py-10'>Error searching users</p>";
+                console.error("Error loading users:", error);
+            }
+        }
+
+        async function renderChatInboxList() {
+            const appDiv = document.getElementById('app');
+            appDiv.innerHTML = `
+                <div class="p-4">
+                    <h2 class="text-xl font-bold mb-4 text-yellow-400">Messages</h2>
+                    <div class="bg-zinc-900/50 border border-zinc-800 p-6 rounded-xl text-center text-zinc-400 text-sm">
+                        <p class="mb-3">To chat with someone, go to the Explore tab and select a user.</p>
+                        <button onclick="switchTab('explore')" class="bg-yellow-400 text-black px-4 py-2 rounded-xl font-bold text-xs">Explore Users</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function openChatRoom(peerUid, peerUsername) {
+            const currentUid = window.auth.currentUser.uid;
+            const chatId = currentUid < peerUid ? `${currentUid}_${peerUid}` : `${peerUid}_${currentUid}`;
+            
+            document.getElementById('app').innerHTML = `
+                <div class="flex flex-col h-screen bg-black">
+                    <div class="flex items-center justify-between p-4 bg-zinc-950 border-b border-zinc-800">
+                        <button onclick="switchTab('explore')" class="text-zinc-400 text-lg"><i class="fa-solid fa-arrow-left"></i></button>
+                        <h2 class="font-bold text-white">${peerUsername}</h2>
+                        <div class="w-6"></div>
+                    </div>
+                    
+                    <div id="messageContainer" class="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
+                        <div class="text-center text-zinc-500 text-xs">Direct chat started with ${peerUsername}.</div>
+                    </div>
+                    
+                    <div class="fixed bottom-16 left-0 right-0 max-w-md mx-auto p-3 bg-zinc-950 border-t border-zinc-800 flex items-center space-x-2">
+                        <input type="text" id="chatInput" placeholder="Message..." class="flex-1 bg-zinc-900 border border-zinc-800 text-white p-3 rounded-xl text-sm focus:outline-none focus:border-yellow-400">
+                        <button onclick="sendPrivateMessage('${chatId}')" class="bg-yellow-400 text-black px-4 py-3 rounded-xl font-bold text-sm">Send</button>
+                    </div>
+                </div>
+            `;
+            
+            loadPrivateMessages(chatId);
+        }
+
+        async function sendPrivateMessage(chatId) {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            try {
+                await window.addDoc(window.collection(window.db, "chats", chatId, "messages"), {
+                    sender: window.auth.currentUser.uid,
+                    text: text,
+                    timestamp: window.serverTimestamp()
+                });
+                input.value = '';
+                loadPrivateMessages(chatId);
+            } catch (e) {
+                console.error("Error sending message: ", e);
+            }
+        }
+
+        async function loadPrivateMessages(chatId) {
+            const container = document.getElementById('messageContainer');
+            try {
+                const q = window.query(
+                    window.collection(window.db, "chats", chatId, "messages"), 
+                    window.orderBy("timestamp", "asc")
+                );
+                const snapshot = await window.getDocs(q);
+                
+                let html = '';
+                snapshot.forEach(docSnap => {
+                    const msg = docSnap.data();
+                    const isMe = msg.sender === window.auth.currentUser.uid;
+                    html += `
+                        <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                            <div class="max-w-[70%] p-3 rounded-2xl text-sm ${isMe ? 'bg-yellow-400 text-black rounded-br-none' : 'bg-zinc-900 text-white border border-zinc-800 rounded-bl-none'}">
+                                ${msg.text}
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+                container.scrollTop = container.scrollHeight;
+            } catch (e) {
+                console.error("Error loading messages:", e);
             }
         }
 
         function renderReels() {
-            document.getElementById('app').innerHTML = `
-                <div class="h-screen flex flex-col items-center justify-center bg-black text-center p-4 pb-20">
-                    <div class="w-16 h-16 bg-yellow-400/10 rounded-2xl flex items-center justify-center text-yellow-400 mb-3 border border-yellow-400/20">
-                        <i class="fa-solid fa-bolt text-2xl"></i>
-                    </div>
-                    <p class="font-bold text-lg text-white">Rox Reels</p>
-                    <p class="text-xs text-zinc-500 mt-1">Short clips stream coming soon.</p>
-                </div>
-            `;
-        }
-
-        function renderChat() {
-            document.getElementById('app').innerHTML = `
-                <div class="p-4 pb-24 flex flex-col h-screen">
-                    <div class="flex justify-between items-center mb-3 pb-2 border-b border-zinc-900">
-                        <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-arrow-left text-lg cursor-pointer text-zinc-300 hover:text-yellow-400" onclick="switchTab('home')"></i>
-                            <div>
-                                <h2 class="font-bold text-base text-zinc-100">Global Chat Room 🌍</h2>
-                                <p class="text-[10px] text-zinc-400">Public messaging inbox</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="chatMessages" class="flex-1 overflow-y-auto space-y-3 mb-4 pr-1">
-                        <div class="text-center text-zinc-500 text-xs py-4">Loading messages...</div>
-                    </div>
-                    <div class="sticky bottom-20 bg-black pt-2 pb-2 border-t border-zinc-900 flex items-center gap-2">
-                        <input type="text" id="chatInput" placeholder="Type a message..." onkeydown="if(event.key === 'Enter') sendChatMessage()" class="flex-1 bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-full text-sm text-white focus:outline-none focus:border-yellow-400 transition">
-                        <button id="recordBtn" onclick="toggleInboxRecord()" class="bg-zinc-900 border border-zinc-800 w-11 h-11 rounded-full flex items-center justify-center text-yellow-400 hover:bg-zinc-800 transition">
-                            <i class="fa-solid fa-microphone"></i>
-                        </button>
-                        <button onclick="sendChatMessage()" class="bg-yellow-400 text-black px-5 py-3 rounded-full text-sm font-bold shadow-md shadow-yellow-400/15">Send</button>
-                    </div>
-                </div>
-            `;
-            loadChatMessages();
-        }
-
-        let localAIMessages = [
-            { sender: 'ai', text: 'Hello! I am Rox AI Assistant. You can ask me anything about Roxchat and its features!' }
-        ];
-
-        function renderAIChat() {
-            document.getElementById('app').innerHTML = `
-                <div class="p-4 pb-24 flex flex-col h-screen">
-                    <div class="flex justify-between items-center mb-3 pb-2 border-b border-zinc-900">
-                        <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-arrow-left text-lg cursor-pointer text-zinc-300 hover:text-yellow-400" onclick="switchTab('profile')"></i>
-                            <div>
-                                <h2 class="font-bold text-base text-zinc-100">Rox AI Assistant 🤖</h2>
-                                <p class="text-[10px] text-zinc-400">Ask anything about Roxchat</p>
-                            </div>
-                        </div>
-                        <button onclick="switchTab('profile')" class="bg-zinc-900 border border-zinc-800 text-yellow-400 text-xs px-3 py-1.5 rounded-xl font-semibold hover:bg-zinc-800 transition">
-                            Back
-                        </button>
-                    </div>
-                    <div id="aiChatMessages" class="flex-1 overflow-y-auto space-y-3 mb-4 pr-1">
-                        <div class="text-center text-zinc-500 text-xs py-4">Loading AI...</div>
-                    </div>
-                    <div class="sticky bottom-20 bg-black pt-2 pb-2 border-t border-zinc-900 flex items-center gap-2">
-                        <input type="text" id="aiChatInput" placeholder="Ask AI about Roxchat..." onkeydown="if(event.key === 'Enter') sendAIChatMessageInput()" class="flex-1 bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-full text-sm text-white focus:outline-none focus:border-yellow-400 transition">
-                        <button onclick="sendAIChatMessageInput()" class="bg-yellow-400 text-black px-5 py-3 rounded-full text-sm font-bold shadow-md shadow-yellow-400/15">Send</button>
-                    </div>
-                </div>
-            `;
-            loadAIChatMessages();
-        }
-
-        function loadAIChatMessages() {
-            const chatBox = document.getElementById('aiChatMessages');
-            if (!chatBox) return;
-            let html = "";
-            localAIMessages.forEach(msg => {
-                const isMe = msg.sender === 'user';
-                html += `
-                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                        <span class="text-[10px] text-zinc-500 mb-1 px-1">${isMe ? 'You' : 'Rox AI 🤖'}</span>
-                        <div class="max-w-[85%] bg-zinc-900 p-3.5 rounded-2xl border border-zinc-800 text-sm shadow-sm text-zinc-100">
-                            ${msg.text}
-                        </div>
-                    </div>
-                `;
-            });
-            chatBox.innerHTML = html;
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        async function sendAIChatMessageInput() {
-            const inputField = document.getElementById('aiChatInput');
-            const text = inputField.value.trim();
-            if (!text) return;
-            inputField.value = '';
-
-            localAIMessages.push({ sender: 'user', text: text });
-            loadAIChatMessages();
-
-            let reply = "For more details about Roxchat, please check the features available in the app!";
-            const lower = text.toLowerCase();
-            
-            if (lower.includes('hello') || lower.includes('hi') || lower.includes('hai')) {
-                reply = "Hello! Welcome to Roxchat. How can I help you learn more about the app today?";
-            } else if (lower.includes('what is roxchat') || lower.includes('about')) {
-                reply = "Roxchat is a modern social chat application designed to help you connect with friends, share posts, stories, and chat globally.";
-            }
-
-            setTimeout(() => {
-                localAIMessages.push({ sender: 'ai', text: reply });
-                loadAIChatMessages();
-            }, 500);
-        }
-
-        async function toggleInboxRecord() {
-            const recordBtn = document.getElementById('recordBtn');
-            if (!mediaRecorder || mediaRecorder.state === "inactive") {
-                audioChunks = [];
-                let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                recordingStartTime = Date.now();
-                
-                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                mediaRecorder.onstop = async () => { 
-                    const durationSec = Math.round((Date.now() - recordingStartTime) / 1000);
-                    recordedAudioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const audioBase64 = await blobToBase64(recordedAudioBlob);
-                    
-                    await window.addDoc(window.collection(window.db, "chats"), {
-                        audio: audioBase64, 
-                        duration: durationSec > 0 ? durationSec : 1,
-                        email: window.auth.currentUser.email, 
-                        createdAt: window.serverTimestamp()
-                    });
-                    recordedAudioBlob = null;
-                    loadChatMessages();
-                };
-                mediaRecorder.start();
-                recordBtn.classList.add("bg-zinc-800", "border-yellow-400", "text-red-500");
-            } else {
-                mediaRecorder.stop();
-                recordBtn.classList.remove("bg-zinc-800", "border-yellow-400", "text-red-500");
-            }
-        }
-
-        async function sendChatMessage() {
-            const inputField = document.getElementById('chatInput');
-            const text = inputField.value.trim();
-            if (!text) return;
-            inputField.value = '';
-
-            await window.addDoc(window.collection(window.db, "chats"), {
-                text, email: window.auth.currentUser.email, createdAt: window.serverTimestamp()
-            });
-            loadChatMessages();
-        }
-
-        async function loadChatMessages() {
-            const chatBox = document.getElementById('chatMessages');
-            if (!chatBox) return;
-            const q = window.query(window.collection(window.db, "chats"), window.orderBy("createdAt", "asc"));
-            const snapshot = await window.getDocs(q);
-            let html = "";
-            snapshot.forEach(doc => {
-                const c = doc.data();
-                const isMe = c.email === window.auth.currentUser.email;
-                html += `
-                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                        <span class="text-[10px] text-zinc-500 mb-1 px-1">${c.email.split('@')[0]}</span>
-                        <div class="max-w-[78%] bg-zinc-900 p-3.5 rounded-2xl border border-zinc-800 text-sm shadow-sm">
-                            ${c.text ? `<p class="text-zinc-100">${c.text}</p>` : ''}
-                            ${c.audio ? `
-                                <div class="flex items-center gap-2 mt-1">
-                                    <audio controls class="w-48 h-8"><source src="${c.audio}" type="audio/webm"></audio>
-                                    <span class="text-[10px] text-yellow-400 font-semibold">${c.duration || '0:03'}s</span>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
-            });
-            chatBox.innerHTML = html || "<p class='text-center text-zinc-600 text-xs'>No messages yet.</p>";
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function blobToBase64(blob) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.readAsDataURL(blob);
-            });
+            document.getElementById('app').innerHTML = `<div class="p-4 text-zinc-400 text-center">Reels page coming soon!</div>`;
         }
 
         function renderProfile() {
-            const user = window.auth.currentUser;
-            if (!cachedUserData) {
-                cachedUserData = { name: user.email.split('@')[0], bio: "Exploring Roxchat ✨", photo: "", language: "en" };
-            }
-
-            const userData = cachedUserData;
-            currentLanguage = userData.language || "en";
-
-            document.getElementById('app').innerHTML = `
-                <div class="p-4 pb-24">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 id="profileNameHeader" class="font-bold text-lg truncate text-zinc-100">${userData.name}</h2>
-                        <button onclick="window.signOut(window.auth)" class="text-yellow-400 text-xs font-semibold border border-yellow-400/30 px-3.5 py-1.5 rounded-xl hover:bg-yellow-400/10 transition">Log Out</button>
-                    </div>
-                    
-                    <!-- Profile Header -->
-                    <div class="flex items-center gap-4 mb-4 bg-zinc-950 p-4 rounded-2xl border border-zinc-900">
-                        <div id="profileAvatarContainer" class="w-20 h-20 bg-yellow-400 text-black rounded-full overflow-hidden flex items-center justify-center text-2xl font-bold shadow-lg border-2 border-yellow-400">
-                            ${userData.photo ? `<img src="${userData.photo}" class="w-full h-full object-cover">` : userData.name[0].toUpperCase()}
-                        </div>
-                        <div class="flex gap-4 text-center flex-1 justify-around">
-                            <div><p class="font-bold text-base text-zinc-100">Posts</p><p class="text-xs text-zinc-400">Active</p></div>
-                        </div>
-                    </div>
-                    <div class="mb-5 px-1">
-                        <p id="profileNameDisplay" class="text-xs font-bold text-zinc-100">${userData.name}</p>
-                        <p id="profileBioDisplay" class="text-xs text-zinc-400 mt-1">${userData.bio || 'Exploring Roxchat ✨'}</p>
-                    </div>
-
-                    <!-- Edit Profile Section with File Upload -->
-                    <div class="bg-zinc-950 border border-zinc-900 p-4 rounded-2xl space-y-3 mb-4">
-                        <p class="text-xs font-bold text-yellow-400 mb-1 flex items-center gap-2"><i class="fa-solid fa-user-pen"></i> Edit Profile & Picture</p>
-                        <input type="text" id="editName" value="${userData.name || ''}" placeholder="Your Username" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-xs text-white focus:outline-none focus:border-yellow-400">
-                        <input type="text" id="editBio" value="${userData.bio || ''}" placeholder="Your Bio / Thoughts" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-xs text-white focus:outline-none focus:border-yellow-400">
-                        
-                        <div class="space-y-1">
-                            <label class="text-[11px] text-zinc-400">Upload Profile Picture:</label>
-                            <input type="file" id="editPhotoFile" accept="image/*" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-xs text-zinc-300 focus:outline-none file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-yellow-400 file:text-black hover:file:bg-yellow-500">
-                        </div>
-
-                        <button onclick="updateProfileData()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-xs transition">Save Profile Changes</button>
-                    </div>
-
-                    <!-- Language Settings Section -->
-                    <div class="bg-zinc-950 border border-zinc-900 p-4 rounded-2xl space-y-3 mb-4">
-                        <p class="text-xs font-bold text-yellow-400 mb-1 flex items-center gap-2"><i class="fa-solid fa-globe"></i> App Language</p>
-                        <select id="languageSelect" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-xs text-white focus:outline-none focus:border-yellow-400">
-                            <option value="en" ${currentLanguage === 'en' ? 'selected' : ''}>English</option>
-                            <option value="ml" ${currentLanguage === 'ml' ? 'selected' : ''}>മലയാളം (Malayalam)</option>
-                            <option value="ta" ${currentLanguage === 'ta' ? 'selected' : ''}>தமிழ் (Tamil)</option>
-                            <option value="hi" ${currentLanguage === 'hi' ? 'selected' : ''}>हिन्दी (Hindi)</option>
-                            <option value="ar" ${currentLanguage === 'ar' ? 'selected' : ''}>العربية (Arabic)</option>
-                            <option value="fa" ${currentLanguage === 'fa' ? 'selected' : ''}>فارسی (Farsi)</option>
-                            <option value="ja" ${currentLanguage === 'ja' ? 'selected' : ''}>日本語 (Japanese)</option>
-                            <option value="zh" ${currentLanguage === 'zh' ? 'selected' : ''}>中文 (Chinese)</option>
-                            <option value="fr" ${currentLanguage === 'fr' ? 'selected' : ''}>Français (French)</option>
-                            <option value="es" ${currentLanguage === 'es' ? 'selected' : ''}>Español (Spanish)</option>
-                            <option value="nl" ${currentLanguage === 'nl' ? 'selected' : ''}>Nederlands (Dutch)</option>
-                        </select>
-                        <button onclick="updateLanguageSetting()" class="w-full bg-zinc-900 hover:bg-zinc-800 text-yellow-400 border border-zinc-800 py-2.5 rounded-xl font-bold text-xs transition">Save Language</button>
-                    </div>
-
-                    <!-- AI Assistant Option -->
-                    <div class="space-y-2 pt-2">
-                        <button onclick="renderAIChat()" class="w-full bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 text-yellow-400 py-3.5 px-4 rounded-xl font-semibold text-sm flex items-center justify-between transition shadow-sm">
-                            <span class="flex items-center gap-3"><i class="fa-solid fa-robot text-lg"></i> Rox AI Assistant</span>
-                            <i class="fa-solid fa-chevron-right text-xs text-zinc-500"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            window.getDoc(window.doc(window.db, "users", user.uid)).then(userDoc => {
-                if (userDoc.exists()) {
-                    cachedUserData = userDoc.data();
-                    currentLanguage = cachedUserData.language || "en";
-                    
-                    const nameH = document.getElementById('profileNameHeader');
-                    const nameD = document.getElementById('profileNameDisplay');
-                    const bioD = document.getElementById('profileBioDisplay');
-                    const avatarC = document.getElementById('profileAvatarContainer');
-                    
-                    if (nameH) nameH.innerText = cachedUserData.name;
-                    if (nameD) nameD.innerText = cachedUserData.name;
-                    if (bioD) bioD.innerText = cachedUserData.bio || 'Exploring Roxchat ✨';
-                    if (avatarC) {
-                        avatarC.innerHTML = cachedUserData.photo ? `<img src="${cachedUserData.photo}" class="w-full h-full object-cover">` : cachedUserData.name[0].toUpperCase();
-                    }
-                }
-            }).catch(e => {});
-        }
-
-        async function updateLanguageSetting() {
-            const selectedLang = document.getElementById('languageSelect').value;
-            const user = window.auth.currentUser;
-            try {
-                await window.setDoc(window.doc(window.db, "users", user.uid), {
-                    language: selectedLang
-                }, { merge: true });
-                currentLanguage = selectedLang;
-                if (cachedUserData) cachedUserData.language = selectedLang;
-                alert("Language setting updated successfully!");
-                renderProfile();
-            } catch (error) {
-                alert("Error updating language: " + error.message);
-            }
-        }
-
-        async function updateProfileData() {
-            const name = document.getElementById('editName').value.trim().toLowerCase();
-            const bio = document.getElementById('editBio').value.trim();
-            const photoFile = document.getElementById('editPhotoFile').files[0];
-            const user = window.auth.currentUser;
-
-            if (!name) return alert("Username cannot be empty!");
-
-            try {
-                const q = window.query(window.collection(window.db, "users"), window.where("name", "==", name));
-                const querySnapshot = await window.getDocs(q);
-                let isTaken = false;
-                querySnapshot.forEach(docSnap => {
-                    if (docSnap.id !== user.uid) {
-                        isTaken = true;
-                    }
-                });
-
-                if (isTaken) {
-                    return alert("This username is already taken by another user. Please choose a different one!");
-                }
-
-                let photoBase64 = "";
-                if (photoFile) {
-                    photoBase64 = await blobToBase64(photoFile);
-                }
-
-                const updateData = {
-                    email: user.email,
-                    name: name,
-                    bio: bio
-                };
-                if (photoBase64) {
-                    updateData.photo = photoBase64;
-                }
-
-                await window.setDoc(window.doc(window.db, "users", user.uid), updateData, { merge: true });
-                cachedUserData = { ...cachedUserData, ...updateData };
-
-                alert("Profile and Picture updated successfully!");
-                renderProfile();
-            } catch (error) {
-                alert("Error updating profile: " + error.message);
-            }
+            document.getElementById('app').innerHTML = `<div class="p-4 text-zinc-400 text-center">Profile page coming soon!</div>`;
         }
     </script>
 </body>
