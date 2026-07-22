@@ -34,7 +34,8 @@
     <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/80 flex justify-around py-4 z-50 shadow-lg">
         <button onclick="switchTab('home')" id="nav-home" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-house-chimney"></i></button>
         <button onclick="switchTab('chat')" id="nav-chat" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-comments"></i></button>
-        <button onclick="switchTab('explore')" id="nav-explore" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-compass"></i></button>
+        <!-- Center Search Button -->
+        <button onclick="switchTab('explore')" id="nav-explore" class="text-zinc-400 text-2xl transition transform active:scale-90" title="Search Reels & Friends"><i class="fa-solid fa-magnifying-glass"></i></button>
         <button onclick="switchTab('reels')" id="nav-reels" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-bolt"></i></button>
         <button onclick="switchTab('profile')" id="nav-profile" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-circle-user"></i></button>
     </nav>
@@ -376,7 +377,10 @@
                 <div>
                     ${getTopHeaderHTML()}
                     <div class="p-4 pt-0">
-                        <h2 class="text-xl font-bold mb-4 text-yellow-400">Explore Users</h2>
+                        <h2 class="text-xl font-bold mb-4 text-yellow-400">Search Reels & Friends</h2>
+                        <div class="mb-4">
+                            <input type="text" id="searchInput" placeholder="Search friends or reels..." oninput="filterSearchUsers(this.value)" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400">
+                        </div>
                         <div id="exploreUsersList" class="space-y-3 text-center text-zinc-400">Loading users...</div>
                     </div>
                 </div>
@@ -384,28 +388,48 @@
             
             try {
                 const querySnapshot = await window.getDocs(window.collection(window.db, "users"));
-                let usersHTML = `<div class="space-y-3">`;
-                
+                window.allExploreUsers = [];
                 querySnapshot.forEach((docSnap) => {
                     const userData = docSnap.data();
                     if(userData.uid !== window.auth.currentUser.uid) {
-                        usersHTML += `
-                            <div onclick="openChatRoom('${userData.uid}', '${userData.username}')" class="flex items-center justify-between bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl cursor-pointer hover:border-yellow-400 transition">
-                                <div class="flex items-center space-x-3">
-                                    <img src="${userData.avatar}" class="w-10 h-10 rounded-full bg-zinc-800 object-cover">
-                                    <span class="font-semibold text-white">${userData.username}</span>
-                                </div>
-                                <i class="fa-solid fa-comments text-yellow-400 text-lg"></i>
-                            </div>
-                        `;
+                        window.allExploreUsers.push(userData);
                     }
                 });
-                
-                usersHTML += `</div>`;
-                document.getElementById('exploreUsersList').innerHTML = usersHTML;
+                renderUserSearchResults(window.allExploreUsers);
             } catch (error) {
                 console.error("Error loading users:", error);
             }
+        }
+
+        function renderUserSearchResults(users) {
+            let usersListDiv = document.getElementById('exploreUsersList');
+            if(!usersListDiv) return;
+            
+            if(users.length === 0) {
+                usersListDiv.innerHTML = `<div class="text-zinc-500 text-sm py-6">No users found.</div>`;
+                return;
+            }
+
+            let usersHTML = `<div class="space-y-3">`;
+            users.forEach((userData) => {
+                usersHTML += `
+                    <div onclick="openChatRoom('${userData.uid}', '${userData.username}')" class="flex items-center justify-between bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl cursor-pointer hover:border-yellow-400 transition">
+                        <div class="flex items-center space-x-3">
+                            <img src="${userData.avatar}" class="w-10 h-10 rounded-full bg-zinc-800 object-cover">
+                            <span class="font-semibold text-white">${userData.username}</span>
+                        </div>
+                        <i class="fa-solid fa-comments text-yellow-400 text-lg"></i>
+                    </div>
+                `;
+            });
+            usersHTML += `</div>`;
+            usersListDiv.innerHTML = usersHTML;
+        }
+
+        window.filterSearchUsers = function(queryText) {
+            if(!window.allExploreUsers) return;
+            const filtered = window.allExploreUsers.filter(u => u.username.toLowerCase().includes(queryText.toLowerCase()));
+            renderUserSearchResults(filtered);
         }
 
         async function renderChatInboxList() {
@@ -656,19 +680,16 @@
                                         <input type="checkbox" id="settingNotif" ${userData.pushNotifications !== false ? 'checked' : ''} class="accent-yellow-400 w-4 h-4 cursor-pointer">
                                     </div>
 
-                                    <!-- Working Feature: Blocked Accounts -->
                                     <div onclick="openBlockedUsersModal()" class="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm cursor-pointer hover:border-yellow-400 transition">
                                         <span class="text-zinc-300"><i class="fa-solid fa-ban text-red-400 mr-2"></i> Blocked Accounts</span>
                                         <i class="fa-solid fa-chevron-right text-xs text-zinc-500"></i>
                                     </div>
 
-                                    <!-- Working Feature: Saved Items -->
                                     <div onclick="openSavedItemsModal()" class="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm cursor-pointer hover:border-yellow-400 transition">
                                         <span class="text-zinc-300"><i class="fa-solid fa-bookmark text-yellow-400 mr-2"></i> Saved Messages</span>
                                         <i class="fa-solid fa-chevron-right text-xs text-zinc-500"></i>
                                     </div>
 
-                                    <!-- Working Feature: Help & Customer Complaint Resolution -->
                                     <div onclick="openHelpSupportModal()" class="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl text-sm cursor-pointer hover:border-yellow-400 transition">
                                         <span class="text-zinc-300"><i class="fa-solid fa-circle-question text-blue-400 mr-2"></i> Help / Report a Problem</span>
                                         <i class="fa-solid fa-chevron-right text-xs text-zinc-500"></i>
@@ -701,7 +722,6 @@
             `;
         }
 
-        // Functional Modals for New Roxchat Settings & Customer Complaints
         function openBlockedUsersModal() {
             const appDiv = document.getElementById('app');
             appDiv.innerHTML = `
@@ -785,6 +805,15 @@
             }
 
             try {
+                if (window.currentUserData.username !== newUsername) {
+                    const q = window.query(window.collection(window.db, "users"), window.where("username", "==", newUsername));
+                    const querySnapshot = await window.getDocs(q);
+                    if (!querySnapshot.empty) {
+                        alert("Username is already taken by another user!");
+                        return;
+                    }
+                }
+
                 const userRef = window.doc(window.db, "users", window.auth.currentUser.uid);
                 const updatedData = {
                     username: newUsername,
