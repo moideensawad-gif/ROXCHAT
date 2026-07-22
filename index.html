@@ -40,7 +40,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, setDoc, getDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAaqyhWJg8QmFzB4xKR5sJT8UetZEqZGrs",
@@ -68,6 +68,7 @@
         window.collection = collection;
         window.query = query;
         window.orderBy = orderBy;
+        window.where = where;
         window.serverTimestamp = serverTimestamp;
         window.doc = doc;
         window.setDoc = setDoc;
@@ -95,7 +96,9 @@
         let mediaRecorder;
         let audioChunks = [];
         let recordedAudioBlob = null;
+        let recordingStartTime = 0;
         let currentLanguage = 'en';
+        let cachedUserData = null;
 
         function switchTab(tab) {
             currentTab = tab;
@@ -129,6 +132,7 @@
                             <p class="text-xs text-zinc-500 mt-2">Connect with your world differently</p>
                         </div>
                         <div class="space-y-3.5">
+                            ${isSignup ? '<input type="text" id="username" placeholder="Username (Unique)" class="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">' : ''}
                             <input type="email" id="email" placeholder="Email address" class="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">
                             <input type="password" id="password" placeholder="Password" class="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">
                             <button onclick="${isSignup ? 'handleSignup()' : 'handleLogin()'}" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black p-3.5 rounded-xl font-bold text-sm transition shadow-lg shadow-yellow-400/10 mt-2">${isSignup ? 'Create Account' : 'Sign In'}</button>
@@ -155,17 +159,28 @@
         }
 
         async function handleSignup() {
+            const usernameInput = document.getElementById('username').value.trim().toLowerCase();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+
+            if (!usernameInput) return alert("Please enter a username!");
+
             try {
+                const q = window.query(window.collection(window.db, "users"), window.where("name", "==", usernameInput));
+                const querySnapshot = await window.getDocs(q);
+                if (!querySnapshot.empty) {
+                    return alert("This username is already taken! Please choose another one.");
+                }
+
                 const res = await window.createUserWithEmailAndPassword(window.auth, email, password);
-                await window.setDoc(window.doc(window.db, "users", res.user.uid), { 
+                cachedUserData = { 
                     email: email, 
-                    name: email.split('@')[0],
+                    name: usernameInput,
                     bio: "Exploring Roxchat ✨",
                     photo: "",
                     language: "en"
-                });
+                };
+                await window.setDoc(window.doc(window.db, "users", res.user.uid), cachedUserData);
             } catch (error) {
                 alert("Signup Error: " + error.message);
             }
@@ -190,12 +205,11 @@
                         <div id="storiesList" class="flex gap-3"></div>
                     </div>
                     
-                    <!-- Posts Feed Clean -->
                     <div id="postsFeed" class="divide-y divide-zinc-900/60">
                         <div class="text-center py-10 text-zinc-500 text-sm">Loading feed...</div>
                     </div>
 
-                    <!-- Instagram Style Create Post Modal -->
+                    <!-- Create Post Modal -->
                     <div id="createPostModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                         <div class="bg-zinc-950 border border-zinc-800 w-full max-w-sm p-5 rounded-2xl shadow-2xl relative">
                             <div class="flex justify-between items-center mb-4 pb-2 border-b border-zinc-900">
@@ -295,11 +309,11 @@
             document.getElementById('app').innerHTML = `
                 <div class="p-4 pb-20">
                     <div class="mb-4 flex gap-2">
-                        <input type="text" id="searchInput" placeholder="Search users by email..." onkeydown="if(event.key === 'Enter') handleSearch()" class="flex-1 bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">
+                        <input type="text" id="searchInput" placeholder="Search users by name..." onkeydown="if(event.key === 'Enter') handleSearch()" class="flex-1 bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">
                         <button onclick="handleSearch()" class="bg-yellow-400 text-black px-4 py-3 rounded-xl font-bold text-sm shadow-md">Search</button>
                     </div>
                     <div id="searchResults" class="grid grid-cols-1 gap-2">
-                        <p class="text-center text-zinc-500 text-xs py-10">Type an email to search users</p>
+                        <p class="text-center text-zinc-500 text-xs py-10">Type a username to search</p>
                     </div>
                 </div>
             `;
@@ -317,13 +331,15 @@
                 let html = "";
                 querySnapshot.forEach((doc) => {
                     const userData = doc.data();
-                    if (userData.email && userData.email.toLowerCase().includes(queryText)) {
+                    if (userData.name && userData.name.toLowerCase().includes(queryText)) {
                         html += `
                             <div class="bg-zinc-900/80 border border-zinc-800 p-3.5 rounded-xl flex items-center justify-between">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 bg-yellow-400 text-black rounded-xl flex items-center justify-center font-bold text-sm">${userData.email[0].toUpperCase()}</div>
+                                    <div class="w-10 h-10 bg-yellow-400 text-black rounded-xl flex items-center justify-center font-bold text-sm overflow-hidden">
+                                        ${userData.photo ? `<img src="${userData.photo}" class="w-full h-full object-cover">` : userData.name[0].toUpperCase()}
+                                    </div>
                                     <div>
-                                        <p class="text-xs font-semibold text-zinc-200">${userData.name || userData.email}</p>
+                                        <p class="text-xs font-semibold text-zinc-200">${userData.name}</p>
                                         <p class="text-[11px] text-zinc-400">${userData.bio || 'No bio'}</p>
                                     </div>
                                 </div>
@@ -349,7 +365,6 @@
             `;
         }
 
-        // Global Chat Room
         function renderChat() {
             document.getElementById('app').innerHTML = `
                 <div class="p-4 pb-24 flex flex-col h-screen">
@@ -443,8 +458,6 @@
                 reply = "Hello! Welcome to Roxchat. How can I help you learn more about the app today?";
             } else if (lower.includes('what is roxchat') || lower.includes('about')) {
                 reply = "Roxchat is a modern social chat application designed to help you connect with friends, share posts, stories, and chat globally.";
-            } else if (lower.includes('feature') || lower.includes('what can') || lower.includes('functions')) {
-                reply = "Roxchat key features include: Home Feed with posts and stories, Global Chat Room, User Search in Explore, Reels section, Profile Management, and Language Settings.";
             }
 
             setTimeout(() => {
@@ -459,12 +472,19 @@
                 audioChunks = [];
                 let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
+                recordingStartTime = Date.now();
+                
                 mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
                 mediaRecorder.onstop = async () => { 
+                    const durationSec = Math.round((Date.now() - recordingStartTime) / 1000);
                     recordedAudioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                     const audioBase64 = await blobToBase64(recordedAudioBlob);
+                    
                     await window.addDoc(window.collection(window.db, "chats"), {
-                        audio: audioBase64, email: window.auth.currentUser.email, createdAt: window.serverTimestamp()
+                        audio: audioBase64, 
+                        duration: durationSec > 0 ? durationSec : 1,
+                        email: window.auth.currentUser.email, 
+                        createdAt: window.serverTimestamp()
                     });
                     recordedAudioBlob = null;
                     loadChatMessages();
@@ -503,7 +523,12 @@
                         <span class="text-[10px] text-zinc-500 mb-1 px-1">${c.email.split('@')[0]}</span>
                         <div class="max-w-[78%] bg-zinc-900 p-3.5 rounded-2xl border border-zinc-800 text-sm shadow-sm">
                             ${c.text ? `<p class="text-zinc-100">${c.text}</p>` : ''}
-                            ${c.audio ? `<audio controls class="w-full h-8 mt-1"><source src="${c.audio}" type="audio/webm"></audio>` : ''}
+                            ${c.audio ? `
+                                <div class="flex items-center gap-2 mt-1">
+                                    <audio controls class="w-48 h-8"><source src="${c.audio}" type="audio/webm"></audio>
+                                    <span class="text-[10px] text-yellow-400 font-semibold">${c.duration || '0:03'}s</span>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -520,45 +545,47 @@
             });
         }
 
-        async function renderProfile() {
+        function renderProfile() {
             const user = window.auth.currentUser;
-            let userData = { name: user.email.split('@')[0], bio: "Exploring Roxchat ✨", photo: "", language: "en" };
-            
-            try {
-                const userDoc = await window.getDoc(window.doc(window.db, "users", user.uid));
-                if (userDoc.exists()) {
-                    userData = userDoc.data();
-                    currentLanguage = userData.language || "en";
-                }
-            } catch(e) {}
+            if (!cachedUserData) {
+                cachedUserData = { name: user.email.split('@')[0], bio: "Exploring Roxchat ✨", photo: "", language: "en" };
+            }
+
+            const userData = cachedUserData;
+            currentLanguage = userData.language || "en";
 
             document.getElementById('app').innerHTML = `
                 <div class="p-4 pb-24">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="font-bold text-lg truncate text-zinc-100">${userData.name || user.email.split('@')[0]}</h2>
+                        <h2 id="profileNameHeader" class="font-bold text-lg truncate text-zinc-100">${userData.name}</h2>
                         <button onclick="window.signOut(window.auth)" class="text-yellow-400 text-xs font-semibold border border-yellow-400/30 px-3.5 py-1.5 rounded-xl hover:bg-yellow-400/10 transition">Log Out</button>
                     </div>
                     
-                    <!-- Instagram Style Profile Header Section -->
+                    <!-- Profile Header -->
                     <div class="flex items-center gap-4 mb-4 bg-zinc-950 p-4 rounded-2xl border border-zinc-900">
-                        <div class="w-20 h-20 bg-yellow-400 text-black rounded-full overflow-hidden flex items-center justify-center text-2xl font-bold shadow-lg border-2 border-yellow-400">
-                            ${userData.photo ? `<img src="${userData.photo}" class="w-full h-full object-cover">` : user.email[0].toUpperCase()}
+                        <div id="profileAvatarContainer" class="w-20 h-20 bg-yellow-400 text-black rounded-full overflow-hidden flex items-center justify-center text-2xl font-bold shadow-lg border-2 border-yellow-400">
+                            ${userData.photo ? `<img src="${userData.photo}" class="w-full h-full object-cover">` : userData.name[0].toUpperCase()}
                         </div>
                         <div class="flex gap-4 text-center flex-1 justify-around">
                             <div><p class="font-bold text-base text-zinc-100">Posts</p><p class="text-xs text-zinc-400">Active</p></div>
                         </div>
                     </div>
                     <div class="mb-5 px-1">
-                        <p class="text-xs font-bold text-zinc-100">${userData.name || user.email.split('@')[0]}</p>
-                        <p class="text-xs text-zinc-400 mt-1">${userData.bio || 'Exploring Roxchat ✨'}</p>
+                        <p id="profileNameDisplay" class="text-xs font-bold text-zinc-100">${userData.name}</p>
+                        <p id="profileBioDisplay" class="text-xs text-zinc-400 mt-1">${userData.bio || 'Exploring Roxchat ✨'}</p>
                     </div>
 
-                    <!-- Edit Profile Section (Instagram Style) -->
+                    <!-- Edit Profile Section with File Upload -->
                     <div class="bg-zinc-950 border border-zinc-900 p-4 rounded-2xl space-y-3 mb-4">
                         <p class="text-xs font-bold text-yellow-400 mb-1 flex items-center gap-2"><i class="fa-solid fa-user-pen"></i> Edit Profile & Picture</p>
-                        <input type="text" id="editName" value="${userData.name || ''}" placeholder="Your Name" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-xs text-white focus:outline-none focus:border-yellow-400">
+                        <input type="text" id="editName" value="${userData.name || ''}" placeholder="Your Username" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-xs text-white focus:outline-none focus:border-yellow-400">
                         <input type="text" id="editBio" value="${userData.bio || ''}" placeholder="Your Bio / Thoughts" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-xs text-white focus:outline-none focus:border-yellow-400">
-                        <input type="text" id="editPhoto" value="${userData.photo || ''}" placeholder="Profile Image URL" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-xs text-white focus:outline-none focus:border-yellow-400">
+                        
+                        <div class="space-y-1">
+                            <label class="text-[11px] text-zinc-400">Upload Profile Picture:</label>
+                            <input type="file" id="editPhotoFile" accept="image/*" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-xs text-zinc-300 focus:outline-none file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-yellow-400 file:text-black hover:file:bg-yellow-500">
+                        </div>
+
                         <button onclick="updateProfileData()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-xs transition">Save Profile Changes</button>
                     </div>
 
@@ -590,6 +617,25 @@
                     </div>
                 </div>
             `;
+
+            window.getDoc(window.doc(window.db, "users", user.uid)).then(userDoc => {
+                if (userDoc.exists()) {
+                    cachedUserData = userDoc.data();
+                    currentLanguage = cachedUserData.language || "en";
+                    
+                    const nameH = document.getElementById('profileNameHeader');
+                    const nameD = document.getElementById('profileNameDisplay');
+                    const bioD = document.getElementById('profileBioDisplay');
+                    const avatarC = document.getElementById('profileAvatarContainer');
+                    
+                    if (nameH) nameH.innerText = cachedUserData.name;
+                    if (nameD) nameD.innerText = cachedUserData.name;
+                    if (bioD) bioD.innerText = cachedUserData.bio || 'Exploring Roxchat ✨';
+                    if (avatarC) {
+                        avatarC.innerHTML = cachedUserData.photo ? `<img src="${cachedUserData.photo}" class="w-full h-full object-cover">` : cachedUserData.name[0].toUpperCase();
+                    }
+                }
+            }).catch(e => {});
         }
 
         async function updateLanguageSetting() {
@@ -600,6 +646,7 @@
                     language: selectedLang
                 }, { merge: true });
                 currentLanguage = selectedLang;
+                if (cachedUserData) cachedUserData.language = selectedLang;
                 alert("Language setting updated successfully!");
                 renderProfile();
             } catch (error) {
@@ -608,18 +655,44 @@
         }
 
         async function updateProfileData() {
-            const name = document.getElementById('editName').value.trim();
+            const name = document.getElementById('editName').value.trim().toLowerCase();
             const bio = document.getElementById('editBio').value.trim();
-            const photo = document.getElementById('editPhoto').value.trim();
+            const photoFile = document.getElementById('editPhotoFile').files[0];
             const user = window.auth.currentUser;
 
+            if (!name) return alert("Username cannot be empty!");
+
             try {
-                await window.setDoc(window.doc(window.db, "users", user.uid), {
+                const q = window.query(window.collection(window.db, "users"), window.where("name", "==", name));
+                const querySnapshot = await window.getDocs(q);
+                let isTaken = false;
+                querySnapshot.forEach(docSnap => {
+                    if (docSnap.id !== user.uid) {
+                        isTaken = true;
+                    }
+                });
+
+                if (isTaken) {
+                    return alert("This username is already taken by another user. Please choose a different one!");
+                }
+
+                let photoBase64 = "";
+                if (photoFile) {
+                    photoBase64 = await blobToBase64(photoFile);
+                }
+
+                const updateData = {
                     email: user.email,
                     name: name,
-                    bio: bio,
-                    photo: photo
-                }, { merge: true });
+                    bio: bio
+                };
+                if (photoBase64) {
+                    updateData.photo = photoBase64;
+                }
+
+                await window.setDoc(window.doc(window.db, "users", user.uid), updateData, { merge: true });
+                cachedUserData = { ...cachedUserData, ...updateData };
+
                 alert("Profile and Picture updated successfully!");
                 renderProfile();
             } catch (error) {
