@@ -4,16 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Roxchat - Social Media</title>
-    <link rel="manifest" href="./manifest.json">
     <style>
-        body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; max-width: 400px; margin-bottom: 20px; }
-        input, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { background: #075e54; color: white; border: none; cursor: pointer; font-weight: bold; }
-        button:hover { background: #054c43; }
+        :root {
+            --primary-color: #075e54;
+            --primary-hover: #054c43;
+            --bg-color: #f0f2f5;
+            --white: #ffffff;
+            --border-color: #ddd;
+            --text-color: #333;
+        }
+        body { font-family: Arial, sans-serif; background: var(--bg-color); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; color: var(--text-color); }
+        .container { background: var(--white); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; max-width: 450px; margin-bottom: 20px; }
+        input, textarea, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid var(--border-color); border-radius: 4px; box-sizing: border-box; }
+        button { background: var(--primary-color); color: var(--white); border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: var(--primary-hover); }
         .hidden { display: none; }
-        .post, .notification { background: #fafafa; border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 4px; }
-        .header-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 400px; margin-bottom: 10px; }
+        .post, .notification, .story-item { background: #fafafa; border: 1px solid var(--border-color); padding: 12px; margin-top: 10px; border-radius: 6px; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 450px; margin-bottom: 10px; }
+        .comment-section { margin-top: 8px; border-top: 1px dashed #eee; padding-top: 8px; font-size: 14px; }
+        .stories-container { display: flex; gap: 10px; overflow-x: auto; padding: 5px 0; width: 100%; max-width: 450px; margin-bottom: 15px; }
+        .story-bubble { min-width: 70px; height: 70px; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer; font-size: 12px; text-align: center; padding: 2px; }
+        .story-inner { background: white; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #333; overflow: hidden; text-overflow: ellipsis; }
+        .nav-tabs { display: flex; justify-content: space-around; background: #fff; padding: 10px 0; border-radius: 6px; margin-bottom: 15px; border: 1px solid var(--border-color); width: 100%; max-width: 450px; }
+        .nav-tabs button { background: none; color: var(--primary-color); border: none; font-weight: bold; cursor: pointer; margin: 0; }
     </style>
 </head>
 <body>
@@ -28,34 +41,60 @@
     </div>
 
     <!-- Main App Section -->
-    <div id="app-container" class="container hidden">
+    <div id="app-container" class="container hidden" style="max-width: 450px;">
         <div class="header-bar">
             <h3 id="welcome-user">Welcome</h3>
             <button onclick="handleLogout()" style="width: auto; padding: 5px 10px; background: #d9534f;">Logout</button>
         </div>
 
-        <hr>
-        <h4>Create Post</h4>
-        <input type="text" id="post-caption" placeholder="What's on your mind?">
-        <button onclick="handleCreatePost()">Post</button>
+        <div class="nav-tabs">
+            <button onclick="switchTab('feed')">🏠 Feed</button>
+            <button onclick="switchTab('stories')">⭕ Stories</button>
+            <button onclick="switchTab('notifications')">🔔 Alerts</button>
+        </div>
 
-        <h4>Feed</h4>
-        <div id="feed-container"></div>
+        <!-- Feed Tab -->
+        <div id="tab-feed">
+            <h4>Create Post</h4>
+            <textarea id="post-caption" placeholder="What's on your mind?"></textarea>
+            <button onclick="handleCreatePost()">Post</button>
+            <h4>Feed</h4>
+            <div id="feed-container"></div>
+        </div>
 
-        <h4>Notifications</h4>
-        <div id="notification-container"></div>
+        <!-- Stories Tab -->
+        <div id="tab-stories" class="hidden">
+            <h4>Add Story</h4>
+            <input type="text" id="story-text" placeholder="Story text/update...">
+            <button onclick="handleCreateStory()">Share Story</button>
+            <h4>Active Stories</h4>
+            <div id="stories-flex" class="stories-container"></div>
+            <div id="story-viewer" style="margin-top: 15px; font-weight: bold; text-align: center;"></div>
+        </div>
+
+        <!-- Notifications Tab -->
+        <div id="tab-notifications" class="hidden">
+            <h4>Notifications</h4>
+            <div id="notification-container"></div>
+        </div>
     </div>
 
     <script>
-        // --- RoxChat Core Logic (Converted from Swift) ---
         class RoxChatApp {
             constructor() {
-                this.users = [];
-                this.currentUser = null;
-                this.posts = [];
-                this.notifications = [];
-                this.friendRequests = [];
-                this.messages = [];
+                this.users = JSON.parse(localStorage.getItem('rox_users')) || [];
+                this.currentUser = JSON.parse(localStorage.getItem('rox_current')) || null;
+                this.posts = JSON.parse(localStorage.getItem('rox_posts')) || [];
+                this.notifications = JSON.parse(localStorage.getItem('rox_notifs')) || [];
+                this.stories = JSON.parse(localStorage.getItem('rox_stories')) || [];
+            }
+
+            saveData() {
+                localStorage.setItem('rox_users', JSON.stringify(this.users));
+                localStorage.setItem('rox_current', JSON.stringify(this.currentUser));
+                localStorage.setItem('rox_posts', JSON.stringify(this.posts));
+                localStorage.setItem('rox_notifs', JSON.stringify(this.notifications));
+                localStorage.setItem('rox_stories', JSON.stringify(this.stories));
             }
 
             createAccount(username, password) {
@@ -63,7 +102,8 @@
                     alert("User already exists!");
                     return false;
                 }
-                this.users.push({ username, password, profilePic: "default.png", stories: [] });
+                this.users.push({ username, password });
+                this.saveData();
                 alert("Account created successfully for " + username);
                 return true;
             }
@@ -72,7 +112,7 @@
                 const user = this.users.find(u => u.username === username && u.password === password);
                 if (user) {
                     this.currentUser = user;
-                    alert("Login successful! Welcome " + username);
+                    this.saveData();
                     return true;
                 }
                 alert("Error: Invalid username or password.");
@@ -81,7 +121,7 @@
 
             logout() {
                 this.currentUser = null;
-                alert("Logged out successfully.");
+                localStorage.removeItem('rox_current');
             }
 
             createPost(caption) {
@@ -95,41 +135,79 @@
                 };
                 this.posts.unshift(newPost);
                 this.addNotification(this.currentUser.username, "You created a new post.");
+                this.saveData();
             }
 
             likePost(postId) {
                 if (!this.currentUser) return;
                 const post = this.posts.find(p => p.id === postId);
-                if (post && !post.likes.includes(this.currentUser.username)) {
-                    post.likes.push(this.currentUser.username);
-                    this.addNotification(post.author, `${this.currentUser.username} liked your post.`);
+                if (post) {
+                    const index = post.likes.indexOf(this.currentUser.username);
+                    if (index === -1) {
+                        post.likes.push(this.currentUser.username);
+                        if (post.author !== this.currentUser.username) {
+                            this.addNotification(post.author, `${this.currentUser.username} liked your post.`);
+                        }
+                    } else {
+                        post.likes.splice(index, 1);
+                    }
+                    this.saveData();
                 }
             }
 
+            addComment(postId, text) {
+                if (!this.currentUser || !text.trim()) return;
+                const post = this.posts.find(p => p.id === postId);
+                if (post) {
+                    post.comments.push({ author: this.currentUser.username, text: text });
+                    if (post.author !== this.currentUser.username) {
+                        this.addNotification(post.author, `${this.currentUser.username} commented on your post.`);
+                    }
+                    this.saveData();
+                }
+            }
+
+            createStory(text) {
+                if (!this.currentUser || !text.trim()) return;
+                this.stories.unshift({ id: Date.now(), author: this.currentUser.username, text: text });
+                this.saveData();
+            }
+
             addNotification(user, message) {
-                this.notifications.unshift({ user, message, isRead: false });
+                this.notifications.unshift({ user, message, time: new Date().toLocaleTimeString() });
+                this.saveData();
             }
         }
 
         const myApp = new RoxChatApp();
 
-        // --- UI Controllers ---
+        // Check active session on load
+        window.onload = function() {
+            if (myApp.currentUser) {
+                showAppUI(myApp.currentUser.username);
+            }
+        };
+
         function handleCreateAccount() {
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
             if(u && p) myApp.createAccount(u, p);
             else alert("Please fill all fields");
         }
 
         function handleLogin() {
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
             if (myApp.login(u, p)) {
-                document.getElementById('auth-container').classList.add('hidden');
-                document.getElementById('app-container').classList.remove('hidden');
-                document.getElementById('welcome-user').textContent = "Hello, " + u;
-                updateUI();
+                showAppUI(u);
             }
+        }
+
+        function showAppUI(username) {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('welcome-user').textContent = "Hello, " + username;
+            updateUI();
         }
 
         function handleLogout() {
@@ -152,16 +230,72 @@
             updateUI();
         }
 
+        function handleAddComment(postId) {
+            const inputField = document.getElementById(`comment-input-${postId}`);
+            if (inputField && inputField.value) {
+                myApp.addComment(postId, inputField.value);
+                inputField.value = '';
+                updateUI();
+            }
+        }
+
+        function handleCreateStory() {
+            const text = document.getElementById('story-text').value;
+            if (text) {
+                myApp.createStory(text);
+                document.getElementById('story-text').value = '';
+                updateUI();
+                alert("Story added successfully!");
+            }
+        }
+
+        function viewStory(text, author) {
+            document.getElementById('story-viewer').textContent = `${author}'s Story: "${text}"`;
+        }
+
+        function switchTab(tabName) {
+            document.getElementById('tab-feed').classList.add('hidden');
+            document.getElementById('tab-stories').classList.add('hidden');
+            document.getElementById('tab-notifications').classList.add('hidden');
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+        }
+
         function updateUI() {
             // Render Feed
             const feed = document.getElementById('feed-container');
             feed.innerHTML = '';
             myApp.posts.forEach(post => {
+                let commentsHtml = '';
+                post.comments.forEach(c => {
+                    commentsHtml += `<div><strong>@${c.author}:</strong> ${c.text}</div>`;
+                });
+
+                const isLiked = myApp.currentUser && post.likes.includes(myApp.currentUser.username);
+
                 feed.innerHTML += `
                     <div class="post">
                         <strong>@${post.author}</strong>
                         <p>${post.caption}</p>
-                        <button onclick="handleLike(${post.id})" style="width: auto; padding: 5px 10px;">❤️ Like (${post.likes.length})</button>
+                        <button onclick="handleLike(${post.id})" style="width: auto; padding: 5px 10px; background: ${isLiked ? '#c9302c' : '#075e54'};">
+                            ❤️ Like (${post.likes.length})
+                        </button>
+                        <div class="comment-section">
+                            <div style="margin-bottom: 5px;"><strong>Comments:</strong></div>
+                            ${commentsHtml}
+                            <input type="text" id="comment-input-${post.id}" placeholder="Write a comment..." style="margin: 4px 0; padding: 6px;">
+                            <button onclick="handleAddComment(${post.id})" style="width: auto; padding: 4px 8px; font-size: 12px;">Comment</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Render Stories
+            const storiesFlex = document.getElementById('stories-flex');
+            storiesFlex.innerHTML = '';
+            myApp.stories.forEach(story => {
+                storiesFlex.innerHTML += `
+                    <div class="story-bubble" onclick="viewStory('${story.text}', '${story.author}')">
+                        <div class="story-inner">${story.author}</div>
                     </div>
                 `;
             });
@@ -170,13 +304,8 @@
             const notif = document.getElementById('notification-container');
             notif.innerHTML = '';
             myApp.notifications.forEach(n => {
-                notif.innerHTML += `<div class="notification"><small>${n.message}</small></div>`;
+                notif.innerHTML += `<div class="notification"><small>[${n.time}]</small> <div>${n.message}</div></div>`;
             });
-        }
-
-        // Service Worker for PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js').then(() => console.log('Service Worker Registered'));
         }
     </script>
 </body>
