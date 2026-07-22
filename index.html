@@ -122,16 +122,17 @@
                 <div id="stories-container" style="display:flex; gap:10px; overflow-x:auto; margin-top:10px;"></div>
             </div>
 
-            <!-- Post Section with Voice Note -->
+            <!-- Post Section with Voice Note & Timer -->
             <div class="container">
                 <h4>Create Post / Voice Note</h4>
                 <textarea id="post-caption" placeholder="What's on your mind?"></textarea>
                 <input type="text" id="post-media-url" placeholder="Image URL (Optional)...">
                 
-                <!-- Voice Recorder Controls -->
-                <div style="margin: 8px 0; display:flex; gap:10px;">
-                    <button type="button" onclick="startVoiceRecord()" style="background:#333;"><i class="fa-solid fa-microphone"></i> Record</button>
-                    <button type="button" onclick="stopVoiceRecord()" style="background:red;" id="stop-rec-btn" class="hidden"><i class="fa-solid fa-stop"></i> Stop</button>
+                <!-- Voice Recorder & Timer Controls -->
+                <div style="margin: 8px 0; display:flex; gap:10px; align-items:center;">
+                    <button type="button" onclick="startVoiceRecord()" style="background:#333; width:auto; padding:10px 15px;"><i class="fa-solid fa-microphone"></i> Record</button>
+                    <button type="button" onclick="stopVoiceRecord()" style="background:red; width:auto; padding:10px 15px;" id="stop-rec-btn" class="hidden"><i class="fa-solid fa-stop"></i> Stop</button>
+                    <span id="timer-display" style="font-weight:bold; color:red; font-size:16px;">00:00</span>
                 </div>
                 <p id="rec-status" style="font-size:12px; color:gray;"></p>
                 <audio id="audio-preview" controls class="hidden" style="width:100%; margin:5px 0;"></audio>
@@ -172,6 +173,8 @@
         let mediaRecorder;
         let audioChunks = [];
         let recordedAudioBlobUrl = "";
+        let timerInterval;
+        let secondsElapsed = 0;
 
         function toggleDarkMode() {
             let current = document.body.getAttribute('data-theme');
@@ -224,31 +227,47 @@
             if(tab === 'profile') document.getElementById('tab-profile').classList.remove('hidden');
         }
 
-        // --- VOICE RECORDER FUNCTIONS ---
+        // --- VOICE RECORDER WITH TIMER ---
         async function startVoiceRecord() {
             audioChunks = [];
+            secondsElapsed = 0;
+            document.getElementById('timer-display').innerText = "00:00";
+            
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
+                
                 mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                
                 mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    clearInterval(timerInterval);
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/mp4' }); // iOS compatible format
                     recordedAudioBlobUrl = URL.createObjectURL(audioBlob);
                     const preview = document.getElementById('audio-preview');
                     preview.src = recordedAudioBlobUrl;
                     preview.classList.remove('hidden');
-                    document.getElementById('rec-status').innerText = "Voice recorded successfully! You can play it below.";
+                    document.getElementById('rec-status').innerText = `Voice recorded (${secondsElapsed} seconds). Play above to check!`;
                 };
+
                 mediaRecorder.start();
-                document.getElementById('rec-status').innerText = "Recording voice...";
                 document.getElementById('stop-rec-btn').classList.remove('hidden');
+                document.getElementById('rec-status').innerText = "Recording...";
+
+                // Start Timer
+                timerInterval = setInterval(() => {
+                    secondsElapsed++;
+                    let mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+                    let secs = (secondsElapsed % 60).toString().padStart(2, '0');
+                    document.getElementById('timer-display').innerText = `${mins}:${secs}`;
+                }, 1000);
+
             } catch (err) {
                 alert("Microphone permission denied or not supported.");
             }
         }
 
         function stopVoiceRecord() {
-            if (mediaRecorder) {
+            if (mediaRecorder && mediaRecorder.state !== "inactive") {
                 mediaRecorder.stop();
                 document.getElementById('stop-rec-btn').classList.add('hidden');
             }
@@ -268,6 +287,7 @@
                     caption, 
                     mediaUrl, 
                     audioUrl: recordedAudioBlobUrl || "", 
+                    audioDuration: secondsElapsed,
                     likes: [], 
                     timestamp: Date.now()
                 });
@@ -275,7 +295,9 @@
                 document.getElementById('post-media-url').value = '';
                 document.getElementById('audio-preview').classList.add('hidden');
                 document.getElementById('rec-status').innerText = '';
+                document.getElementById('timer-display').innerText = "00:00";
                 recordedAudioBlobUrl = "";
+                secondsElapsed = 0;
                 loadPosts();
             } catch(e) { alert(e.message); }
         }
@@ -289,7 +311,11 @@
                 const post = docSnap.data();
                 const postId = docSnap.id;
                 let media = post.mediaUrl ? `<img src="${post.mediaUrl}" class="post-media">` : '';
-                let audio = post.audioUrl ? `<audio controls src="${post.audioUrl}" style="width:100%; margin-top:8px;"></audio>` : '';
+                let audio = post.audioUrl ? `
+                    <div style="margin-top:8px; background:rgba(255,255,255,0.05); padding:8px; border-radius:6px;">
+                        <span style="font-size:12px; color:var(--primary-color);">🎤 Voice Note (${post.audioDuration || 0}s)</span>
+                        <audio controls src="${post.audioUrl}" style="width:100%; margin-top:4px;"></audio>
+                    </div>` : '';
                 container.innerHTML += `
                     <div class="post">
                         <div style="font-weight:bold; margin-bottom:5px;">@${post.author.split('@')[0]}</div>
