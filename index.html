@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Roxchat</title>
-    <!-- PWABuilder Manifest & Meta Tags with Custom Icon support -->
-    <meta name="description" content="Roxchat App">
+    <meta name="description" content="Instagram clone with Firebase">
     <meta name="theme-color" content="#000000">
-    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Roxchat%22%2C%22short_name%22%3A%22Roxchat%22%2C%22description%22%3A%22Instagram%20clone%20with%20Firebase%22%2C%22start_url%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%23000000%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22YOUR_LOGO_IMAGE_URL_HERE%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2png%22%7D%5D%7D">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -302,7 +300,7 @@
         }
 
         async function sendChatMessage() {
-            const text = document.getElementById('chatInput.value');
+            const text = document.getElementById('chatInput').value;
             if (!text) return;
 
             await window.addDoc(window.collection(window.db, "chats"), {
@@ -349,7 +347,7 @@
                         <h2 class="font-bold text-lg truncate">${window.auth.currentUser?.email.split('@')[0]}</h2>
                         <button onclick="window.signOut(window.auth)" class="text-red-500 text-xs font-semibold border border-red-500/30 px-3 py-1.5 rounded-md">Log Out</button>
                     </div>
-                    <div class="flex items-center gap-6 mb-4">
+                    <div class="flex items-center gap-2 mb-4">
                         <div class="w-20 h-20 bg-zinc-800 rounded-full flex items-center justify-center text-2xl font-bold">${window.auth.currentUser?.email[0].toUpperCase()}</div>
                         <div class="flex gap-6 text-center flex-1 justify-around">
                             <div><p class="font-bold">1</p><p class="text-xs text-zinc-400">Posts</p></div>
