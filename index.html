@@ -2,405 +2,376 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Roxchat – Voice & Chat Online</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roxchat Instagram Clone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase SDKs & Initialization -->
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-black text-white font-sans antialiased selection:bg-pink-500 selection:text-white">
+    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col justify-between pb-16 relative">
+        <!-- Dynamic App Container -->
+    </div>
+
+    <!-- Instagram Style Bottom Navigation Bar -->
+    <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-black border-t border-zinc-900 flex justify-around py-3 z-50">
+        <button onclick="switchTab('home')" class="text-white text-xl"><i class="fa-solid fa-house"></i></button>
+        <button onclick="switchTab('explore')" class="text-zinc-400 text-xl"><i class="fa-solid fa-magnifying-glass"></i></button>
+        <button onclick="switchTab('reels')" class="text-zinc-400 text-xl"><i class="fa-solid fa-clapperboard"></i></button>
+        <button onclick="switchTab('chat')" class="text-zinc-400 text-xl"><i class="fa-solid fa-comment-dots"></i></button>
+        <button onclick="switchTab('profile')" class="text-zinc-400 text-xl"><i class="fa-solid fa-user"></i></button>
+    </nav>
+
+    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyAaqyhWJg8QmFzB4xKR5sJT8UetZEqZGrs",
+            apiKey: "AIzaSyD...",
             authDomain: "roxchat-529a0.firebaseapp.com",
             projectId: "roxchat-529a0",
-            storageBucket: "roxchat-529a0.firebasestorage.app",
-            messagingSenderId: "711075232006",
-            appId: "1:711075232006:web:0f52e8d2eb707573ae8687",
-            measurementId: "G-1JCBDGNB45"
+            storageBucket: "roxchat-529a0.appspot.com",
+            messagingSenderId: "...",
+            appId: "..."
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        window.firebaseAuth = auth;
-        window.firebaseDb = db;
-        window.fbCreateUser = createUserWithEmailAndPassword;
-        window.fbSignIn = signInWithEmailAndPassword;
-        window.fbSignOut = signOut;
-        window.fbCollection = collection;
-        window.fbAddDoc = addDoc;
-        window.fbGetDocs = getDocs;
-        window.fbOnSnapshot = onSnapshot;
-        window.fbQuery = query;
-        window.fbOrderBy = orderBy;
-        window.fbDoc = doc;
-        window.fbUpdateDoc = updateDoc;
-        window.fbArrayUnion = arrayUnion;
+        window.auth = auth;
+        window.db = db;
+        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.signOut = signOut;
+        window.addDoc = addDoc;
+        window.getDocs = getDocs;
+        window.collection = collection;
+        window.query = query;
+        window.orderBy = orderBy;
+        window.serverTimestamp = serverTimestamp;
+        window.doc = doc;
+        window.setDoc = setDoc;
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                showAppUI(user);
+                document.getElementById('bottomNav').classList.remove('hidden');
+                switchTab('home');
             } else {
-                handleLogoutUI();
+                document.getElementById('bottomNav').classList.add('hidden');
+                renderLogin();
             }
         });
     </script>
 
-    <style>
-        :root {
-            --primary-color: #0095f6;
-            --bg-color: #000000;
-            --border-color: #262626;
-            --text-color: #f5f5f5;
-            --card-bg: #121212;
-        }
-        [data-theme="light"] {
-            --bg-color: #fafafa;
-            --border-color: #dbdbdb;
-            --text-color: #262626;
-            --card-bg: #ffffff;
-        }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-color); margin: 0; padding: 0 0 70px 0; display: flex; flex-direction: column; align-items: center; color: var(--text-color); }
-        .container { background: var(--card-bg); padding: 15px; border-radius: 8px; width: 100%; max-width: 450px; margin-bottom: 15px; border: 1px solid var(--border-color); box-sizing: border-box; }
-        input, textarea, button { width: 100%; padding: 10px; margin: 6px 0; border: 1px solid var(--border-color); border-radius: 6px; background: var(--card-bg); color: var(--text-color); font-size: 16px; box-sizing: border-box; }
-        button { background: var(--primary-color); color: #fff; border: none; cursor: pointer; font-weight: bold; }
-        .hidden { display: none !important; }
-        .post { background: var(--card-bg); border: 1px solid var(--border-color); padding: 12px; margin-top: 10px; border-radius: 6px; }
-        .header-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 450px; margin: 10px 0; padding: 0 15px; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 12px 0; z-index: 1000; }
-        .bottom-nav-item { background: none; border: none; color: var(--text-color); font-size: 22px; cursor: pointer; width: auto; margin: 0; padding: 0; }
-        .post-media { width: 100%; max-height: 400px; object-fit: cover; border-radius: 4px; margin-top: 8px; }
-        .chat-box { height: 250px; overflow-y: auto; border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-        .msg { padding: 8px 12px; border-radius: 12px; max-width: 75%; font-size: 14px; }
-        .msg-my { background: var(--primary-color); color: #fff; align-self: flex-end; }
-        .msg-other { background: var(--border-color); color: var(--text-color); align-self: flex-start; }
-    </style>
-</head>
-<body data-theme="dark">
-
-    <!-- Auth Section -->
-    <div id="auth-container" class="container" style="margin-top: 40px;">
-        <h2>Roxchat Social</h2>
-        <div id="register-form">
-            <h3>Sign Up</h3>
-            <input type="email" id="reg-email" placeholder="Email">
-            <input type="password" id="reg-password" placeholder="Password">
-            <button onclick="handleRegister()">Sign Up</button>
-            <p onclick="toggleAuthMode()" style="color:var(--primary-color); cursor:pointer; font-size:14px; text-align:center;">Have an account? Log in</p>
-        </div>
-        <div id="login-form" class="hidden">
-            <h3>Log In</h3>
-            <input type="email" id="login-email" placeholder="Email">
-            <input type="password" id="login-password" placeholder="Password">
-            <button onclick="handleLogin()">Log In</button>
-            <p onclick="toggleAuthMode()" style="color:var(--primary-color); cursor:pointer; font-size:14px; text-align:center;">Don't have an account? Sign up</p>
-        </div>
-    </div>
-
-    <!-- Main App Container -->
-    <div id="app-container" class="hidden" style="width: 100%; max-width: 450px; display: flex; flex-direction: column; align-items: center;">
-        
-        <div class="header-bar">
-            <div style="font-weight:bold; font-size:24px; letter-spacing:1px;">Roxchat</div>
-            <div style="display:flex; gap:15px; align-items:center;">
-                <i class="fa-solid fa-circle-half-stroke" onclick="toggleDarkMode()" style="cursor:pointer; font-size:20px;"></i>
-                <i class="fa-solid fa-right-from-bracket" onclick="handleLogout()" style="cursor:pointer; font-size:20px; color:red;"></i>
-            </div>
-        </div>
-
-        <!-- TAB 1: FEED & STORIES -->
-        <div id="tab-feed" class="container" style="border:none; background:transparent; padding:0;">
-            <!-- Story Section -->
-            <div class="container">
-                <h4>Create Story (24h Limit)</h4>
-                <input type="text" id="story-url" placeholder="Story Image URL...">
-                <button onclick="handleCreateStory()">Add Story</button>
-                <div id="stories-container" style="display:flex; gap:10px; overflow-x:auto; margin-top:10px;"></div>
-            </div>
-
-            <!-- Post Section with Voice Note & Timer -->
-            <div class="container">
-                <h4>Create Post / Voice Note</h4>
-                <textarea id="post-caption" placeholder="What's on your mind?"></textarea>
-                <input type="text" id="post-media-url" placeholder="Image URL (Optional)...">
-                
-                <!-- Voice Recorder & Timer Controls -->
-                <div style="margin: 8px 0; display:flex; gap:10px; align-items:center;">
-                    <button type="button" onclick="startVoiceRecord()" style="background:#333; width:auto; padding:10px 15px;"><i class="fa-solid fa-microphone"></i> Record</button>
-                    <button type="button" onclick="stopVoiceRecord()" style="background:red; width:auto; padding:10px 15px;" id="stop-rec-btn" class="hidden"><i class="fa-solid fa-stop"></i> Stop</button>
-                    <span id="timer-display" style="font-weight:bold; color:red; font-size:16px;">00:00</span>
-                </div>
-                <p id="rec-status" style="font-size:12px; color:gray;"></p>
-                <audio id="audio-preview" controls class="hidden" style="width:100%; margin:5px 0;"></audio>
-
-                <button onclick="handleCreatePost()">Share Post</button>
-            </div>
-            
-            <div id="feed-container"></div>
-        </div>
-
-        <!-- TAB 2: CHAT / INBOX -->
-        <div id="tab-chat" class="container hidden" style="border:none; background:transparent; padding:0;">
-            <div class="container">
-                <h4>Live Inbox Chat</h4>
-                <div id="chat-messages" class="chat-box"></div>
-                <input type="text" id="chat-input" placeholder="Type a message...">
-                <button onclick="sendChatMessage()">Send Message</button>
-            </div>
-        </div>
-
-        <!-- TAB 3: PROFILE -->
-        <div id="tab-profile" class="container hidden" style="text-align:center;">
-            <h3>My Profile</h3>
-            <i class="fa-solid fa-user-circle" style="font-size:80px; color:var(--primary-color); margin:10px 0;"></i>
-            <p id="profile-email" style="font-weight:bold;"></p>
-            <p style="font-size:14px; color:gray;">Active Online Account</p>
-        </div>
-
-        <!-- Bottom Navigation -->
-        <div class="bottom-nav">
-            <button class="bottom-nav-item" onclick="switchTab('feed')"><i class="fa-solid fa-house"></i></button>
-            <button class="bottom-nav-item" onclick="switchTab('chat')"><i class="fa-solid fa-comments"></i></button>
-            <button class="bottom-nav-item" onclick="switchTab('profile')"><i class="fa-solid fa-user"></i></button>
-        </div>
-    </div>
-
     <script>
+        let currentTab = 'home';
         let mediaRecorder;
         let audioChunks = [];
-        let recordedAudioBlobUrl = "";
-        let timerInterval;
-        let secondsElapsed = 0;
+        let recordedAudioBlob = null;
 
-        function toggleDarkMode() {
-            let current = document.body.getAttribute('data-theme');
-            let next = current === 'dark' ? 'light' : 'dark';
-            document.body.setAttribute('data-theme', next);
+        function switchTab(tab) {
+            currentTab = tab;
+            if (tab === 'home') renderHome();
+            else if (tab === 'explore') renderExplore();
+            else if (tab === 'reels') renderReels();
+            else if (tab === 'chat') renderChat();
+            else if (tab === 'profile') renderProfile();
         }
 
-        function toggleAuthMode() {
-            document.getElementById('register-form').classList.toggle('hidden');
-            document.getElementById('login-form').classList.toggle('hidden');
-        }
-
-        async function handleRegister() {
-            try {
-                await window.fbCreateUser(window.firebaseAuth, document.getElementById('reg-email').value, document.getElementById('reg-password').value);
-                alert("Account created successfully!");
-            } catch (e) { alert(e.message); }
+        // --- LOGIN & SIGNUP SCREEN ---
+        function renderLogin(isSignup = false) {
+            document.getElementById('app').innerHTML = `
+                <div class="p-8 flex flex-col justify-center min-h-screen">
+                    <div class="text-center mb-8">
+                        <h1 class="text-4xl font-serif italic tracking-wider font-bold bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500 bg-clip-text text-transparent">Roxchat</h1>
+                    </div>
+                    <div class="space-y-3">
+                        <input type="email" id="email" placeholder="Phone number, username, or email" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-md text-sm text-white focus:outline-none focus:border-zinc-600">
+                        <input type="password" id="password" placeholder="Password" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-md text-sm text-white focus:outline-none focus:border-zinc-600">
+                        <button onclick="${isSignup ? 'handleSignup()' : 'handleLogin()'}" class="w-full bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-md font-semibold text-sm transition">${isSignup ? 'Sign Up' : 'Log In'}</button>
+                    </div>
+                    <div class="mt-6 text-center">
+                        <p class="text-xs text-zinc-400 cursor-pointer" onclick="renderLogin(${!isSignup})">
+                            ${isSignup ? 'Have an account? <span class="text-blue-400 font-semibold">Log in</span>' : "Don't have an account? <span class="text-blue-400 font-semibold">Sign up</span>"}
+                        </p>
+                    </div>
+                </div>
+            `;
         }
 
         async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
             try {
-                await window.fbSignIn(window.firebaseAuth, document.getElementById('login-email').value, document.getElementById('login-password').value);
-            } catch (e) { alert(e.message); }
+                await window.signInWithEmailAndPassword(window.auth, email, password);
+            } catch (error) {
+                alert("Login Error: " + error.message);
+            }
         }
 
-        async function handleLogout() {
-            await window.fbSignOut(window.firebaseAuth);
+        async function handleSignup() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            try {
+                const res = await window.createUserWithEmailAndPassword(window.auth, email, password);
+                await window.setDoc(window.doc(window.db, "users", res.user.uid), { email: email, bio: "Digital creator ✨" });
+            } catch (error) {
+                alert("Signup Error: " + error.message);
+            }
         }
 
-        function showAppUI(user) {
-            document.getElementById('auth-container').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
-            document.getElementById('profile-email').innerText = user.email;
+        // --- HOME / FEED & STORIES ---
+        function renderHome() {
+            document.getElementById('app').innerHTML = `
+                <div class="pb-20">
+                    <div class="flex justify-between items-center px-4 py-3 border-b border-zinc-900 sticky top-0 bg-black z-40">
+                        <h1 class="text-2xl font-serif italic font-bold tracking-wide">Roxchat</h1>
+                        <div class="flex gap-5 text-xl">
+                            <i class="fa-regular fa-heart cursor-pointer"></i>
+                            <i class="fa-regular fa-paper-plane cursor-pointer" onclick="switchTab('chat')"></i>
+                        </div>
+                    </div>
+
+                    <!-- Stories Section -->
+                    <div class="flex gap-3 px-4 py-3 overflow-x-auto border-b border-zinc-900 no-scrollbar">
+                        <div class="flex flex-col items-center flex-shrink-0 cursor-pointer" onclick="createStory()">
+                            <div class="w-16 h-16 rounded-full border-2 border-dashed border-zinc-600 flex items-center justify-center text-lg bg-zinc-900">+</div>
+                            <span class="text-[11px] mt-1 text-zinc-400">Your Story</span>
+                        </div>
+                        <div id="storiesList" class="flex gap-3"></div>
+                    </div>
+
+                    <!-- Post Upload Box -->
+                    <div class="p-4 border-b border-zinc-900 bg-zinc-950">
+                        <textarea id="postText" placeholder="What's on your mind?" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white text-sm mb-3 resize-none focus:outline-none"></textarea>
+                        <input type="text" id="postImgUrl" placeholder="Image URL (Optional)" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-lg text-white text-xs mb-3 focus:outline-none">
+                        <button onclick="sharePost()" class="w-full bg-blue-500 hover:bg-blue-600 py-2.5 rounded-lg font-semibold text-sm transition">Share Post</button>
+                    </div>
+
+                    <!-- Posts Feed -->
+                    <div id="postsFeed" class="divide-y divide-zinc-900">
+                        <div class="text-center py-8 text-zinc-500 text-sm">Loading feed...</div>
+                    </div>
+                </div>
+            `;
             loadPosts();
             loadStories();
-            loadChatMessages();
         }
 
-        function handleLogoutUI() {
-            document.getElementById('auth-container').classList.remove('hidden');
-            document.getElementById('app-container').classList.add('hidden');
-        }
+        async function sharePost() {
+            const text = document.getElementById('postText').value;
+            const image = document.getElementById('postImgUrl').value;
+            if (!text && !image) return alert("Please add text or image!");
 
-        function switchTab(tab) {
-            document.getElementById('tab-feed').classList.add('hidden');
-            document.getElementById('tab-chat').classList.add('hidden');
-            document.getElementById('tab-profile').classList.add('hidden');
-            if(tab === 'feed') document.getElementById('tab-feed').classList.remove('hidden');
-            if(tab === 'chat') document.getElementById('tab-chat').classList.remove('hidden');
-            if(tab === 'profile') document.getElementById('tab-profile').classList.remove('hidden');
-        }
-
-        // --- VOICE RECORDER WITH TIMER ---
-        async function startVoiceRecord() {
-            audioChunks = [];
-            secondsElapsed = 0;
-            document.getElementById('timer-display').innerText = "00:00";
-            
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                
-                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                
-                mediaRecorder.onstop = () => {
-                    clearInterval(timerInterval);
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/mp4' }); // iOS compatible format
-                    recordedAudioBlobUrl = URL.createObjectURL(audioBlob);
-                    const preview = document.getElementById('audio-preview');
-                    preview.src = recordedAudioBlobUrl;
-                    preview.classList.remove('hidden');
-                    document.getElementById('rec-status').innerText = `Voice recorded (${secondsElapsed} seconds). Play above to check!`;
-                };
-
-                mediaRecorder.start();
-                document.getElementById('stop-rec-btn').classList.remove('hidden');
-                document.getElementById('rec-status').innerText = "Recording...";
-
-                // Start Timer
-                timerInterval = setInterval(() => {
-                    secondsElapsed++;
-                    let mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
-                    let secs = (secondsElapsed % 60).toString().padStart(2, '0');
-                    document.getElementById('timer-display').innerText = `${mins}:${secs}`;
-                }, 1000);
-
-            } catch (err) {
-                alert("Microphone permission denied or not supported.");
-            }
-        }
-
-        function stopVoiceRecord() {
-            if (mediaRecorder && mediaRecorder.state !== "inactive") {
-                mediaRecorder.stop();
-                document.getElementById('stop-rec-btn').classList.add('hidden');
-            }
-        }
-
-        // --- POSTS & VOICE NOTES ---
-        async function handleCreatePost() {
-            const caption = document.getElementById('post-caption').value;
-            const mediaUrl = document.getElementById('post-media-url').value;
-            const user = window.firebaseAuth.currentUser;
-            
-            if(!caption && !mediaUrl && !recordedAudioBlobUrl) return alert("Write something or record a voice note!");
-
-            try {
-                await window.fbAddDoc(window.fbCollection(window.firebaseDb, "posts"), {
-                    author: user.email, 
-                    caption, 
-                    mediaUrl, 
-                    audioUrl: recordedAudioBlobUrl || "", 
-                    audioDuration: secondsElapsed,
-                    likes: [], 
-                    timestamp: Date.now()
-                });
-                document.getElementById('post-caption').value = '';
-                document.getElementById('post-media-url').value = '';
-                document.getElementById('audio-preview').classList.add('hidden');
-                document.getElementById('rec-status').innerText = '';
-                document.getElementById('timer-display').innerText = "00:00";
-                recordedAudioBlobUrl = "";
-                secondsElapsed = 0;
-                loadPosts();
-            } catch(e) { alert(e.message); }
+            await window.addDoc(window.collection(window.db, "posts"), {
+                text, image, email: window.auth.currentUser.email, createdAt: window.serverTimestamp()
+            });
+            renderHome();
         }
 
         async function loadPosts() {
-            const container = document.getElementById('feed-container');
-            const q = window.fbQuery(window.fbCollection(window.firebaseDb, "posts"), window.fbOrderBy("timestamp", "desc"));
-            const snapshot = await window.fbGetDocs(q);
-            container.innerHTML = '';
-            snapshot.forEach((docSnap) => {
-                const post = docSnap.data();
-                const postId = docSnap.id;
-                let media = post.mediaUrl ? `<img src="${post.mediaUrl}" class="post-media">` : '';
-                let audio = post.audioUrl ? `
-                    <div style="margin-top:8px; background:rgba(255,255,255,0.05); padding:8px; border-radius:6px;">
-                        <span style="font-size:12px; color:var(--primary-color);">🎤 Voice Note (${post.audioDuration || 0}s)</span>
-                        <audio controls src="${post.audioUrl}" style="width:100%; margin-top:4px;"></audio>
-                    </div>` : '';
-                container.innerHTML += `
-                    <div class="post">
-                        <div style="font-weight:bold; margin-bottom:5px;">@${post.author.split('@')[0]}</div>
-                        <p>${post.caption}</p>
-                        ${media}
-                        ${audio}
-                        <div style="margin-top:8px; font-size:14px; color:gray;">❤️ ${post.likes ? post.likes.length : 0} Likes</div>
-                        <button onclick="likePost('${postId}')" style="margin-top:5px; padding:6px; font-size:12px;">Like Post</button>
+            const feed = document.getElementById('postsFeed');
+            const q = window.query(window.collection(window.db, "posts"), window.orderBy("createdAt", "desc"));
+            const querySnapshot = await window.getDocs(q);
+            let html = "";
+            querySnapshot.forEach((doc) => {
+                const p = doc.data();
+                html += `
+                    <div class="py-3">
+                        <div class="flex items-center px-4 py-2 gap-2">
+                            <div class="w-8 h-8 bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 rounded-full flex items-center justify-center font-bold text-xs">${p.email[0].toUpperCase()}</div>
+                            <span class="text-xs font-semibold">${p.email.split('@')[0]}</span>
+                        </div>
+                        ${p.image ? `<img src="${p.image}" class="w-full max-h-96 object-cover mb-2">` : ''}
+                        ${p.text ? `<p class="px-4 text-sm mb-2 text-zinc-200">${p.text}</p>` : ''}
+                        <div class="flex px-4 gap-4 text-xl mt-2 text-zinc-300">
+                            <i class="fa-regular fa-heart hover:text-red-500 cursor-pointer"></i>
+                            <i class="fa-regular fa-comment cursor-pointer"></i>
+                            <i class="fa-regular fa-paper-plane cursor-pointer"></i>
+                        </div>
                     </div>
                 `;
             });
+            feed.innerHTML = html || "<p class='text-center text-zinc-500 py-8'>No posts yet</p>";
         }
 
-        async function likePost(postId) {
-            const user = window.firebaseAuth.currentUser;
-            const postRef = window.fbDoc(window.firebaseDb, "posts", postId);
-            await window.fbUpdateDoc(postRef, {
-                likes: window.fbArrayUnion(user.email)
-            });
-            loadPosts();
-        }
-
-        // --- STORIES ---
-        async function handleCreateStory() {
-            const url = document.getElementById('story-url').value;
-            const user = window.firebaseAuth.currentUser;
-            if(!url) return alert("Enter image URL");
-
-            await window.fbAddDoc(window.fbCollection(window.firebaseDb, "stories"), {
-                author: user.email, url, timestamp: Date.now()
-            });
-            document.getElementById('story-url').value = '';
-            loadStories();
+        async function createStory() {
+            const imgUrl = prompt("Enter Image URL for your Story:");
+            if (imgUrl) {
+                await window.addDoc(window.collection(window.db, "stories"), {
+                    image: imgUrl, email: window.auth.currentUser.email, createdAt: window.serverTimestamp()
+                });
+                loadStories();
+            }
         }
 
         async function loadStories() {
-            const container = document.getElementById('stories-container');
-            const snapshot = await window.fbGetDocs(window.fbCollection(window.firebaseDb, "stories"));
-            container.innerHTML = '';
-            const now = Date.now();
-            const twentyFourHours = 24 * 60 * 60 * 1000;
-
-            snapshot.forEach((docSnap) => {
-                const story = docSnap.data();
-                if ((now - story.timestamp) < twentyFourHours) {
-                    container.innerHTML += `
-                        <div style="text-align:center;">
-                            <img src="${story.url}" style="width:55px; height:55px; border-radius:50%; border:2px solid var(--primary-color); object-fit:cover;">
-                            <div style="font-size:10px; margin-top:2px;">@${story.author.split('@')[0]}</div>
+            const list = document.getElementById('storiesList');
+            const q = window.query(window.collection(window.db, "stories"), window.orderBy("createdAt", "desc"));
+            const snapshot = await window.getDocs(q);
+            let html = "";
+            snapshot.forEach(doc => {
+                const s = doc.data();
+                html += `
+                    <div class="flex flex-col items-center flex-shrink-0 cursor-pointer">
+                        <div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600">
+                            <img src="${s.image}" class="w-full h-full rounded-full object-cover border-2 border-black">
                         </div>
-                    `;
-                }
+                        <span class="text-[11px] mt-1 text-zinc-300 truncate w-16 text-center">${s.email.split('@')[0]}</span>
+                    </div>
+                `;
             });
+            list.innerHTML = html;
         }
 
-        // --- REALTIME CHAT ---
+        // --- EXPLORE TAB ---
+        function renderExplore() {
+            document.getElementById('app').innerHTML = `
+                <div class="p-4 pb-20">
+                    <div class="mb-4">
+                        <input type="text" placeholder="Search" class="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 rounded-lg text-sm text-white focus:outline-none">
+                    </div>
+                    <div class="grid grid-cols-3 gap-1">
+                        <div class="bg-zinc-900 h-32 flex items-center justify-center text-xs text-zinc-600">Explore</div>
+                        <div class="bg-zinc-900 h-32 flex items-center justify-center text-xs text-zinc-600">Explore</div>
+                        <div class="bg-zinc-900 h-32 flex items-center justify-center text-xs text-zinc-600">Explore</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- REELS TAB ---
+        function renderReels() {
+            document.getElementById('app').innerHTML = `
+                <div class="h-screen flex flex-col items-center justify-center bg-black text-center p-4 pb-20">
+                    <i class="fa-solid fa-clapperboard text-5xl mb-3 text-zinc-700"></i>
+                    <p class="font-bold text-lg">Reels Section</p>
+                    <p class="text-xs text-zinc-500 mt-1">Scroll through vertical video feeds.</p>
+                </div>
+            `;
+        }
+
+        // --- CHAT / INBOX TAB (With Voice Note & Messages) ---
+        function renderChat() {
+            document.getElementById('app').innerHTML = `
+                <div class="p-4 pb-20 flex flex-col h-screen">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-arrow-left text-lg cursor-pointer" onclick="switchTab('home')"></i>
+                            <h2 class="font-bold text-lg">${window.auth.currentUser?.email.split('@')[0]}</h2>
+                        </div>
+                        <i class="fa-regular fa-pen-to-square text-xl"></i>
+                    </div>
+
+                    <div id="chatMessages" class="flex-1 overflow-y-auto space-y-3 mb-4 pr-1">
+                        <div class="text-center text-zinc-500 text-xs py-2">Direct Message Inbox</div>
+                    </div>
+
+                    <div class="sticky bottom-16 bg-black pt-2 pb-2 border-t border-zinc-900 flex items-center gap-2">
+                        <input type="text" id="chatInput" placeholder="Message..." class="flex-1 bg-zinc-900 border border-zinc-800 px-4 py-2.5 rounded-full text-sm text-white focus:outline-none">
+                        <button id="recordBtn" onclick="toggleInboxRecord()" class="bg-zinc-900 border border-zinc-800 w-10 h-10 rounded-full flex items-center justify-center text-red-500 hover:bg-zinc-800">
+                            <i class="fa-solid fa-microphone"></i>
+                        </button>
+                        <button onclick="sendChatMessage()" class="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-semibold">Send</button>
+                    </div>
+                </div>
+            `;
+            loadChatMessages();
+        }
+
+        async function toggleInboxRecord() {
+            const recordBtn = document.getElementById('recordBtn');
+            if (!mediaRecorder || mediaRecorder.state === "inactive") {
+                audioChunks = [];
+                let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = async () => { 
+                    recordedAudioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const audioBase64 = await blobToBase64(recordedAudioBlob);
+                    await window.addDoc(window.collection(window.db, "chats"), {
+                        audio: audioBase64, email: window.auth.currentUser.email, createdAt: window.serverTimestamp()
+                    });
+                    recordedAudioBlob = null;
+                    loadChatMessages();
+                };
+                mediaRecorder.start();
+                recordBtn.classList.add("bg-red-900", "border-red-500");
+            } else {
+                mediaRecorder.stop();
+                recordBtn.classList.remove("bg-red-900", "border-red-500");
+            }
+        }
+
         async function sendChatMessage() {
-            const text = document.getElementById('chat-input').value;
-            const user = window.firebaseAuth.currentUser;
-            if(!text) return;
+            const text = document.getElementById('chatInput').value;
+            if (!text) return;
 
-            await window.fbAddDoc(window.fbCollection(window.firebaseDb, "chats"), {
-                sender: user.email, text, timestamp: Date.now()
+            await window.addDoc(window.collection(window.db, "chats"), {
+                text, email: window.auth.currentUser.email, createdAt: window.serverTimestamp()
             });
-            document.getElementById('chat-input').value = '';
+            document.getElementById('chatInput').value = '';
+            loadChatMessages();
         }
 
-        function loadChatMessages() {
-            const chatBox = document.getElementById('chat-messages');
-            const q = window.fbQuery(window.fbCollection(window.firebaseDb, "chats"), window.fbOrderBy("timestamp", "asc"));
-            window.fbOnSnapshot(q, (snapshot) => {
-                chatBox.innerHTML = '';
-                const currentUser = window.firebaseAuth.currentUser;
-                snapshot.forEach((docSnap) => {
-                    const msg = docSnap.data();
-                    let isMy = currentUser && msg.sender === currentUser.email;
-                    chatBox.innerHTML += `
-                        <div class="msg ${isMy ? 'msg-my' : 'msg-other'}">
-                            <span style="font-size:10px; display:block; opacity:0.7;">@${msg.sender.split('@')[0]}</span>
-                            ${msg.text}
+        async function loadChatMessages() {
+            const chatBox = document.getElementById('chatMessages');
+            if (!chatBox) return;
+            const q = window.query(window.collection(window.db, "chats"), window.orderBy("createdAt", "asc"));
+            const snapshot = await window.getDocs(q);
+            let html = "";
+            snapshot.forEach(doc => {
+                const c = doc.data();
+                const isMe = c.email === window.auth.currentUser.email;
+                html += `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        <span class="text-[10px] text-zinc-500 mb-1">${c.email.split('@')[0]}</span>
+                        <div class="max-w-[75%] bg-zinc-900 p-3 rounded-2xl border border-zinc-800 text-sm">
+                            ${c.text ? `<p>${c.text}</p>` : ''}
+                            ${c.audio ? `<audio controls class="w-full h-8 mt-1"><source src="${c.audio}" type="audio/webm"></audio>` : ''}
                         </div>
-                    `;
-                });
-                chatBox.scrollTop = chatBox.scrollHeight;
+                    </div>
+                `;
             });
+            chatBox.innerHTML = html || "<p class='text-center text-zinc-600 text-xs'>No messages yet.</p>";
+        }
+
+        function blobToBase64(blob) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        // --- PROFILE TAB ---
+        function renderProfile() {
+            document.getElementById('app').innerHTML = `
+                <div class="p-4 pb-20">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="font-bold text-lg truncate">${window.auth.currentUser?.email.split('@')[0]}</h2>
+                        <button onclick="window.signOut(window.auth)" class="text-red-500 text-xs font-semibold border border-red-500/30 px-3 py-1.5 rounded-md">Log Out</button>
+                    </div>
+                    <div class="flex items-center gap-6 mb-4">
+                        <div class="w-20 h-20 bg-zinc-800 rounded-full flex items-center justify-center text-2xl font-bold">${window.auth.currentUser?.email[0].toUpperCase()}</div>
+                        <div class="flex gap-6 text-center flex-1 justify-around">
+                            <div><p class="font-bold">1</p><p class="text-xs text-zinc-400">Posts</p></div>
+                            <div><p class="font-bold">150</p><p class="text-xs text-zinc-400">Followers</p></div>
+                            <div><p class="font-bold">90</p><p class="text-xs text-zinc-400">Following</p></div>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <p class="text-xs font-semibold">${window.auth.currentUser?.email}</p>
+                        <p class="text-xs text-zinc-400 mt-1">Digital creator ✨</p>
+                    </div>
+                </div>
+            `;
         }
     </script>
 </body>
