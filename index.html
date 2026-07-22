@@ -28,17 +28,36 @@
         .story-inner { background: white; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #333; overflow: hidden; text-overflow: ellipsis; }
         .nav-tabs { display: flex; justify-content: space-around; background: #fff; padding: 10px 0; border-radius: 6px; margin-bottom: 15px; border: 1px solid var(--border-color); width: 100%; max-width: 450px; }
         .nav-tabs button { background: none; color: var(--primary-color); border: none; font-weight: bold; cursor: pointer; margin: 0; }
+        .profile-pic-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); margin-bottom: 10px; }
+        .post-media { width: 100%; max-height: 400px; object-fit: cover; border-radius: 6px; margin-top: 8px; }
     </style>
 </head>
 <body>
 
     <!-- Auth Section -->
     <div id="auth-container" class="container">
-        <h2>Roxchat Login / Register</h2>
-        <input type="text" id="username" placeholder="Username">
-        <input type="password" id="password" placeholder="Password">
-        <button onclick="handleCreateAccount()">Create Account</button>
-        <button onclick="handleLogin()">Login</button>
+        <h2>Roxchat Register / Login</h2>
+        
+        <!-- Register Form -->
+        <div id="register-form">
+            <h3>Create Account</h3>
+            <input type="text" id="reg-username" placeholder="Username">
+            <input type="password" id="reg-password" placeholder="Password">
+            <textarea id="reg-bio" placeholder="Write a short bio..."></textarea>
+            <label style="font-size: 13px; color: #666;">Profile Picture Link (URL):</label>
+            <input type="text" id="reg-pic" placeholder="https://example.com/image.jpg">
+            <button onclick="handleCreateAccount()">Register</button>
+            <p style="text-align: center; font-size: 14px; cursor: pointer; color: #075e54;" onclick="toggleAuthMode()">Already have an account? Login</p>
+        </div>
+
+        <!-- Login Form -->
+        <div id="login-form" class="hidden">
+            <h3>Login</h3>
+            <input type="text" id="login-username" placeholder="Username">
+            <input type="password" id="login-password" placeholder="Password">
+            <button onclick="handleLogin()">Login</button>
+            <p style="text-align: center; font-size: 14px; cursor: pointer; color: #075e54;" onclick="toggleAuthMode()">Don't have an account? Register</p>
+        </div>
     </div>
 
     <!-- Main App Section -->
@@ -46,6 +65,13 @@
         <div class="header-bar">
             <h3 id="welcome-user">Welcome</h3>
             <button onclick="handleLogout()" style="width: auto; padding: 5px 10px; background: #d9534f;">Logout</button>
+        </div>
+
+        <!-- User Profile Card -->
+        <div class="post" style="text-align: center;">
+            <img id="profile-display-pic" class="profile-pic-preview" src="" alt="Profile">
+            <h3 id="profile-display-name" style="margin: 5px 0;"></h3>
+            <p id="profile-display-bio" style="font-size: 14px; color: #666;"></p>
         </div>
 
         <div class="nav-tabs">
@@ -56,8 +82,10 @@
 
         <!-- Feed Tab -->
         <div id="tab-feed">
-            <h4>Create Post</h4>
-            <textarea id="post-caption" placeholder="What's on your mind?"></textarea>
+            <h4>Create Post (Photo / Video)</h4>
+            <textarea id="post-caption" placeholder="Write a caption..."></textarea>
+            <label style="font-size: 13px; color: #666;">Media Link (Image or Video URL):</label>
+            <input type="text" id="post-media-url" placeholder="https://example.com/image.jpg or video.mp4">
             <button onclick="handleCreatePost()">Post</button>
             <h4>Feed</h4>
             <div id="feed-container"></div>
@@ -98,14 +126,15 @@
                 localStorage.setItem('rox_stories', JSON.stringify(this.stories));
             }
 
-            createAccount(username, password) {
+            createAccount(username, password, bio, profilePic) {
                 if (this.users.find(u => u.username === username)) {
                     alert("User already exists!");
                     return false;
                 }
-                this.users.push({ username, password });
+                const defaultPic = profilePic.trim() !== '' ? profilePic : 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
+                this.users.push({ username, password, bio, profilePic: defaultPic });
                 this.saveData();
-                alert("Account created successfully for " + username);
+                alert("Account created successfully! Please login.");
                 return true;
             }
 
@@ -125,12 +154,14 @@
                 localStorage.removeItem('rox_current');
             }
 
-            createPost(caption) {
+            createPost(caption, mediaUrl) {
                 if (!this.currentUser) return;
                 const newPost = {
                     id: Date.now(),
                     author: this.currentUser.username,
+                    profilePic: this.currentUser.profilePic,
                     caption: caption,
+                    mediaUrl: mediaUrl,
                     likes: [],
                     comments: []
                 };
@@ -182,32 +213,48 @@
 
         const myApp = new RoxChatApp();
 
-        // Check active session on load
         window.onload = function() {
             if (myApp.currentUser) {
-                showAppUI(myApp.currentUser.username);
+                showAppUI(myApp.currentUser);
             }
         };
 
-        function handleCreateAccount() {
-            const u = document.getElementById('username').value.trim();
-            const p = document.getElementById('password').value.trim();
-            if(u && p) myApp.createAccount(u, p);
-            else alert("Please fill all fields");
+        function toggleAuthMode() {
+            const regForm = document.getElementById('register-form');
+            const loginForm = document.getElementById('login-form');
+            regForm.classList.toggle('hidden');
+            loginForm.classList.toggle('hidden');
         }
 
-        function handleLogin() {
-            const u = document.getElementById('username').value.trim();
-            const p = document.getElementById('password').value.trim();
-            if (myApp.login(u, p)) {
-                showAppUI(u);
+        function handleCreateAccount() {
+            const u = document.getElementById('reg-username').value.trim();
+            const p = document.getElementById('reg-password').value.trim();
+            const bio = document.getElementById('reg-bio').value.trim();
+            const pic = document.getElementById('reg-pic').value.trim();
+            if(u && p) {
+                if(myApp.createAccount(u, p, bio, pic)) {
+                    toggleAuthMode();
+                }
+            } else {
+                alert("Please fill username and password fields");
             }
         }
 
-        function showAppUI(username) {
+        function handleLogin() {
+            const u = document.getElementById('login-username').value.trim();
+            const p = document.getElementById('login-password').value.trim();
+            if (myApp.login(u, p)) {
+                showAppUI(myApp.currentUser);
+            }
+        }
+
+        function showAppUI(user) {
             document.getElementById('auth-container').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
-            document.getElementById('welcome-user').textContent = "Hello, " + username;
+            document.getElementById('welcome-user').textContent = "Roxchat";
+            document.getElementById('profile-display-name').textContent = "@" + user.username;
+            document.getElementById('profile-display-bio').textContent = user.bio || "No bio yet.";
+            document.getElementById('profile-display-pic').src = user.profilePic;
             updateUI();
         }
 
@@ -219,10 +266,14 @@
 
         function handleCreatePost() {
             const caption = document.getElementById('post-caption').value;
-            if (caption) {
-                myApp.createPost(caption);
+            const mediaUrl = document.getElementById('post-media-url').value;
+            if (caption || mediaUrl) {
+                myApp.createPost(caption, mediaUrl);
                 document.getElementById('post-caption').value = '';
+                document.getElementById('post-media-url').value = '';
                 updateUI();
+            } else {
+                alert("Please add a caption or media URL.");
             }
         }
 
@@ -241,10 +292,10 @@
         }
 
         function handleCreateStory() {
-            const text = document.getElementById('story-text').value;
-            if (text) {
-                myApp.createStory(text);
-                document.getElementById('story-text').value = '';
+            const text = document.getElementById('story-text');
+            if (text && text.value) {
+                myApp.createStory(text.value);
+                text.value = '';
                 updateUI();
                 alert("Story added successfully!");
             }
@@ -262,7 +313,6 @@
         }
 
         function updateUI() {
-            // Render Feed
             const feed = document.getElementById('feed-container');
             feed.innerHTML = '';
             myApp.posts.forEach(post => {
@@ -273,11 +323,25 @@
 
                 const isLiked = myApp.currentUser && post.likes.includes(myApp.currentUser.username);
 
+                // Check if media is video or image based on extension or link
+                let mediaHtml = '';
+                if (post.mediaUrl && post.mediaUrl.trim() !== '') {
+                    if (post.mediaUrl.includes('.mp4') || post.mediaUrl.includes('video')) {
+                        mediaHtml = `<video src="${post.mediaUrl}" controls class="post-media"></video>`;
+                    } else {
+                        mediaHtml = `<img src="${post.mediaUrl}" class="post-media" alt="Post media">`;
+                    }
+                }
+
                 feed.innerHTML += `
                     <div class="post">
-                        <strong>@${post.author}</strong>
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <img src="${post.profilePic}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; margin-right: 8px;">
+                            <strong>@${post.author}</strong>
+                        </div>
                         <p>${post.caption}</p>
-                        <button onclick="handleLike(${post.id})" style="width: auto; padding: 5px 10px; background: ${isLiked ? '#c9302c' : '#075e54'};">
+                        ${mediaHtml}
+                        <button onclick="handleLike(${post.id})" style="width: auto; padding: 5px 10px; background: ${isLiked ? '#c9302c' : '#075e54'}; margin-top: 8px;">
                             ❤️ Like (${post.likes.length})
                         </button>
                         <div class="comment-section">
@@ -290,7 +354,6 @@
                 `;
             });
 
-            // Render Stories
             const storiesFlex = document.getElementById('stories-flex');
             storiesFlex.innerHTML = '';
             myApp.stories.forEach(story => {
@@ -301,7 +364,6 @@
                 `;
             });
 
-            // Render Notifications
             const notif = document.getElementById('notification-container');
             notif.innerHTML = '';
             myApp.notifications.forEach(n => {
