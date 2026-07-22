@@ -185,15 +185,72 @@
         async function renderHome() {
             document.getElementById('app').innerHTML = `
                 <div class="p-4">
+                    <!-- Top Header with Brand, Add Story, and Notifications -->
                     <div class="flex justify-between items-center mb-6">
-                        <h1 class="text-2xl brand-font text-yellow-400">Roxchat Feed</h1>
-                        <button onclick="window.signOut(window.auth)" class="text-xs bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-zinc-300 hover:text-white">Logout</button>
-                    </div>
-                    <div class="bg-zinc-900/50 border border-zinc-800 p-4 rounded-xl text-center text-zinc-400 text-sm">
-                        Welcome to Roxchat! Use the Explore tab to find users and start chatting privately.
+                        <h1 class="text-2xl brand-font text-yellow-400">Roxchat</h1>
+                        <div class="flex items-center space-x-4 text-xl">
+                            <button onclick="alert('Add Story feature coming soon!')" class="text-zinc-300 hover:text-yellow-400 transition" title="Add Story"><i class="fa-solid fa-plus-circle"></i></button>
+                            <button onclick="renderNotifications()" class="text-zinc-300 hover:text-yellow-400 transition relative" title="Notifications">
+                                <i class="fa-solid fa-heart"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
+        }
+
+        // Notification Page Rendering
+        async function renderNotifications() {
+            const appDiv = document.getElementById('app');
+            appDiv.innerHTML = `
+                <div class="p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold text-yellow-400">Notifications</h2>
+                        <button onclick="switchTab('home')" class="text-zinc-400 text-sm"><i class="fa-solid fa-arrow-left"></i> Back</button>
+                    </div>
+                    <div id="notifList" class="space-y-3">
+                        <div class="text-center text-zinc-500 text-sm py-10">Loading notifications...</div>
+                    </div>
+                </div>
+            `;
+
+            try {
+                const q = window.query(
+                    window.collection(window.db, "notifications"), 
+                    window.where("receiverUid", "==", window.auth.currentUser.uid),
+                    window.orderBy("timestamp", "desc")
+                );
+                const snapshot = await window.getDocs(q);
+                const notifList = document.getElementById('notifList');
+                
+                if (snapshot.empty) {
+                    notifList.innerHTML = `<div class="text-center text-zinc-500 text-sm py-10">No notifications yet. Likes, comments, and messages will appear here.</div>`;
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach(docSnap => {
+                    const notif = docSnap.data();
+                    let icon = "fa-bell text-yellow-400";
+                    if(notif.type === 'like') icon = "fa-heart text-red-500";
+                    if(notif.type === 'comment') icon = "fa-comment text-blue-400";
+                    if(notif.type === 'message') icon = "fa-paper-plane text-yellow-400";
+
+                    html += `
+                        <div class="flex items-center space-x-3 bg-zinc-900 border border-zinc-800 p-3 rounded-xl">
+                            <i class="fa-solid ${icon} text-lg w-6 text-center"></i>
+                            <div class="flex-1 text-sm">
+                                <span class="font-semibold text-white">${notif.senderUsername || 'Someone'}</span> 
+                                <span class="text-zinc-300">${notif.text}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                notifList.innerHTML = html;
+            } catch (e) {
+                console.error("Error loading notifications:", e);
+                document.getElementById('notifList').innerHTML = `<div class="text-center text-red-500 text-sm">Failed to load notifications.</div>`;
+            }
         }
 
         async function renderExplore() {
@@ -257,7 +314,7 @@
                     
                     <div class="fixed bottom-16 left-0 right-0 max-w-md mx-auto p-3 bg-zinc-950 border-t border-zinc-800 flex items-center space-x-2">
                         <input type="text" id="chatInput" placeholder="Message..." class="flex-1 bg-zinc-900 border border-zinc-800 text-white p-3 rounded-xl text-sm focus:outline-none focus:border-yellow-400">
-                        <button onclick="sendPrivateMessage('${chatId}')" class="bg-yellow-400 text-black px-4 py-3 rounded-xl font-bold text-sm">Send</button>
+                        <button onclick="sendPrivateMessage('${chatId}', '${peerUid}')" class="bg-yellow-400 text-black px-4 py-3 rounded-xl font-bold text-sm">Send</button>
                     </div>
                 </div>
             `;
@@ -265,17 +322,33 @@
             loadPrivateMessages(chatId);
         }
 
-        async function sendPrivateMessage(chatId) {
+        async function sendPrivateMessage(chatId, peerUid) {
             const input = document.getElementById('chatInput');
             const text = input.value.trim();
             if (!text) return;
             
             try {
+                // Send message to chat room
                 await window.addDoc(window.collection(window.db, "chats", chatId, "messages"), {
                     sender: window.auth.currentUser.uid,
                     text: text,
                     timestamp: window.serverTimestamp()
                 });
+
+                // Fetch current user details for notification
+                const userDoc = await window.getDoc(window.doc(window.db, "users", window.auth.currentUser.uid));
+                const senderUsername = userDoc.exists() ? userDoc.data().username : "Someone";
+
+                // Add notification for message recipient
+                await window.addDoc(window.collection(window.db, "notifications"), {
+                    receiverUid: peerUid,
+                    senderUid: window.auth.currentUser.uid,
+                    senderUsername: senderUsername,
+                    type: 'message',
+                    text: `sent you a message: "${text.substring(0, 20)}..."`,
+                    timestamp: window.serverTimestamp()
+                });
+
                 input.value = '';
                 loadPrivateMessages(chatId);
             } catch (e) {
