@@ -22,6 +22,9 @@
 </head>
 <body class="bg-black text-white antialiased selection:bg-yellow-500 selection:text-black">
     <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col justify-between pb-24 relative">
+        <div class="flex items-center justify-center h-screen text-yellow-400">
+            <i class="fa-solid fa-spinner fa-spin text-3xl"></i>
+        </div>
     </div>
 
     <!-- Hidden file inputs -->
@@ -119,6 +122,15 @@
                 }
             } catch (e) {
                 console.error("Preload error:", e);
+                window.currentUserData = {
+                    uid: window.auth.currentUser.uid,
+                    username: window.auth.currentUser.email ? window.auth.currentUser.email.split('@')[0] : "user",
+                    email: window.auth.currentUser.email || "",
+                    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=" + window.auth.currentUser.uid,
+                    bio: "Hey there! I am using Roxchat.",
+                    isPrivate: false,
+                    pushNotifications: true
+                };
             }
         }
 
