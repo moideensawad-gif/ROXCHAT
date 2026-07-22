@@ -23,24 +23,24 @@
     </style>
 </head>
 <body class="bg-black text-white antialiased selection:bg-yellow-500 selection:text-black">
-    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col justify-between pb-20 relative">
+    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col justify-between pb-24 relative">
         <!-- Dynamic App Container -->
     </div>
 
     <!-- Unique Custom Navigation Bar -->
-    <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/80 flex justify-around py-3.5 z-50 shadow-lg">
-        <button onclick="switchTab('home')" class="text-yellow-400 text-xl transition transform active:scale-90"><i class="fa-solid fa-house-chimney"></i></button>
-        <button onclick="switchTab('chat')" class="text-zinc-400 text-xl transition transform active:scale-90"><i class="fa-solid fa-comments"></i></button>
-        <button onclick="switchTab('explore')" class="text-zinc-400 text-xl transition transform active:scale-90"><i class="fa-solid fa-compass"></i></button>
-        <button onclick="switchTab('reels')" class="text-zinc-400 text-xl transition transform active:scale-90"><i class="fa-solid fa-bolt"></i></button>
-        <button onclick="switchTab('profile')" class="text-zinc-400 text-xl transition transform active:scale-90"><i class="fa-solid fa-circle-user"></i></button>
+    <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/80 flex justify-around py-4 z-50 shadow-lg">
+        <button onclick="switchTab('home')" id="nav-home" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-house-chimney"></i></button>
+        <button onclick="switchTab('chat')" id="nav-chat" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-comments"></i></button>
+        <button onclick="switchTab('explore')" id="nav-explore" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-compass"></i></button>
+        <button onclick="switchTab('reels')" id="nav-reels" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-bolt"></i></button>
+        <button onclick="switchTab('profile')" id="nav-profile" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-circle-user"></i></button>
     </nav>
 
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAaqyhWJg8QmFzB4xKR5sJT8UetZEqZGrs",
@@ -63,6 +63,8 @@
         window.signOut = signOut;
         window.addDoc = addDoc;
         window.getDocs = getDocs;
+        window.getDoc = getDoc;
+        window.updateDoc = updateDoc;
         window.collection = collection;
         window.query = query;
         window.orderBy = orderBy;
@@ -81,7 +83,7 @@
         });
     </script>
 
-    <!-- Service Worker & App Logic (JavaScript) -->
+    <!-- Service Worker & App Logic -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -93,10 +95,24 @@
         let mediaRecorder;
         let audioChunks = [];
         let recordedAudioBlob = null;
-        let currentChatMode = 'ai'; // Default to AI Assistant mode in chat
+        let currentLanguage = 'en';
 
         function switchTab(tab) {
             currentTab = tab;
+            const tabs = ['home', 'chat', 'explore', 'reels', 'profile'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`nav-${t}`);
+                if (btn) {
+                    if (t === tab) {
+                        btn.classList.remove('text-zinc-400');
+                        btn.classList.add('text-yellow-400');
+                    } else {
+                        btn.classList.remove('text-yellow-400');
+                        btn.classList.add('text-zinc-400');
+                    }
+                }
+            });
+
             if (tab === 'home') renderHome();
             else if (tab === 'explore') renderExplore();
             else if (tab === 'reels') renderReels();
@@ -143,7 +159,13 @@
             const password = document.getElementById('password').value;
             try {
                 const res = await window.createUserWithEmailAndPassword(window.auth, email, password);
-                await window.setDoc(window.doc(window.db, "users", res.user.uid), { email: email, bio: "Exploring Roxchat ✨" });
+                await window.setDoc(window.doc(window.db, "users", res.user.uid), { 
+                    email: email, 
+                    name: email.split('@')[0],
+                    bio: "Exploring Roxchat ✨",
+                    photo: "",
+                    language: "en"
+                });
             } catch (error) {
                 alert("Signup Error: " + error.message);
             }
@@ -151,10 +173,11 @@
 
         function renderHome() {
             document.getElementById('app').innerHTML = `
-                <div class="pb-16">
+                <div class="pb-16 relative">
                     <div class="flex justify-between items-center px-4 py-3.5 border-b border-zinc-900 sticky top-0 bg-black/90 backdrop-blur-md z-40">
                         <h1 class="text-2xl brand-font tracking-wide text-yellow-400">Roxchat</h1>
-                        <div class="flex gap-5 text-xl text-zinc-300">
+                        <div class="flex gap-5 text-xl text-zinc-300 items-center">
+                            <i class="fa-regular fa-square-plus hover:text-yellow-400 cursor-pointer transition text-2xl" onclick="openCreatePostModal()" title="Create Post"></i>
                             <i class="fa-regular fa-heart hover:text-yellow-400 cursor-pointer transition"></i>
                             <i class="fa-regular fa-paper-plane hover:text-yellow-400 cursor-pointer transition" onclick="switchTab('chat')"></i>
                         </div>
@@ -166,13 +189,23 @@
                         </div>
                         <div id="storiesList" class="flex gap-3"></div>
                     </div>
-                    <div class="p-4 border-b border-zinc-900 bg-zinc-950/50">
-                        <textarea id="postText" placeholder="Share your thoughts..." class="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white text-sm mb-3 resize-none focus:outline-none focus:border-yellow-400 transition"></textarea>
-                        <input type="text" id="postImgUrl" placeholder="Image Link URL (Optional)" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-white text-xs mb-3 focus:outline-none focus:border-yellow-400 transition">
-                        <button onclick="sharePost()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 rounded-xl font-bold text-sm transition shadow-md shadow-yellow-400/10">Post Update</button>
-                    </div>
+                    
+                    <!-- Posts Feed Clean -->
                     <div id="postsFeed" class="divide-y divide-zinc-900/60">
                         <div class="text-center py-10 text-zinc-500 text-sm">Loading feed...</div>
+                    </div>
+
+                    <!-- Instagram Style Create Post Modal -->
+                    <div id="createPostModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div class="bg-zinc-950 border border-zinc-800 w-full max-w-sm p-5 rounded-2xl shadow-2xl relative">
+                            <div class="flex justify-between items-center mb-4 pb-2 border-b border-zinc-900">
+                                <h3 class="font-bold text-sm text-yellow-400">Create New Post</h3>
+                                <i class="fa-solid fa-xmark text-zinc-400 hover:text-white cursor-pointer text-lg" onclick="closeCreatePostModal()"></i>
+                            </div>
+                            <textarea id="postText" placeholder="Share your thoughts..." class="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white text-sm mb-3 resize-none focus:outline-none focus:border-yellow-400 transition h-28"></textarea>
+                            <input type="text" id="postImgUrl" placeholder="Image Link URL (Optional)" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-white text-xs mb-4 focus:outline-none focus:border-yellow-400 transition">
+                            <button onclick="sharePost()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 rounded-xl font-bold text-sm transition shadow-md shadow-yellow-400/10">Share Post</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -180,14 +213,25 @@
             loadStories();
         }
 
+        function openCreatePostModal() {
+            const modal = document.getElementById('createPostModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeCreatePostModal() {
+            const modal = document.getElementById('createPostModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
         async function sharePost() {
             const text = document.getElementById('postText').value;
             const image = document.getElementById('postImgUrl').value;
-            if (!text && !image) return alert("Please add text or image!");
+            if (!text && !image) return alert("Please add caption or image!");
 
             await window.addDoc(window.collection(window.db, "posts"), {
                 text, image, email: window.auth.currentUser.email, createdAt: window.serverTimestamp()
             });
+            closeCreatePostModal();
             renderHome();
         }
 
@@ -279,7 +323,7 @@
                                 <div class="flex items-center gap-3">
                                     <div class="w-10 h-10 bg-yellow-400 text-black rounded-xl flex items-center justify-center font-bold text-sm">${userData.email[0].toUpperCase()}</div>
                                     <div>
-                                        <p class="text-xs font-semibold text-zinc-200">${userData.email}</p>
+                                        <p class="text-xs font-semibold text-zinc-200">${userData.name || userData.email}</p>
                                         <p class="text-[11px] text-zinc-400">${userData.bio || 'No bio'}</p>
                                     </div>
                                 </div>
@@ -305,53 +349,67 @@
             `;
         }
 
+        // Global Chat Room
         function renderChat() {
             document.getElementById('app').innerHTML = `
-                <div class="p-4 pb-20 flex flex-col h-screen">
+                <div class="p-4 pb-24 flex flex-col h-screen">
                     <div class="flex justify-between items-center mb-3 pb-2 border-b border-zinc-900">
                         <div class="flex items-center gap-3">
                             <i class="fa-solid fa-arrow-left text-lg cursor-pointer text-zinc-300 hover:text-yellow-400" onclick="switchTab('home')"></i>
                             <div>
-                                <h2 class="font-bold text-base text-zinc-100" id="chatTitle">${currentChatMode === 'ai' ? 'Rox AI Assistant 🤖' : 'Global Chat Room 🌍'}</h2>
-                                <p class="text-[10px] text-zinc-400">${currentChatMode === 'ai' ? 'Ask anything about Roxchat' : 'Public messages'}</p>
+                                <h2 class="font-bold text-base text-zinc-100">Global Chat Room 🌍</h2>
+                                <p class="text-[10px] text-zinc-400">Public messaging inbox</p>
                             </div>
                         </div>
-                        <button onclick="toggleChatMode()" class="bg-zinc-900 border border-zinc-800 text-yellow-400 text-xs px-3 py-1.5 rounded-xl font-semibold hover:bg-zinc-800 transition">
-                            ${currentChatMode === 'ai' ? '🌍 Global Chat' : '🤖 Rox AI'}
-                        </button>
                     </div>
                     <div id="chatMessages" class="flex-1 overflow-y-auto space-y-3 mb-4 pr-1">
                         <div class="text-center text-zinc-500 text-xs py-4">Loading messages...</div>
                     </div>
-                    <div class="sticky bottom-16 bg-black pt-2 pb-2 border-t border-zinc-900 flex items-center gap-2">
-                        <input type="text" id="chatInput" placeholder="${currentChatMode === 'ai' ? 'Ask AI about Roxchat...' : 'Type a public message...'}" onkeydown="if(event.key === 'Enter') sendChatMessage()" class="flex-1 bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-full text-sm text-white focus:outline-none focus:border-yellow-400 transition">
-                        ${currentChatMode === 'global' ? `
-                            <button id="recordBtn" onclick="toggleInboxRecord()" class="bg-zinc-900 border border-zinc-800 w-11 h-11 rounded-full flex items-center justify-center text-yellow-400 hover:bg-zinc-800 transition">
-                                <i class="fa-solid fa-microphone"></i>
-                            </button>
-                        ` : ''}
+                    <div class="sticky bottom-20 bg-black pt-2 pb-2 border-t border-zinc-900 flex items-center gap-2">
+                        <input type="text" id="chatInput" placeholder="Type a message..." onkeydown="if(event.key === 'Enter') sendChatMessage()" class="flex-1 bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-full text-sm text-white focus:outline-none focus:border-yellow-400 transition">
+                        <button id="recordBtn" onclick="toggleInboxRecord()" class="bg-zinc-900 border border-zinc-800 w-11 h-11 rounded-full flex items-center justify-center text-yellow-400 hover:bg-zinc-800 transition">
+                            <i class="fa-solid fa-microphone"></i>
+                        </button>
                         <button onclick="sendChatMessage()" class="bg-yellow-400 text-black px-5 py-3 rounded-full text-sm font-bold shadow-md shadow-yellow-400/15">Send</button>
                     </div>
                 </div>
             `;
-            if (currentChatMode === 'ai') {
-                loadAIChatMessages();
-            } else {
-                loadChatMessages();
-            }
-        }
-
-        function toggleChatMode() {
-            currentChatMode = currentChatMode === 'ai' ? 'global' : 'ai';
-            renderChat();
+            loadChatMessages();
         }
 
         let localAIMessages = [
-            { sender: 'ai', text: 'ഹലോ! ഞാൻ Rox AI അസിസ്റ്റന്റാണ്. Roxchat ആപ്പിനെക്കുറിച്ചും ഇതിന്റെ ഫീച്ചറുകളെക്കുറിച്ചും നിങ്ങൾക്ക് എന്ത് വേണമെങ്കിലും എന്നോട് ചോദിക്കാം!' }
+            { sender: 'ai', text: 'Hello! I am Rox AI Assistant. You can ask me anything about Roxchat and its features!' }
         ];
 
+        function renderAIChat() {
+            document.getElementById('app').innerHTML = `
+                <div class="p-4 pb-24 flex flex-col h-screen">
+                    <div class="flex justify-between items-center mb-3 pb-2 border-b border-zinc-900">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-arrow-left text-lg cursor-pointer text-zinc-300 hover:text-yellow-400" onclick="switchTab('profile')"></i>
+                            <div>
+                                <h2 class="font-bold text-base text-zinc-100">Rox AI Assistant 🤖</h2>
+                                <p class="text-[10px] text-zinc-400">Ask anything about Roxchat</p>
+                            </div>
+                        </div>
+                        <button onclick="switchTab('profile')" class="bg-zinc-900 border border-zinc-800 text-yellow-400 text-xs px-3 py-1.5 rounded-xl font-semibold hover:bg-zinc-800 transition">
+                            Back
+                        </button>
+                    </div>
+                    <div id="aiChatMessages" class="flex-1 overflow-y-auto space-y-3 mb-4 pr-1">
+                        <div class="text-center text-zinc-500 text-xs py-4">Loading AI...</div>
+                    </div>
+                    <div class="sticky bottom-20 bg-black pt-2 pb-2 border-t border-zinc-900 flex items-center gap-2">
+                        <input type="text" id="aiChatInput" placeholder="Ask AI about Roxchat..." onkeydown="if(event.key === 'Enter') sendAIChatMessageInput()" class="flex-1 bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-full text-sm text-white focus:outline-none focus:border-yellow-400 transition">
+                        <button onclick="sendAIChatMessageInput()" class="bg-yellow-400 text-black px-5 py-3 rounded-full text-sm font-bold shadow-md shadow-yellow-400/15">Send</button>
+                    </div>
+                </div>
+            `;
+            loadAIChatMessages();
+        }
+
         function loadAIChatMessages() {
-            const chatBox = document.getElementById('chatMessages');
+            const chatBox = document.getElementById('aiChatMessages');
             if (!chatBox) return;
             let html = "";
             localAIMessages.forEach(msg => {
@@ -369,26 +427,24 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        async function sendAIChatMessage(text) {
+        async function sendAIChatMessageInput() {
+            const inputField = document.getElementById('aiChatInput');
+            const text = inputField.value.trim();
+            if (!text) return;
+            inputField.value = '';
+
             localAIMessages.push({ sender: 'user', text: text });
             loadAIChatMessages();
 
-            // Smart Detailed AI Answers about Roxchat
-            let reply = "Roxchat-നെക്കുറിച്ചുള്ള കൂടുതൽ വിവരങ്ങൾക്ക് നിങ്ങൾക്ക് ആപ്പിലെ ഫീച്ചറുകൾ പരിശോധിക്കാവുന്നതാണ്!";
+            let reply = "For more details about Roxchat, please check the features available in the app!";
             const lower = text.toLowerCase();
             
             if (lower.includes('hello') || lower.includes('hi') || lower.includes('hai')) {
-                reply = "ഹലോ! Roxchat-ലേക്ക് സ്വാഗതം. നിങ്ങൾക്ക് ഈ ആപ്പിനെക്കുറിച്ച് എന്താണ് അറിയേണ്ടത്?";
-            } else if (lower.includes('what is roxchat') || lower.includes('roxchat എന്താണ്') || lower.includes('about')) {
-                reply = "Roxchat എന്നത് സുഹൃത്തുക്കളുമായി ചാറ്റ് ചെയ്യാനും, ഫോട്ടോകളും സ്റ്റോറികളും ഷെയർ ചെയ്യാനുമുള്ള ഒരു മോഡേൺ സോഷ്യൽ ചാറ്റ് ആപ്പാണ്. ഇത് HTML, Tailwind CSS, Firebase എന്നിവ ഉപയോഗിച്ചാണ് നിർമ്മിച്ചിരിക്കുന്നത്.";
-            } else if (lower.includes('feature') || lower.includes('what can') || lower.includes('ഫീച്ചർ')) {
-                reply = "Roxchat-ലെ പ്രധാന ഫീച്ചറുകൾ താഴെ പറയുന്നവയാണ്:\n1. ഹോം ഫീഡിൽ പോസ്റ്റുകളും സ്റ്റോറികളും ഷെയർ ചെയ്യാം.\n2. എക്സ്പ്ലോർ പേജിൽ മറ്റ് യൂസർമാരെ സെർച്ച് ചെയ്യാം.\n3. ഗ്ലോബൽ ചാറ്റിൽ വോയ്സ് മെസ്സേജുകളും ടെക്സ്റ്റുകളും അയക്കാം.\n4. ഈ Rox AI റോബോട്ടിനോട് ആപ്പിനെക്കുറിച്ച് എന്ത് സംശയവും ചോദിക്കാം!";
-            } else if (lower.includes('search') || lower.includes('സെർച്ച്')) {
-                reply = "Explore പേജിൽ പോയി യൂസർമാരുടെ ഇമെയിൽ വിലാസം നൽകി നിങ്ങൾക്ക് അവരെ എളുപ്പത്തിൽ സെർച്ച് ചെയ്ത് കണ്ടെത്താവുന്നതാണ്. എന്റർ കീ അമർത്തിയോ സെർച്ച് ബട്ടൺ ക്ലിക്ക് ചെയ്തോ ഇത് പ്രവർത്തിപ്പിക്കാം.";
-            } else if (lower.includes('firebase') || lower.includes('database')) {
-                reply = "Roxchat ആപ്പ് സെക്യൂർ ആയി പ്രവർത്തിക്കാനും യൂസർ ഡാറ്റ സേവ് ചെയ്യാനും ഫയർബേസ് (Firebase Auth & Firestore) ആണ് ഉപയോഗിക്കുന്നത്.";
-            } else if (lower.includes('creator') || lower.includes('who made') || lower.includes('ആരാണ്')) {
-                reply = "Roxchat നിർമ്മിച്ചിരിക്കുന്നത് നിങ്ങളും ഞാനും ചേർന്നാണ്! ഇതൊരു കസ്റ്റം വെബ് ആപ്പാണ്.";
+                reply = "Hello! Welcome to Roxchat. How can I help you learn more about the app today?";
+            } else if (lower.includes('what is roxchat') || lower.includes('about')) {
+                reply = "Roxchat is a modern social chat application designed to help you connect with friends, share posts, stories, and chat globally.";
+            } else if (lower.includes('feature') || lower.includes('what can') || lower.includes('functions')) {
+                reply = "Roxchat key features include: Home Feed with posts and stories, Global Chat Room, User Search in Explore, Reels section, Profile Management, and Language Settings.";
             }
 
             setTimeout(() => {
@@ -427,11 +483,6 @@
             if (!text) return;
             inputField.value = '';
 
-            if (currentChatMode === 'ai') {
-                sendAIChatMessage(text);
-                return;
-            }
-
             await window.addDoc(window.collection(window.db, "chats"), {
                 text, email: window.auth.currentUser.email, createdAt: window.serverTimestamp()
             });
@@ -469,27 +520,111 @@
             });
         }
 
-        function renderProfile() {
+        async function renderProfile() {
+            const user = window.auth.currentUser;
+            let userData = { name: user.email.split('@')[0], bio: "Exploring Roxchat ✨", photo: "", language: "en" };
+            
+            try {
+                const userDoc = await window.getDoc(window.doc(window.db, "users", user.uid));
+                if (userDoc.exists()) {
+                    userData = userDoc.data();
+                    currentLanguage = userData.language || "en";
+                }
+            } catch(e) {}
+
             document.getElementById('app').innerHTML = `
-                <div class="p-4 pb-20">
+                <div class="p-4 pb-24">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="font-bold text-lg truncate text-zinc-100">${window.auth.currentUser?.email.split('@')[0]}</h2>
+                        <h2 class="font-bold text-lg truncate text-zinc-100">${userData.name || user.email.split('@')[0]}</h2>
                         <button onclick="window.signOut(window.auth)" class="text-yellow-400 text-xs font-semibold border border-yellow-400/30 px-3.5 py-1.5 rounded-xl hover:bg-yellow-400/10 transition">Log Out</button>
                     </div>
-                    <div class="flex items-center gap-4 mb-5 bg-zinc-950 p-4 rounded-2xl border border-zinc-900">
-                        <div class="w-20 h-20 bg-yellow-400 text-black rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">${window.auth.currentUser?.email[0].toUpperCase()}</div>
+                    
+                    <!-- Instagram Style Profile Header Section -->
+                    <div class="flex items-center gap-4 mb-4 bg-zinc-950 p-4 rounded-2xl border border-zinc-900">
+                        <div class="w-20 h-20 bg-yellow-400 text-black rounded-full overflow-hidden flex items-center justify-center text-2xl font-bold shadow-lg border-2 border-yellow-400">
+                            ${userData.photo ? `<img src="${userData.photo}" class="w-full h-full object-cover">` : user.email[0].toUpperCase()}
+                        </div>
                         <div class="flex gap-4 text-center flex-1 justify-around">
-                            <div><p class="font-bold text-base text-zinc-100">1</p><p class="text-xs text-zinc-400">Posts</p></div>
-                            <div><p class="font-bold text-base text-zinc-100">150</p><p class="text-xs text-zinc-400">Followers</p></div>
-                            <div><p class="font-bold text-base text-zinc-100">90</p><p class="text-xs text-zinc-400">Following</p></div>
+                            <div><p class="font-bold text-base text-zinc-100">Posts</p><p class="text-xs text-zinc-400">Active</p></div>
                         </div>
                     </div>
-                    <div class="mb-6 px-1">
-                        <p class="text-xs font-semibold text-zinc-200">${window.auth.currentUser?.email}</p>
-                        <p class="text-xs text-zinc-400 mt-1">Exploring Roxchat ✨</p>
+                    <div class="mb-5 px-1">
+                        <p class="text-xs font-bold text-zinc-100">${userData.name || user.email.split('@')[0]}</p>
+                        <p class="text-xs text-zinc-400 mt-1">${userData.bio || 'Exploring Roxchat ✨'}</p>
+                    </div>
+
+                    <!-- Edit Profile Section (Instagram Style) -->
+                    <div class="bg-zinc-950 border border-zinc-900 p-4 rounded-2xl space-y-3 mb-4">
+                        <p class="text-xs font-bold text-yellow-400 mb-1 flex items-center gap-2"><i class="fa-solid fa-user-pen"></i> Edit Profile & Picture</p>
+                        <input type="text" id="editName" value="${userData.name || ''}" placeholder="Your Name" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-xs text-white focus:outline-none focus:border-yellow-400">
+                        <input type="text" id="editBio" value="${userData.bio || ''}" placeholder="Your Bio / Thoughts" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-xs text-white focus:outline-none focus:border-yellow-400">
+                        <input type="text" id="editPhoto" value="${userData.photo || ''}" placeholder="Profile Image URL" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-xs text-white focus:outline-none focus:border-yellow-400">
+                        <button onclick="updateProfileData()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-xs transition">Save Profile Changes</button>
+                    </div>
+
+                    <!-- Language Settings Section -->
+                    <div class="bg-zinc-950 border border-zinc-900 p-4 rounded-2xl space-y-3 mb-4">
+                        <p class="text-xs font-bold text-yellow-400 mb-1 flex items-center gap-2"><i class="fa-solid fa-globe"></i> App Language</p>
+                        <select id="languageSelect" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-xs text-white focus:outline-none focus:border-yellow-400">
+                            <option value="en" ${currentLanguage === 'en' ? 'selected' : ''}>English</option>
+                            <option value="ml" ${currentLanguage === 'ml' ? 'selected' : ''}>മലയാളം (Malayalam)</option>
+                            <option value="ta" ${currentLanguage === 'ta' ? 'selected' : ''}>தமிழ் (Tamil)</option>
+                            <option value="hi" ${currentLanguage === 'hi' ? 'selected' : ''}>हिन्दी (Hindi)</option>
+                            <option value="ar" ${currentLanguage === 'ar' ? 'selected' : ''}>العربية (Arabic)</option>
+                            <option value="fa" ${currentLanguage === 'fa' ? 'selected' : ''}>فارسی (Farsi)</option>
+                            <option value="ja" ${currentLanguage === 'ja' ? 'selected' : ''}>日本語 (Japanese)</option>
+                            <option value="zh" ${currentLanguage === 'zh' ? 'selected' : ''}>中文 (Chinese)</option>
+                            <option value="fr" ${currentLanguage === 'fr' ? 'selected' : ''}>Français (French)</option>
+                            <option value="es" ${currentLanguage === 'es' ? 'selected' : ''}>Español (Spanish)</option>
+                            <option value="nl" ${currentLanguage === 'nl' ? 'selected' : ''}>Nederlands (Dutch)</option>
+                        </select>
+                        <button onclick="updateLanguageSetting()" class="w-full bg-zinc-900 hover:bg-zinc-800 text-yellow-400 border border-zinc-800 py-2.5 rounded-xl font-bold text-xs transition">Save Language</button>
+                    </div>
+
+                    <!-- AI Assistant Option -->
+                    <div class="space-y-2 pt-2">
+                        <button onclick="renderAIChat()" class="w-full bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 text-yellow-400 py-3.5 px-4 rounded-xl font-semibold text-sm flex items-center justify-between transition shadow-sm">
+                            <span class="flex items-center gap-3"><i class="fa-solid fa-robot text-lg"></i> Rox AI Assistant</span>
+                            <i class="fa-solid fa-chevron-right text-xs text-zinc-500"></i>
+                        </button>
                     </div>
                 </div>
             `;
+        }
+
+        async function updateLanguageSetting() {
+            const selectedLang = document.getElementById('languageSelect').value;
+            const user = window.auth.currentUser;
+            try {
+                await window.setDoc(window.doc(window.db, "users", user.uid), {
+                    language: selectedLang
+                }, { merge: true });
+                currentLanguage = selectedLang;
+                alert("Language setting updated successfully!");
+                renderProfile();
+            } catch (error) {
+                alert("Error updating language: " + error.message);
+            }
+        }
+
+        async function updateProfileData() {
+            const name = document.getElementById('editName').value.trim();
+            const bio = document.getElementById('editBio').value.trim();
+            const photo = document.getElementById('editPhoto').value.trim();
+            const user = window.auth.currentUser;
+
+            try {
+                await window.setDoc(window.doc(window.db, "users", user.uid), {
+                    email: user.email,
+                    name: name,
+                    bio: bio,
+                    photo: photo
+                }, { merge: true });
+                alert("Profile and Picture updated successfully!");
+                renderProfile();
+            } catch (error) {
+                alert("Error updating profile: " + error.message);
+            }
         }
     </script>
 </body>
