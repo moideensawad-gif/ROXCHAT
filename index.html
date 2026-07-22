@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Roxchat</title>
-    <meta name="description" content="Yellow and Black style social chat app with Firebase">
+    <meta name="description" content="Custom unique social chat app with Firebase">
     <meta name="theme-color" content="#000000">
     
     <!-- PWA Manifest & Icons -->
@@ -13,27 +13,27 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts for Unique Font Styling -->
-    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .brand-font { font-family: 'Pacifico', cursive; }
-        body { font-family: 'Poppins', sans-serif; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
     </style>
 </head>
 <body class="bg-black text-white antialiased selection:bg-yellow-500 selection:text-black">
-    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col justify-between pb-16 relative">
+    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col justify-between pb-20 relative">
         <!-- Dynamic App Container -->
     </div>
 
-    <!-- Bottom Navigation Bar -->
-    <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-black border-t border-zinc-900 flex justify-around py-3 z-50">
-        <button onclick="switchTab('home')" class="text-yellow-400 text-xl"><i class="fa-solid fa-house"></i></button>
-        <button onclick="switchTab('explore')" class="text-zinc-500 text-xl"><i class="fa-solid fa-magnifying-glass"></i></button>
-        <button onclick="switchTab('reels')" class="text-zinc-500 text-xl"><i class="fa-solid fa-clapperboard"></i></button>
-        <button onclick="switchTab('chat')" class="text-zinc-500 text-xl"><i class="fa-solid fa-comment-dots"></i></button>
-        <button onclick="switchTab('profile')" class="text-zinc-500 text-xl"><i class="fa-solid fa-user"></i></button>
+    <!-- Unique Custom Navigation Bar -->
+    <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/80 flex justify-around py-3.5 z-50 shadow-lg">
+        <button onclick="switchTab('home')" class="text-yellow-400 text-xl transition transform active:scale-90"><i class="fa-solid fa-house-chimney"></i></button>
+        <button onclick="switchTab('chat')" class="text-zinc-400 text-xl transition transform active:scale-90"><i class="fa-solid fa-comments"></i></button>
+        <button onclick="switchTab('explore')" class="text-zinc-400 text-xl transition transform active:scale-90"><i class="fa-solid fa-compass"></i></button>
+        <button onclick="switchTab('reels')" class="text-zinc-400 text-xl transition transform active:scale-90"><i class="fa-solid fa-bolt"></i></button>
+        <button onclick="switchTab('profile')" class="text-zinc-400 text-xl transition transform active:scale-90"><i class="fa-solid fa-circle-user"></i></button>
     </nav>
 
     <!-- Firebase SDKs -->
@@ -80,13 +80,11 @@
         });
     </script>
 
-    <!-- Service Worker Registration & App Logic -->
+    <!-- Service Worker & App Logic -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker registered!', reg))
-                    .catch(err => console.log('Service Worker registration failed:', err));
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW failed:', err));
             });
         }
 
@@ -104,24 +102,24 @@
             else if (tab === 'profile') renderProfile();
         }
 
-        // Login & Signup UI with New Brand Font
         function renderLogin(isSignup = false) {
             document.getElementById('app').innerHTML = `
-                <div class="p-8 flex flex-col justify-center items-center min-h-screen bg-black">
-                    <div class="w-full max-w-sm bg-black border border-zinc-800 p-8 rounded-lg shadow-md">
-                        <div class="text-center mb-6">
+                <div class="p-6 flex flex-col justify-center items-center min-h-screen bg-black">
+                    <div class="w-full max-w-sm bg-zinc-950 border border-zinc-800/80 p-8 rounded-2xl shadow-xl">
+                        <div class="text-center mb-8">
                             <h1 class="text-4xl brand-font tracking-wide text-yellow-400">Roxchat</h1>
+                            <p class="text-xs text-zinc-500 mt-2">Connect with your world differently</p>
                         </div>
-                        <div class="space-y-3">
-                            <input type="email" id="email" placeholder="Phone number, username, or email" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded text-xs text-white focus:outline-none focus:border-yellow-500">
-                            <input type="password" id="password" placeholder="Password" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded text-xs text-white focus:outline-none focus:border-yellow-500">
-                            <button onclick="${isSignup ? 'handleSignup()' : 'handleLogin()'}" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black p-2.5 rounded font-bold text-sm transition mt-2">${isSignup ? 'Sign up' : 'Log in'}</button>
+                        <div class="space-y-3.5">
+                            <input type="email" id="email" placeholder="Email address" class="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">
+                            <input type="password" id="password" placeholder="Password" class="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">
+                            <button onclick="${isSignup ? 'handleSignup()' : 'handleLogin()'}" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black p-3.5 rounded-xl font-bold text-sm transition shadow-lg shadow-yellow-400/10 mt-2">${isSignup ? 'Create Account' : 'Sign In'}</button>
                         </div>
                     </div>
-                    <div class="w-full max-w-sm bg-black border border-zinc-800 p-4 rounded-lg mt-3 text-center">
+                    <div class="w-full max-w-sm bg-zinc-950 border border-zinc-800/80 p-4 rounded-xl mt-3 text-center">
                         <p class="text-xs text-zinc-400">
-                            ${isSignup ? 'Have an account?' : "Don't have an account?"} 
-                            <span class="text-yellow-400 font-semibold cursor-pointer" onclick="renderLogin(${!isSignup})">${isSignup ? 'Log in' : 'Sign up'}</span>
+                            ${isSignup ? 'Already have an account?' : "Don't have an account?"} 
+                            <span class="text-yellow-400 font-bold cursor-pointer ml-1" onclick="renderLogin(${!isSignup})">${isSignup ? 'Sign In' : 'Sign up'}</span>
                         </p>
                     </div>
                 </div>
@@ -143,7 +141,7 @@
             const password = document.getElementById('password').value;
             try {
                 const res = await window.createUserWithEmailAndPassword(window.auth, email, password);
-                await window.setDoc(window.doc(window.db, "users", res.user.uid), { email: email, bio: "Digital creator ✨" });
+                await window.setDoc(window.doc(window.db, "users", res.user.uid), { email: email, bio: "Exploring Roxchat ✨" });
             } catch (error) {
                 alert("Signup Error: " + error.message);
             }
@@ -151,28 +149,28 @@
 
         function renderHome() {
             document.getElementById('app').innerHTML = `
-                <div class="pb-20">
-                    <div class="flex justify-between items-center px-4 py-3 border-b border-zinc-900 sticky top-0 bg-black z-40">
+                <div class="pb-16">
+                    <div class="flex justify-between items-center px-4 py-3.5 border-b border-zinc-900 sticky top-0 bg-black/90 backdrop-blur-md z-40">
                         <h1 class="text-2xl brand-font tracking-wide text-yellow-400">Roxchat</h1>
-                        <div class="flex gap-5 text-xl">
-                            <i class="fa-regular fa-heart cursor-pointer hover:text-yellow-400"></i>
-                            <i class="fa-regular fa-paper-plane cursor-pointer hover:text-yellow-400" onclick="switchTab('chat')"></i>
+                        <div class="flex gap-5 text-xl text-zinc-300">
+                            <i class="fa-regular fa-heart hover:text-yellow-400 cursor-pointer transition"></i>
+                            <i class="fa-regular fa-paper-plane hover:text-yellow-400 cursor-pointer transition" onclick="switchTab('chat')"></i>
                         </div>
                     </div>
-                    <div class="flex gap-3 px-4 py-3 overflow-x-auto border-b border-zinc-900 no-scrollbar">
+                    <div class="flex gap-3 px-4 py-3.5 overflow-x-auto border-b border-zinc-900/80 no-scrollbar bg-zinc-950/30">
                         <div class="flex flex-col items-center flex-shrink-0 cursor-pointer" onclick="createStory()">
-                            <div class="w-16 h-16 rounded-full border-2 border-dashed border-yellow-500 flex items-center justify-center text-lg bg-zinc-900 text-yellow-400">+</div>
-                            <span class="text-[11px] mt-1 text-zinc-400">Your Story</span>
+                            <div class="w-16 h-16 rounded-2xl border-2 border-dashed border-yellow-500/80 flex items-center justify-center text-lg bg-zinc-900 text-yellow-400 shadow-inner">+</div>
+                            <span class="text-[11px] mt-1.5 text-zinc-400 font-medium">Add Story</span>
                         </div>
                         <div id="storiesList" class="flex gap-3"></div>
                     </div>
-                    <div class="p-4 border-b border-zinc-900 bg-zinc-950">
-                        <textarea id="postText" placeholder="What's on your mind?" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg text-white text-sm mb-3 resize-none focus:outline-none focus:border-yellow-500"></textarea>
-                        <input type="text" id="postImgUrl" placeholder="Image URL (Optional)" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-lg text-white text-xs mb-3 focus:outline-none focus:border-yellow-500">
-                        <button onclick="sharePost()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 rounded-lg font-bold text-sm transition">Share Post</button>
+                    <div class="p-4 border-b border-zinc-900 bg-zinc-950/50">
+                        <textarea id="postText" placeholder="Share your thoughts..." class="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white text-sm mb-3 resize-none focus:outline-none focus:border-yellow-400 transition"></textarea>
+                        <input type="text" id="postImgUrl" placeholder="Image Link URL (Optional)" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-white text-xs mb-3 focus:outline-none focus:border-yellow-400 transition">
+                        <button onclick="sharePost()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 rounded-xl font-bold text-sm transition shadow-md shadow-yellow-400/10">Post Update</button>
                     </div>
-                    <div id="postsFeed" class="divide-y divide-zinc-900">
-                        <div class="text-center py-8 text-zinc-500 text-sm">Loading feed...</div>
+                    <div id="postsFeed" class="divide-y divide-zinc-900/60">
+                        <div class="text-center py-10 text-zinc-500 text-sm">Loading feed...</div>
                     </div>
                 </div>
             `;
@@ -199,22 +197,22 @@
             querySnapshot.forEach((doc) => {
                 const p = doc.data();
                 html += `
-                    <div class="py-3">
-                        <div class="flex items-center px-4 py-2 gap-2">
-                            <div class="w-8 h-8 bg-yellow-400 text-black rounded-full flex items-center justify-center font-bold text-xs">${p.email[0].toUpperCase()}</div>
-                            <span class="text-xs font-semibold">${p.email.split('@')[0]}</span>
+                    <div class="py-4 bg-zinc-950/20">
+                        <div class="flex items-center px-4 py-2.5 gap-3">
+                            <div class="w-9 h-9 bg-yellow-400 text-black rounded-xl flex items-center justify-center font-bold text-xs shadow-md">${p.email[0].toUpperCase()}</div>
+                            <span class="text-xs font-semibold tracking-wide text-zinc-200">${p.email.split('@')[0]}</span>
                         </div>
-                        ${p.image ? `<img src="${p.image}" class="w-full max-h-96 object-cover mb-2">` : ''}
-                        ${p.text ? `<p class="px-4 text-sm mb-2 text-zinc-200">${p.text}</p>` : ''}
-                        <div class="flex px-4 gap-4 text-xl mt-2 text-zinc-300">
-                            <i class="fa-regular fa-heart hover:text-yellow-400 cursor-pointer"></i>
-                            <i class="fa-regular fa-comment cursor-pointer hover:text-yellow-400"></i>
-                            <i class="fa-regular fa-paper-plane cursor-pointer hover:text-yellow-400"></i>
+                        ${p.image ? `<img src="${p.image}" class="w-full max-h-[420px] object-cover my-2 rounded-lg border-y border-zinc-900">` : ''}
+                        ${p.text ? `<p class="px-4 text-sm my-2 text-zinc-100 leading-relaxed">${p.text}</p>` : ''}
+                        <div class="flex px-4 gap-5 text-xl mt-3 text-zinc-400">
+                            <i class="fa-regular fa-heart hover:text-yellow-400 cursor-pointer transition"></i>
+                            <i class="fa-regular fa-comment hover:text-yellow-400 cursor-pointer transition"></i>
+                            <i class="fa-regular fa-paper-plane hover:text-yellow-400 cursor-pointer transition"></i>
                         </div>
                     </div>
                 `;
             });
-            feed.innerHTML = html || "<p class='text-center text-zinc-500 py-8'>No posts yet</p>";
+            feed.innerHTML = html || "<p class='text-center text-zinc-500 py-10'>No posts found</p>";
         }
 
         async function createStory() {
@@ -229,6 +227,7 @@
 
         async function loadStories() {
             const list = document.getElementById('storiesList');
+            if (!list) return;
             const q = window.query(window.collection(window.db, "stories"), window.orderBy("createdAt", "desc"));
             const snapshot = await window.getDocs(q);
             let html = "";
@@ -236,10 +235,10 @@
                 const s = doc.data();
                 html += `
                     <div class="flex flex-col items-center flex-shrink-0 cursor-pointer">
-                        <div class="w-16 h-16 rounded-full p-[2px] bg-yellow-400">
-                            <img src="${s.image}" class="w-full h-full rounded-full object-cover border-2 border-black">
+                        <div class="w-16 h-16 rounded-2xl p-[2px] bg-yellow-400 shadow-lg">
+                            <img src="${s.image}" class="w-full h-full rounded-[14px] object-cover border-2 border-black">
                         </div>
-                        <span class="text-[11px] mt-1 text-zinc-300 truncate w-16 text-center">${s.email.split('@')[0]}</span>
+                        <span class="text-[11px] mt-1.5 text-zinc-300 truncate w-16 text-center font-medium">${s.email.split('@')[0]}</span>
                     </div>
                 `;
             });
@@ -250,12 +249,12 @@
             document.getElementById('app').innerHTML = `
                 <div class="p-4 pb-20">
                     <div class="mb-4">
-                        <input type="text" placeholder="Search" class="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-yellow-500">
+                        <input type="text" placeholder="Search Roxchat..." class="w-full bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">
                     </div>
-                    <div class="grid grid-cols-3 gap-1">
-                        <div class="bg-zinc-900 h-32 flex items-center justify-center text-xs text-zinc-600">Explore</div>
-                        <div class="bg-zinc-900 h-32 flex items-center justify-center text-xs text-zinc-600">Explore</div>
-                        <div class="bg-zinc-900 h-32 flex items-center justify-center text-xs text-zinc-600">Explore</div>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <div class="bg-zinc-900/80 h-32 rounded-lg flex items-center justify-center text-xs text-zinc-600 border border-zinc-800/50">Media</div>
+                        <div class="bg-zinc-900/80 h-32 rounded-lg flex items-center justify-center text-xs text-zinc-600 border border-zinc-800/50">Media</div>
+                        <div class="bg-zinc-900/80 h-32 rounded-lg flex items-center justify-center text-xs text-zinc-600 border border-zinc-800/50">Media</div>
                     </div>
                 </div>
             `;
@@ -264,9 +263,11 @@
         function renderReels() {
             document.getElementById('app').innerHTML = `
                 <div class="h-screen flex flex-col items-center justify-center bg-black text-center p-4 pb-20">
-                    <i class="fa-solid fa-clapperboard text-5xl mb-3 text-yellow-500"></i>
-                    <p class="font-bold text-lg">Reels Section</p>
-                    <p class="text-xs text-zinc-500 mt-1">Scroll through vertical video feeds.</p>
+                    <div class="w-16 h-16 bg-yellow-400/10 rounded-2xl flex items-center justify-center text-yellow-400 mb-3 border border-yellow-400/20">
+                        <i class="fa-solid fa-bolt text-2xl"></i>
+                    </div>
+                    <p class="font-bold text-lg text-white">Rox Reels</p>
+                    <p class="text-xs text-zinc-500 mt-1">Short clips stream coming soon.</p>
                 </div>
             `;
         }
@@ -274,22 +275,22 @@
         function renderChat() {
             document.getElementById('app').innerHTML = `
                 <div class="p-4 pb-20 flex flex-col h-screen">
-                    <div class="flex justify-between items-center mb-4">
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-zinc-900">
                         <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-arrow-left text-lg cursor-pointer" onclick="switchTab('home')"></i>
-                            <h2 class="font-bold text-lg">${window.auth.currentUser?.email.split('@')[0]}</h2>
+                            <i class="fa-solid fa-arrow-left text-lg cursor-pointer text-zinc-300 hover:text-yellow-400" onclick="switchTab('home')"></i>
+                            <h2 class="font-bold text-base text-zinc-100">${window.auth.currentUser?.email.split('@')[0]}</h2>
                         </div>
-                        <i class="fa-regular fa-pen-to-square text-xl"></i>
+                        <i class="fa-regular fa-pen-to-square text-xl text-zinc-300"></i>
                     </div>
                     <div id="chatMessages" class="flex-1 overflow-y-auto space-y-3 mb-4 pr-1">
-                        <div class="text-center text-zinc-500 text-xs py-2">Direct Message Inbox</div>
+                        <div class="text-center text-zinc-500 text-xs py-4">Direct Message Channel</div>
                     </div>
                     <div class="sticky bottom-16 bg-black pt-2 pb-2 border-t border-zinc-900 flex items-center gap-2">
-                        <input type="text" id="chatInput" placeholder="Message..." class="flex-1 bg-zinc-900 border border-zinc-800 px-4 py-2.5 rounded-full text-sm text-white focus:outline-none focus:border-yellow-500">
-                        <button id="recordBtn" onclick="toggleInboxRecord()" class="bg-zinc-900 border border-zinc-800 w-10 h-10 rounded-full flex items-center justify-center text-yellow-400 hover:bg-zinc-800">
+                        <input type="text" id="chatInput" placeholder="Type a message..." class="flex-1 bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-full text-sm text-white focus:outline-none focus:border-yellow-400 transition">
+                        <button id="recordBtn" onclick="toggleInboxRecord()" class="bg-zinc-900 border border-zinc-800 w-11 h-11 rounded-full flex items-center justify-center text-yellow-400 hover:bg-zinc-800 transition">
                             <i class="fa-solid fa-microphone"></i>
                         </button>
-                        <button onclick="sendChatMessage()" class="bg-yellow-400 text-black px-4 py-2 rounded-full text-sm font-bold">Send</button>
+                        <button onclick="sendChatMessage()" class="bg-yellow-400 text-black px-5 py-3 rounded-full text-sm font-bold shadow-md shadow-yellow-400/15">Send</button>
                     </div>
                 </div>
             `;
@@ -342,9 +343,9 @@
                 const isMe = c.email === window.auth.currentUser.email;
                 html += `
                     <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                        <span class="text-[10px] text-zinc-500 mb-1">${c.email.split('@')[0]}</span>
-                        <div class="max-w-[75%] bg-zinc-900 p-3 rounded-2xl border border-zinc-800 text-sm">
-                            ${c.text ? `<p>${c.text}</p>` : ''}
+                        <span class="text-[10px] text-zinc-500 mb-1 px-1">${c.email.split('@')[0]}</span>
+                        <div class="max-w-[78%] bg-zinc-900 p-3.5 rounded-2xl border border-zinc-800 text-sm shadow-sm">
+                            ${c.text ? `<p class="text-zinc-100">${c.text}</p>` : ''}
                             ${c.audio ? `<audio controls class="w-full h-8 mt-1"><source src="${c.audio}" type="audio/webm"></audio>` : ''}
                         </div>
                     </div>
@@ -365,20 +366,20 @@
             document.getElementById('app').innerHTML = `
                 <div class="p-4 pb-20">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="font-bold text-lg truncate">${window.auth.currentUser?.email.split('@')[0]}</h2>
-                        <button onclick="window.signOut(window.auth)" class="text-yellow-400 text-xs font-semibold border border-yellow-400/30 px-3 py-1.5 rounded-md">Log Out</button>
+                        <h2 class="font-bold text-lg truncate text-zinc-100">${window.auth.currentUser?.email.split('@')[0]}</h2>
+                        <button onclick="window.signOut(window.auth)" class="text-yellow-400 text-xs font-semibold border border-yellow-400/30 px-3.5 py-1.5 rounded-xl hover:bg-yellow-400/10 transition">Log Out</button>
                     </div>
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="w-20 h-20 bg-yellow-400 text-black rounded-full flex items-center justify-center text-2xl font-bold">${window.auth.currentUser?.email[0].toUpperCase()}</div>
-                        <div class="flex gap-6 text-center flex-1 justify-around">
-                            <div><p class="font-bold">1</p><p class="text-xs text-zinc-400">Posts</p></div>
-                            <div><p class="font-bold">150</p><p class="text-xs text-zinc-400">Followers</p></div>
-                            <div><p class="font-bold">90</p><p class="text-xs text-zinc-400">Following</p></div>
+                    <div class="flex items-center gap-4 mb-5 bg-zinc-950 p-4 rounded-2xl border border-zinc-900">
+                        <div class="w-20 h-20 bg-yellow-400 text-black rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">${window.auth.currentUser?.email[0].toUpperCase()}</div>
+                        <div class="flex gap-4 text-center flex-1 justify-around">
+                            <div><p class="font-bold text-base text-zinc-100">1</p><p class="text-xs text-zinc-400">Posts</p></div>
+                            <div><p class="font-bold text-base text-zinc-100">150</p><p class="text-xs text-zinc-400">Followers</p></div>
+                            <div><p class="font-bold text-base text-zinc-100">90</p><p class="text-xs text-zinc-400">Following</p></div>
                         </div>
                     </div>
-                    <div class="mb-6">
-                        <p class="text-xs font-semibold">${window.auth.currentUser?.email}</p>
-                        <p class="text-xs text-zinc-400 mt-1">Digital creator ✨</p>
+                    <div class="mb-6 px-1">
+                        <p class="text-xs font-semibold text-zinc-200">${window.auth.currentUser?.email}</p>
+                        <p class="text-xs text-zinc-400 mt-1">Exploring Roxchat ✨</p>
                     </div>
                 </div>
             `;
