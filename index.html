@@ -93,6 +93,7 @@
         let mediaRecorder;
         let audioChunks = [];
         let recordedAudioBlob = null;
+        let currentChatMode = 'ai'; // Default to AI Assistant mode in chat
 
         function switchTab(tab) {
             currentTab = tab;
@@ -249,16 +250,47 @@
         function renderExplore() {
             document.getElementById('app').innerHTML = `
                 <div class="p-4 pb-20">
-                    <div class="mb-4">
-                        <input type="text" placeholder="Search Roxchat..." class="w-full bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">
+                    <div class="mb-4 flex gap-2">
+                        <input type="text" id="searchInput" placeholder="Search users by email..." onkeydown="if(event.key === 'Enter') handleSearch()" class="flex-1 bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">
+                        <button onclick="handleSearch()" class="bg-yellow-400 text-black px-4 py-3 rounded-xl font-bold text-sm shadow-md">Search</button>
                     </div>
-                    <div class="grid grid-cols-3 gap-1.5">
-                        <div class="bg-zinc-900/80 h-32 rounded-lg flex items-center justify-center text-xs text-zinc-600 border border-zinc-800/50">Media</div>
-                        <div class="bg-zinc-900/80 h-32 rounded-lg flex items-center justify-center text-xs text-zinc-600 border border-zinc-800/50">Media</div>
-                        <div class="bg-zinc-900/80 h-32 rounded-lg flex items-center justify-center text-xs text-zinc-600 border border-zinc-800/50">Media</div>
+                    <div id="searchResults" class="grid grid-cols-1 gap-2">
+                        <p class="text-center text-zinc-500 text-xs py-10">Type an email to search users</p>
                     </div>
                 </div>
             `;
+        }
+
+        async function handleSearch() {
+            const queryText = document.getElementById('searchInput').value.trim().toLowerCase();
+            const resultsDiv = document.getElementById('searchResults');
+            if (!queryText) return;
+
+            resultsDiv.innerHTML = "<p class='text-center text-zinc-500 text-xs py-4'>Searching...</p>";
+            
+            try {
+                const querySnapshot = await window.getDocs(window.collection(window.db, "users"));
+                let html = "";
+                querySnapshot.forEach((doc) => {
+                    const userData = doc.data();
+                    if (userData.email && userData.email.toLowerCase().includes(queryText)) {
+                        html += `
+                            <div class="bg-zinc-900/80 border border-zinc-800 p-3.5 rounded-xl flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-yellow-400 text-black rounded-xl flex items-center justify-center font-bold text-sm">${userData.email[0].toUpperCase()}</div>
+                                    <div>
+                                        <p class="text-xs font-semibold text-zinc-200">${userData.email}</p>
+                                        <p class="text-[11px] text-zinc-400">${userData.bio || 'No bio'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                resultsDiv.innerHTML = html || "<p class='text-center text-zinc-500 text-xs py-10'>No users found</p>";
+            } catch (error) {
+                resultsDiv.innerHTML = "<p class='text-center text-red-500 text-xs py-10'>Error searching users</p>";
+            }
         }
 
         function renderReels() {
@@ -276,26 +308,93 @@
         function renderChat() {
             document.getElementById('app').innerHTML = `
                 <div class="p-4 pb-20 flex flex-col h-screen">
-                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-zinc-900">
+                    <div class="flex justify-between items-center mb-3 pb-2 border-b border-zinc-900">
                         <div class="flex items-center gap-3">
                             <i class="fa-solid fa-arrow-left text-lg cursor-pointer text-zinc-300 hover:text-yellow-400" onclick="switchTab('home')"></i>
-                            <h2 class="font-bold text-base text-zinc-100">${window.auth.currentUser?.email.split('@')[0]}</h2>
+                            <div>
+                                <h2 class="font-bold text-base text-zinc-100" id="chatTitle">${currentChatMode === 'ai' ? 'Rox AI Assistant 🤖' : 'Global Chat Room 🌍'}</h2>
+                                <p class="text-[10px] text-zinc-400">${currentChatMode === 'ai' ? 'Ask anything about Roxchat' : 'Public messages'}</p>
+                            </div>
                         </div>
-                        <i class="fa-regular fa-pen-to-square text-xl text-zinc-300"></i>
+                        <button onclick="toggleChatMode()" class="bg-zinc-900 border border-zinc-800 text-yellow-400 text-xs px-3 py-1.5 rounded-xl font-semibold hover:bg-zinc-800 transition">
+                            ${currentChatMode === 'ai' ? '🌍 Global Chat' : '🤖 Rox AI'}
+                        </button>
                     </div>
                     <div id="chatMessages" class="flex-1 overflow-y-auto space-y-3 mb-4 pr-1">
-                        <div class="text-center text-zinc-500 text-xs py-4">Direct Message Channel</div>
+                        <div class="text-center text-zinc-500 text-xs py-4">Loading messages...</div>
                     </div>
                     <div class="sticky bottom-16 bg-black pt-2 pb-2 border-t border-zinc-900 flex items-center gap-2">
-                        <input type="text" id="chatInput" placeholder="Type a message..." class="flex-1 bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-full text-sm text-white focus:outline-none focus:border-yellow-400 transition">
-                        <button id="recordBtn" onclick="toggleInboxRecord()" class="bg-zinc-900 border border-zinc-800 w-11 h-11 rounded-full flex items-center justify-center text-yellow-400 hover:bg-zinc-800 transition">
-                            <i class="fa-solid fa-microphone"></i>
-                        </button>
+                        <input type="text" id="chatInput" placeholder="${currentChatMode === 'ai' ? 'Ask AI about Roxchat...' : 'Type a public message...'}" onkeydown="if(event.key === 'Enter') sendChatMessage()" class="flex-1 bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-full text-sm text-white focus:outline-none focus:border-yellow-400 transition">
+                        ${currentChatMode === 'global' ? `
+                            <button id="recordBtn" onclick="toggleInboxRecord()" class="bg-zinc-900 border border-zinc-800 w-11 h-11 rounded-full flex items-center justify-center text-yellow-400 hover:bg-zinc-800 transition">
+                                <i class="fa-solid fa-microphone"></i>
+                            </button>
+                        ` : ''}
                         <button onclick="sendChatMessage()" class="bg-yellow-400 text-black px-5 py-3 rounded-full text-sm font-bold shadow-md shadow-yellow-400/15">Send</button>
                     </div>
                 </div>
             `;
-            loadChatMessages();
+            if (currentChatMode === 'ai') {
+                loadAIChatMessages();
+            } else {
+                loadChatMessages();
+            }
+        }
+
+        function toggleChatMode() {
+            currentChatMode = currentChatMode === 'ai' ? 'global' : 'ai';
+            renderChat();
+        }
+
+        let localAIMessages = [
+            { sender: 'ai', text: 'ഹലോ! ഞാൻ Rox AI അസിസ്റ്റന്റാണ്. Roxchat ആപ്പിനെക്കുറിച്ചും ഇതിന്റെ ഫീച്ചറുകളെക്കുറിച്ചും നിങ്ങൾക്ക് എന്ത് വേണമെങ്കിലും എന്നോട് ചോദിക്കാം!' }
+        ];
+
+        function loadAIChatMessages() {
+            const chatBox = document.getElementById('chatMessages');
+            if (!chatBox) return;
+            let html = "";
+            localAIMessages.forEach(msg => {
+                const isMe = msg.sender === 'user';
+                html += `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        <span class="text-[10px] text-zinc-500 mb-1 px-1">${isMe ? 'You' : 'Rox AI 🤖'}</span>
+                        <div class="max-w-[85%] bg-zinc-900 p-3.5 rounded-2xl border border-zinc-800 text-sm shadow-sm text-zinc-100">
+                            ${msg.text}
+                        </div>
+                    </div>
+                `;
+            });
+            chatBox.innerHTML = html;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendAIChatMessage(text) {
+            localAIMessages.push({ sender: 'user', text: text });
+            loadAIChatMessages();
+
+            // Smart Detailed AI Answers about Roxchat
+            let reply = "Roxchat-നെക്കുറിച്ചുള്ള കൂടുതൽ വിവരങ്ങൾക്ക് നിങ്ങൾക്ക് ആപ്പിലെ ഫീച്ചറുകൾ പരിശോധിക്കാവുന്നതാണ്!";
+            const lower = text.toLowerCase();
+            
+            if (lower.includes('hello') || lower.includes('hi') || lower.includes('hai')) {
+                reply = "ഹലോ! Roxchat-ലേക്ക് സ്വാഗതം. നിങ്ങൾക്ക് ഈ ആപ്പിനെക്കുറിച്ച് എന്താണ് അറിയേണ്ടത്?";
+            } else if (lower.includes('what is roxchat') || lower.includes('roxchat എന്താണ്') || lower.includes('about')) {
+                reply = "Roxchat എന്നത് സുഹൃത്തുക്കളുമായി ചാറ്റ് ചെയ്യാനും, ഫോട്ടോകളും സ്റ്റോറികളും ഷെയർ ചെയ്യാനുമുള്ള ഒരു മോഡേൺ സോഷ്യൽ ചാറ്റ് ആപ്പാണ്. ഇത് HTML, Tailwind CSS, Firebase എന്നിവ ഉപയോഗിച്ചാണ് നിർമ്മിച്ചിരിക്കുന്നത്.";
+            } else if (lower.includes('feature') || lower.includes('what can') || lower.includes('ഫീച്ചർ')) {
+                reply = "Roxchat-ലെ പ്രധാന ഫീച്ചറുകൾ താഴെ പറയുന്നവയാണ്:\n1. ഹോം ഫീഡിൽ പോസ്റ്റുകളും സ്റ്റോറികളും ഷെയർ ചെയ്യാം.\n2. എക്സ്പ്ലോർ പേജിൽ മറ്റ് യൂസർമാരെ സെർച്ച് ചെയ്യാം.\n3. ഗ്ലോബൽ ചാറ്റിൽ വോയ്സ് മെസ്സേജുകളും ടെക്സ്റ്റുകളും അയക്കാം.\n4. ഈ Rox AI റോബോട്ടിനോട് ആപ്പിനെക്കുറിച്ച് എന്ത് സംശയവും ചോദിക്കാം!";
+            } else if (lower.includes('search') || lower.includes('സെർച്ച്')) {
+                reply = "Explore പേജിൽ പോയി യൂസർമാരുടെ ഇമെയിൽ വിലാസം നൽകി നിങ്ങൾക്ക് അവരെ എളുപ്പത്തിൽ സെർച്ച് ചെയ്ത് കണ്ടെത്താവുന്നതാണ്. എന്റർ കീ അമർത്തിയോ സെർച്ച് ബട്ടൺ ക്ലിക്ക് ചെയ്തോ ഇത് പ്രവർത്തിപ്പിക്കാം.";
+            } else if (lower.includes('firebase') || lower.includes('database')) {
+                reply = "Roxchat ആപ്പ് സെക്യൂർ ആയി പ്രവർത്തിക്കാനും യൂസർ ഡാറ്റ സേവ് ചെയ്യാനും ഫയർബേസ് (Firebase Auth & Firestore) ആണ് ഉപയോഗിക്കുന്നത്.";
+            } else if (lower.includes('creator') || lower.includes('who made') || lower.includes('ആരാണ്')) {
+                reply = "Roxchat നിർമ്മിച്ചിരിക്കുന്നത് നിങ്ങളും ഞാനും ചേർന്നാണ്! ഇതൊരു കസ്റ്റം വെബ് ആപ്പാണ്.";
+            }
+
+            setTimeout(() => {
+                localAIMessages.push({ sender: 'ai', text: reply });
+                loadAIChatMessages();
+            }, 500);
         }
 
         async function toggleInboxRecord() {
@@ -323,13 +422,19 @@
         }
 
         async function sendChatMessage() {
-            const text = document.getElementById('chatInput').value;
+            const inputField = document.getElementById('chatInput');
+            const text = inputField.value.trim();
             if (!text) return;
+            inputField.value = '';
+
+            if (currentChatMode === 'ai') {
+                sendAIChatMessage(text);
+                return;
+            }
 
             await window.addDoc(window.collection(window.db, "chats"), {
                 text, email: window.auth.currentUser.email, createdAt: window.serverTimestamp()
             });
-            document.getElementById('chatInput').value = '';
             loadChatMessages();
         }
 
@@ -353,6 +458,7 @@
                 `;
             });
             chatBox.innerHTML = html || "<p class='text-center text-zinc-600 text-xs'>No messages yet.</p>";
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
         function blobToBase64(blob) {
