@@ -102,6 +102,49 @@
         let audioChunks = [];
         window.currentUserData = null;
 
+        // Pull to refresh variables
+        let touchStartY = 0;
+        let isPulling = false;
+
+        window.addEventListener('touchstart', e => {
+            if (window.scrollY === 0) {
+                touchStartY = e.touches[0].clientY;
+                isPulling = true;
+            }
+        });
+
+        window.addEventListener('touchmove', e => {
+            if (!isPulling) return;
+            const touchY = e.touches[0].clientY;
+            const diff = touchY - touchStartY;
+            if (diff > 120 && window.scrollY === 0) {
+                isPulling = false;
+                triggerRefresh();
+            }
+        });
+
+        window.addEventListener('touchend', () => {
+            isPulling = false;
+        });
+
+        function triggerRefresh() {
+            const appDiv = document.getElementById('app');
+            const indicator = document.createElement('div');
+            indicator.id = 'refreshIndicator';
+            indicator.className = 'fixed top-4 left-0 right-0 mx-auto w-max bg-yellow-400 text-black px-4 py-1.5 rounded-full text-xs font-bold shadow-lg z-50 flex items-center space-x-2 animate-bounce';
+            indicator.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Refreshing feed...</span>`;
+            document.body.appendChild(indicator);
+
+            setTimeout(() => {
+                if (indicator) indicator.remove();
+                if (currentTab === 'home') renderHome();
+                else if (currentTab === 'reels') renderReels();
+                else if (currentTab === 'explore') renderExplore();
+                else if (currentTab === 'chat') renderChatInboxList();
+                else if (currentTab === 'profile') renderProfile();
+            }, 800);
+        }
+
         window.preloadUserData = async function() {
             if (!window.auth.currentUser) return;
             try {
@@ -313,7 +356,7 @@
                 <div>
                     ${getTopHeaderHTML()}
                     ${getStoriesBarHTML()}
-                    <div class="px-4 py-6 text-center text-zinc-500 text-sm">Welcome to Roxchat Home Feed!</div>
+                    <div class="px-4 py-6 text-center text-zinc-500 text-sm">Welcome to Roxchat Home Feed! <br><span class="text-xs text-zinc-600">(Pull down to refresh)</span></div>
                 </div>
             `;
         }
@@ -619,7 +662,10 @@
             document.getElementById('app').innerHTML = `
                 <div>
                     ${getTopHeaderHTML()}
-                    <div class="p-4 text-zinc-400 text-center">Reels page coming soon!</div>
+                    <div class="p-4 text-zinc-400 text-center">
+                        <p class="mb-2">Reels feed is up to date!</p>
+                        <span class="text-xs text-zinc-600">(Pull down to refresh new reels)</span>
+                    </div>
                 </div>
             `;
         }
