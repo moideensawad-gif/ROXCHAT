@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roxchat Instagram Clone</title>
+    <title>Roxchat</title>
+    <!-- PWABuilder Manifest & Meta Tags -->
+    <meta name="description" content="Roxchat - Instagram Clone App with Firebase">
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Roxchat%22%2C%22short_name%22%3A%22Roxchat%22%2C%22description%22%3A%22Instagram%20clone%20with%20Firebase%22%2C%22start_url%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%23000000%22%2C%22icons%22%3A%5B%5D%7D">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -257,7 +262,7 @@
             `;
         }
 
-        // --- CHAT / INBOX TAB (With Voice Note & Messages) ---
+        // --- CHAT / INBOX TAB ---
         function renderChat() {
             document.getElementById('app').innerHTML = `
                 <div class="p-4 pb-20 flex flex-col h-screen">
