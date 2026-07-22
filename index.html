@@ -28,13 +28,13 @@
     </div>
 
     <!-- Hidden file inputs -->
+    <input type="file" id="postFileInput" accept="image/*,video/*" class="hidden" onchange="handlePostUpload(event)">
     <input type="file" id="storyFileInput" accept="image/*" class="hidden" onchange="handleStoryUpload(event)">
     <input type="file" id="avatarFileInput" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)">
 
     <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/80 flex justify-around py-4 z-50 shadow-lg">
         <button onclick="switchTab('home')" id="nav-home" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-house-chimney"></i></button>
         <button onclick="switchTab('chat')" id="nav-chat" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-comments"></i></button>
-        <!-- Center Search Button -->
         <button onclick="switchTab('explore')" id="nav-explore" class="text-zinc-400 text-2xl transition transform active:scale-90" title="Search Reels & Friends"><i class="fa-solid fa-magnifying-glass"></i></button>
         <button onclick="switchTab('reels')" id="nav-reels" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-bolt"></i></button>
         <button onclick="switchTab('profile')" id="nav-profile" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-circle-user"></i></button>
@@ -101,8 +101,9 @@
         let mediaRecorder = null;
         let audioChunks = [];
         window.currentUserData = null;
+        let tempAvatarBase64 = null;
 
-        // Pull to refresh variables
+        // Pull to refresh
         let touchStartY = 0;
         let isPulling = false;
 
@@ -128,7 +129,6 @@
         });
 
         function triggerRefresh() {
-            const appDiv = document.getElementById('app');
             const indicator = document.createElement('div');
             indicator.id = 'refreshIndicator';
             indicator.className = 'fixed top-4 left-0 right-0 mx-auto w-max bg-yellow-400 text-black px-4 py-1.5 rounded-full text-xs font-bold shadow-lg z-50 flex items-center space-x-2 animate-bounce';
@@ -152,6 +152,7 @@
                 let userDoc = await window.getDoc(userRef);
                 if (userDoc.exists()) {
                     window.currentUserData = userDoc.data();
+                    tempAvatarBase64 = window.currentUserData.avatar;
                 } else {
                     window.currentUserData = {
                         uid: window.auth.currentUser.uid,
@@ -162,20 +163,16 @@
                         isPrivate: false,
                         pushNotifications: true
                     };
+                    tempAvatarBase64 = window.currentUserData.avatar;
                     await window.setDoc(userRef, { ...window.currentUserData, createdAt: window.serverTimestamp() });
                 }
             } catch (e) {
                 console.error("Preload error:", e);
-                window.currentUserData = {
-                    uid: window.auth.currentUser.uid,
-                    username: window.auth.currentUser.email ? window.auth.currentUser.email.split('@')[0] : "user",
-                    email: window.auth.currentUser.email || "",
-                    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=" + window.auth.currentUser.uid,
-                    bio: "Hey there! I am using Roxchat.",
-                    isPrivate: false,
-                    pushNotifications: true
-                };
             }
+        }
+
+        function triggerPostPicker() {
+            document.getElementById('postFileInput').click();
         }
 
         function triggerStoryPicker() {
@@ -186,17 +183,44 @@
             document.getElementById('avatarFileInput').click();
         }
 
+        async function handlePostUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const mediaBase64 = e.target.result;
+                const isVideo = file.type.startsWith('video');
+                const caption = prompt("Enter a caption for your post:") || "";
+
+                try {
+                    await window.addDoc(window.collection(window.db, "posts"), {
+                        uid: window.auth.currentUser.uid,
+                        username: window.currentUserData ? window.currentUserData.username : "User",
+                        avatar: window.currentUserData ? window.currentUserData.avatar : "https://api.dicebear.com/7.x/avataaars/svg?seed=user",
+                        mediaUrl: mediaBase64,
+                        isVideo: isVideo,
+                        caption: caption,
+                        createdAt: window.serverTimestamp()
+                    });
+                    alert("Post Published Successfully!");
+                    renderHome();
+                } catch (err) {
+                    alert("Failed to publish post: " + err.message);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
         async function handleAvatarUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                const base64Image = e.target.result;
-                const avatarInput = document.getElementById('editAvatar');
+                tempAvatarBase64 = e.target.result;
                 const avatarPreview = document.getElementById('profileAvatarPreview');
-                if (avatarInput) avatarInput.value = base64Image;
-                if (avatarPreview) avatarPreview.src = base64Image;
+                if (avatarPreview) avatarPreview.src = tempAvatarBase64;
             };
             reader.readAsDataURL(file);
         }
@@ -230,7 +254,7 @@
                 <div class="flex justify-between items-center mb-4 px-4 pt-4">
                     <h1 class="text-2xl brand-font text-yellow-400">Roxchat</h1>
                     <div class="flex items-center space-x-4 text-xl">
-                        <button onclick="triggerStoryPicker()" class="text-zinc-300 hover:text-yellow-400 transition" title="Add Story"><i class="fa-solid fa-plus-circle"></i></button>
+                        <button onclick="triggerPostPicker()" class="text-zinc-300 hover:text-yellow-400 transition" title="Create New Post"><i class="fa-solid fa-plus-circle"></i></button>
                         <button onclick="renderNotifications()" class="text-zinc-300 hover:text-yellow-400 transition relative" title="Notifications">
                             <i class="fa-solid fa-heart"></i>
                         </button>
@@ -351,14 +375,63 @@
             }
         }
 
-        function renderHome() {
-            document.getElementById('app').innerHTML = `
+        async function renderHome() {
+            const appDiv = document.getElementById('app');
+            appDiv.innerHTML = `
                 <div>
                     ${getTopHeaderHTML()}
                     ${getStoriesBarHTML()}
-                    <div class="px-4 py-6 text-center text-zinc-500 text-sm">Welcome to Roxchat Home Feed! <br><span class="text-xs text-zinc-600">(Pull down to refresh)</span></div>
+                    <div id="postsFeedContainer" class="space-y-4 px-4 pb-6">
+                        <div class="text-center text-zinc-500 text-sm py-10">Loading posts feed...</div>
+                    </div>
                 </div>
             `;
+
+            try {
+                const q = window.query(window.collection(window.db, "posts"), window.orderBy("createdAt", "desc"));
+                const querySnapshot = await window.getDocs(q);
+                const feedContainer = document.getElementById('postsFeedContainer');
+
+                if (querySnapshot.empty) {
+                    feedContainer.innerHTML = `
+                        <div class="text-center py-10 text-zinc-500 text-sm">
+                            <p>No posts in feed yet.</p>
+                            <span class="text-xs text-zinc-600">Tap the (+) icon top right to upload photos/videos!</span>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                querySnapshot.forEach((docSnap) => {
+                    const post = docSnap.data();
+                    let mediaContent = `<img src="${post.mediaUrl}" class="w-full object-cover max-h-[450px]">`;
+                    if (post.isVideo) {
+                        mediaContent = `<video src="${post.mediaUrl}" controls class="w-full object-cover max-h-[450px]"></video>`;
+                    }
+
+                    html += `
+                        <div class="bg-zinc-950 border border-zinc-900 rounded-2xl overflow-hidden shadow-lg">
+                            <div class="flex items-center justify-between p-3">
+                                <div class="flex items-center space-x-2.5">
+                                    <img src="${post.avatar}" class="w-9 h-9 rounded-full bg-zinc-800 object-cover">
+                                    <span class="font-bold text-sm text-white">${post.username}</span>
+                                </div>
+                            </div>
+                            <div class="bg-black flex items-center justify-center">
+                                ${mediaContent}
+                            </div>
+                            <div class="p-3 text-sm">
+                                <p class="text-zinc-200"><strong class="text-white mr-2">${post.username}</strong>${post.caption || ''}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                feedContainer.innerHTML = html;
+            } catch (e) {
+                console.error("Error loading posts feed:", e);
+                document.getElementById('postsFeedContainer').innerHTML = `<div class="text-center text-red-500 text-sm py-6">Failed to load feed posts.</div>`;
+            }
         }
 
         async function renderNotifications() {
@@ -683,26 +756,25 @@
                 pushNotifications: true
             };
 
+            if(!tempAvatarBase64) tempAvatarBase64 = userData.avatar;
+
             document.getElementById('app').innerHTML = `
                 <div>
                     ${getTopHeaderHTML()}
                     <div class="p-4 text-center">
                         <div class="flex flex-col items-center mt-2">
                             <div class="relative group mb-3 cursor-pointer" onclick="triggerAvatarPicker()" title="Change Profile Picture">
-                                <img id="profileAvatarPreview" src="${userData.avatar}" class="w-24 h-24 rounded-full border-2 border-yellow-400 bg-zinc-800 object-cover">
+                                <img id="profileAvatarPreview" src="${tempAvatarBase64}" class="w-24 h-24 rounded-full border-2 border-yellow-400 bg-zinc-800 object-cover">
                                 <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                                     <i class="fa-solid fa-camera text-white text-lg"></i>
                                 </div>
                             </div>
+                            <span class="text-xs text-zinc-400 mb-3">Tap image to change photo</span>
                             
-                            <div class="w-full max-w-xs space-y-3 mt-2 text-left">
+                            <div class="w-full max-w-xs space-y-3 mt-1 text-left">
                                 <div>
                                     <label class="text-xs text-zinc-400 ml-1">Username</label>
                                     <input type="text" id="editUsername" value="${userData.username || ''}" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400">
-                                </div>
-                                <div>
-                                    <label class="text-xs text-zinc-400 ml-1">Avatar Image URL or Uploaded</label>
-                                    <input type="text" id="editAvatar" value="${userData.avatar || ''}" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400" placeholder="Paste image link or pick from gallery">
                                 </div>
                                 <div>
                                     <label class="text-xs text-zinc-400 ml-1">Bio</label>
@@ -840,7 +912,6 @@
 
         async function saveProfileChanges() {
             const newUsername = document.getElementById('editUsername').value.trim().toLowerCase();
-            const newAvatar = document.getElementById('editAvatar').value.trim();
             const newBio = document.getElementById('editBio').value.trim();
             const isPrivate = document.getElementById('settingPrivate').checked;
             const pushNotifications = document.getElementById('settingNotif').checked;
@@ -863,7 +934,7 @@
                 const userRef = window.doc(window.db, "users", window.auth.currentUser.uid);
                 const updatedData = {
                     username: newUsername,
-                    avatar: newAvatar,
+                    avatar: tempAvatarBase64 || window.currentUserData.avatar,
                     bio: newBio,
                     isPrivate: isPrivate,
                     pushNotifications: pushNotifications
