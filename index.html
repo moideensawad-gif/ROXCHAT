@@ -7,6 +7,10 @@
     <meta name="description" content="Instagram clone with Firebase">
     <meta name="theme-color" content="#000000">
     
+    <!-- PWA Manifest & Icons -->
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./Icon-192.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -72,7 +76,16 @@
         });
     </script>
 
+    <!-- Service Worker Registration & App Logic -->
     <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registered!', reg))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+
         let currentTab = 'home';
         let mediaRecorder;
         let audioChunks = [];
@@ -87,20 +100,32 @@
             else if (tab === 'profile') renderProfile();
         }
 
+        // Instagram Style Login & Signup UI
         function renderLogin(isSignup = false) {
             document.getElementById('app').innerHTML = `
-                <div class="p-8 flex flex-col justify-center min-h-screen">
-                    <div class="text-center mb-8">
-                        <h1 class="text-4xl font-serif italic tracking-wider font-bold bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500 bg-clip-text text-transparent">Roxchat</h1>
+                <div class="p-8 flex flex-col justify-center items-center min-h-screen bg-black">
+                    <div class="w-full max-w-sm bg-black border border-zinc-800 p-8 rounded-lg shadow-md">
+                        <div class="text-center mb-6">
+                            <h1 class="text-4xl font-serif italic tracking-wider font-bold bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500 bg-clip-text text-transparent">Roxchat</h1>
+                        </div>
+                        <div class="space-y-3">
+                            <input type="email" id="email" placeholder="Phone number, username, or email" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded text-xs text-white focus:outline-none focus:border-zinc-600">
+                            <input type="password" id="password" placeholder="Password" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded text-xs text-white focus:outline-none focus:border-zinc-600">
+                            <button onclick="${isSignup ? 'handleSignup()' : 'handleLogin()'}" class="w-full bg-blue-500 hover:bg-blue-600 text-white p-2.5 rounded font-semibold text-sm transition mt-2">${isSignup ? 'Sign up' : 'Log in'}</button>
+                        </div>
+                        <div class="flex items-center my-6">
+                            <div class="flex-1 border-t border-zinc-800"></div>
+                            <span class="px-4 text-xs text-zinc-500 font-semibold uppercase">OR</span>
+                            <div class="flex-1 border-t border-zinc-800"></div>
+                        </div>
+                        <div class="text-center">
+                            <span class="text-xs text-blue-400 font-semibold cursor-pointer">Log in with Facebook</span>
+                        </div>
                     </div>
-                    <div class="space-y-3">
-                        <input type="email" id="email" placeholder="Phone number, username, or email" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-md text-sm text-white focus:outline-none focus:border-zinc-600">
-                        <input type="password" id="password" placeholder="Password" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-md text-sm text-white focus:outline-none focus:border-zinc-600">
-                        <button onclick="${isSignup ? 'handleSignup()' : 'handleLogin()'}" class="w-full bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-md font-semibold text-sm transition">${isSignup ? 'Sign Up' : 'Log In'}</button>
-                    </div>
-                    <div class="mt-6 text-center">
-                        <p class="text-xs text-zinc-400 cursor-pointer" onclick="renderLogin(${!isSignup})">
-                            ${isSignup ? 'Have an account? <span class="text-blue-400 font-semibold">Log in</span>' : "Don't have an account? <span class="text-blue-400 font-semibold">Sign up</span>"}
+                    <div class="w-full max-w-sm bg-black border border-zinc-800 p-4 rounded-lg mt-3 text-center">
+                        <p class="text-xs text-zinc-400">
+                            ${isSignup ? 'Have an account?' : "Don't have an account?"} 
+                            <span class="text-blue-500 font-semibold cursor-pointer" onclick="renderLogin(${!isSignup})">${isSignup ? 'Log in' : 'Sign up'}</span>
                         </p>
                     </div>
                 </div>
