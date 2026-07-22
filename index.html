@@ -29,6 +29,7 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg-color); margin: 0; padding: 0 0 70px 0; display: flex; flex-direction: column; align-items: center; color: var(--text-color); transition: background 0.3s, color 0.3s; }
         .container { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; max-width: 450px; margin-bottom: 20px; border: 1px solid var(--border-color); }
         input, textarea, select, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; background: var(--card-bg); color: var(--text-color); }
+        input, textarea, select { font-size: 16px !important; }
         button { background: var(--primary-color); color: #fff; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background: var(--primary-hover); }
         .hidden { display: none !important; }
@@ -43,7 +44,7 @@
         .comment-section { margin-top: 8px; border-top: 1px dashed var(--border-color); padding-top: 8px; font-size: 14px; }
         .stories-container { display: flex; gap: 12px; overflow-x: auto; padding: 5px 10px; width: 100%; max-width: 450px; box-sizing: border-box; margin-bottom: 10px; }
         
-        /* Instagram Style Bottom Navigation Bar (Black Box / Dark Theme Support) */
+        /* Instagram Style Bottom Navigation Bar */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
         .bottom-nav-item { background: none; border: none; color: var(--text-color); font-size: 22px; cursor: pointer; display: flex; flex-direction: column; align-items: center; width: auto; margin: 0; padding: 0; position: relative; }
         .bottom-nav-label { font-size: 10px; margin-top: 2px; }
@@ -94,7 +95,7 @@
     <!-- Main App Section -->
     <div id="app-container" class="hidden" style="width: 100%; max-width: 450px; display: flex; flex-direction: column; align-items: center;">
         
-        <!-- Instagram Top Header Bar (Larger Logo & Action Icons) -->
+        <!-- Instagram Top Header Bar -->
         <div class="header-bar">
             <div class="insta-logo">Roxchat</div>
             <div class="header-icons">
@@ -260,7 +261,7 @@
             <div id="notification-container"></div>
         </div>
 
-        <!-- Instagram Style Bottom Navigation Bar (Black Box Background) -->
+        <!-- Instagram Style Bottom Navigation Bar -->
         <div id="bottom-nav-bar" class="bottom-nav hidden">
             <button class="bottom-nav-item" onclick="switchTab('feed')"><i class="fa-solid fa-house"></i></button>
             <button class="bottom-nav-item" onclick="switchTab('reels')"><i class="fa-solid fa-clapperboard"></i></button>
@@ -818,7 +819,6 @@
             const container = document.getElementById('stories-flex');
             container.innerHTML = '';
             
-            // Add Your Story icon
             container.innerHTML += `
                 <div style="min-width: 70px; text-align: center;">
                     <img src="${myApp.currentUser ? myApp.currentUser.profilePic : ''}" style="width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid #333;">
