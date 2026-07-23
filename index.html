@@ -12,7 +12,7 @@
             theme: {
                 extend: {
                     colors: {
-                        brand: { 500: '#6366f1', 600: '#4f46e5' }
+                        brand: { 500: '#eab308', 600: '#ca8a04' }
                     }
                 }
             }
@@ -29,7 +29,7 @@
         <!-- Authentication View -->
         <div id="auth-view" class="flex-1 flex flex-col justify-center p-6 hidden">
             <div class="text-center mb-8">
-                <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500 mb-2">Roxchat</h1>
+                <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-500 mb-2">Roxchat</h1>
                 <p class="text-slate-400 text-sm">Connect, Share, and Chat with Friends</p>
             </div>
 
@@ -37,15 +37,15 @@
             <form id="login-form" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Email Address</label>
-                    <input type="email" id="login-email" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500">
+                    <input type="email" id="login-email" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Password</label>
-                    <input type="password" id="login-password" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500">
+                    <input type="password" id="login-password" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500">
                 </div>
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">Sign In</button>
+                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-50">Sign In</button>
                 <p class="text-center text-sm text-slate-400 mt-4">
-                    Don't have an account? <button type="button" id="show-register" class="text-indigo-400 font-semibold hover:underline">Sign Up</button>
+                    Don't have an account? <button type="button" id="show-register" class="text-amber-400 font-semibold hover:underline">Sign Up</button>
                 </p>
             </form>
 
@@ -53,19 +53,19 @@
             <form id="register-form" class="space-y-4 hidden">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Username</label>
-                    <input type="text" id="reg-username" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500">
+                    <input type="text" id="reg-username" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Email Address</label>
-                    <input type="email" id="reg-email" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500">
+                    <input type="email" id="reg-email" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Password</label>
-                    <input type="password" id="reg-password" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500">
+                    <input type="password" id="reg-password" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500">
                 </div>
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">Create Account</button>
+                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-50">Create Account</button>
                 <p class="text-center text-sm text-slate-400 mt-4">
-                    Already have an account? <button type="button" id="show-login" class="text-indigo-400 font-semibold hover:underline">Sign In</button>
+                    Already have an account? <button type="button" id="show-login" class="text-amber-400 font-semibold hover:underline">Sign In</button>
                 </p>
             </form>
         </div>
@@ -75,7 +75,7 @@
             
             <!-- Top Header -->
             <header class="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900/80 backdrop-blur sticky top-0 z-20">
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">Roxchat</h1>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-yellow-500">Roxchat</h1>
                 <div class="flex items-center space-x-3">
                     <button id="logout-btn" class="text-slate-400 hover:text-white p-2"><i class="fa-solid fa-right-from-bracket text-lg"></i></button>
                 </div>
@@ -89,7 +89,7 @@
                     <!-- Stories Bar -->
                     <div class="flex space-x-3 overflow-x-auto pb-2 scrollbar-none">
                         <div class="flex flex-col items-center space-y-1 flex-shrink-0 cursor-pointer" id="add-story-btn">
-                            <div class="w-16 h-16 rounded-full border-2 border-dashed border-indigo-500 flex items-center justify-center bg-slate-800 text-indigo-400">
+                            <div class="w-16 h-16 rounded-full border-2 border-dashed border-amber-500 flex items-center justify-center bg-slate-800 text-amber-400">
                                 <i class="fa-solid fa-plus text-xl"></i>
                             </div>
                             <span class="text-xs text-slate-400">Add Story</span>
@@ -102,12 +102,12 @@
                         <textarea id="post-text" placeholder="What's on your mind?" rows="2" class="w-full bg-transparent resize-none focus:outline-none text-sm placeholder-slate-500"></textarea>
                         <div id="post-media-preview" class="hidden relative mt-2 rounded-xl overflow-hidden max-h-48 bg-black"></div>
                         <div class="flex items-center justify-between border-t border-slate-700/50 pt-3 mt-3">
-                            <label class="cursor-pointer text-indigo-400 hover:text-indigo-300 text-sm flex items-center space-x-1">
+                            <label class="cursor-pointer text-amber-400 hover:text-amber-300 text-sm flex items-center space-x-1">
                                 <i class="fa-solid fa-image"></i>
                                 <span class="text-xs font-medium">Media</span>
                                 <input type="file" id="post-media-input" accept="image/*,video/*" class="hidden">
                             </label>
-                            <button id="create-post-btn" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-1.5 rounded-xl text-xs font-semibold text-white transition active:opacity-50">Post</button>
+                            <button id="create-post-btn" class="bg-amber-500 hover:bg-amber-400 px-4 py-1.5 rounded-xl text-xs font-semibold text-slate-950 transition active:opacity-50">Post</button>
                         </div>
                     </div>
 
@@ -119,7 +119,7 @@
                 <div id="tab-explore" class="p-4 hidden">
                     <div class="relative mb-4">
                         <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-500 text-sm"></i>
-                        <input type="text" id="search-users" placeholder="Search users..." class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
+                        <input type="text" id="search-users" placeholder="Search users..." class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-amber-500">
                     </div>
                     <div id="users-list" class="space-y-3"></div>
                 </div>
@@ -140,9 +140,9 @@
                         </div>
                         <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3"></div>
                         <div class="p-3 border-t border-slate-800 flex items-center space-x-2 bg-slate-900">
-                            <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
-                            <button id="send-audio-btn" class="text-slate-400 hover:text-indigo-400 p-2"><i class="fa-solid fa-microphone text-lg"></i></button>
-                            <button id="send-chat-btn" class="bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold active:opacity-50"><i class="fa-solid fa-paper-plane"></i></button>
+                            <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500">
+                            <button id="send-audio-btn" class="text-slate-400 hover:text-amber-400 p-2"><i class="fa-solid fa-microphone text-lg"></i></button>
+                            <button id="send-chat-btn" class="bg-amber-500 text-slate-950 px-4 py-2.5 rounded-xl text-sm font-semibold active:opacity-50"><i class="fa-solid fa-paper-plane"></i></button>
                         </div>
                     </div>
                 </div>
@@ -150,7 +150,7 @@
                 <!-- Profile Tab -->
                 <div id="tab-profile" class="p-4 space-y-6 hidden">
                     <div class="flex flex-col items-center text-center space-y-3">
-                        <div class="w-20 h-20 rounded-full bg-slate-800 border-2 border-indigo-500 overflow-hidden flex items-center justify-center text-2xl font-bold text-indigo-400" id="profile-avatar-container">
+                        <div class="w-20 h-20 rounded-full bg-slate-800 border-2 border-amber-500 overflow-hidden flex items-center justify-center text-2xl font-bold text-amber-400" id="profile-avatar-container">
                             <span id="profile-initial">U</span>
                         </div>
                         <div>
@@ -164,9 +164,9 @@
                         <h3 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Change Password</h3>
                         <div>
                             <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">New Password</label>
-                            <input type="password" id="new-password-input" placeholder="Enter new password" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                            <input type="password" id="new-password-input" placeholder="Enter new password" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
                         </div>
-                        <!-- Button with active:opacity-50 for dim effect when clicked -->
+                        <!-- Save Button with Yellow color and active:opacity-50 dim effect -->
                         <button id="save-password-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-2 rounded-xl text-xs transition active:opacity-50">Save</button>
                     </div>
 
@@ -180,7 +180,7 @@
 
             <!-- Bottom Navigation Bar -->
             <nav class="h-16 border-t border-slate-800 bg-slate-900/90 backdrop-blur flex items-center justify-around px-2 fixed bottom-0 max-w-md w-full z-20">
-                <button data-tab="feed" class="nav-btn text-indigo-500 flex flex-col items-center space-y-1"><i class="fa-solid fa-house text-lg"></i><span class="text-[10px] font-medium">Home</span></button>
+                <button data-tab="feed" class="nav-btn text-amber-500 flex flex-col items-center space-y-1"><i class="fa-solid fa-house text-lg"></i><span class="text-[10px] font-medium">Home</span></button>
                 <button data-tab="explore" class="nav-btn text-slate-400 flex flex-col items-center space-y-1"><i class="fa-solid fa-compass text-lg"></i><span class="text-[10px] font-medium">Explore</span></button>
                 <button data-tab="messages" class="nav-btn text-slate-400 flex flex-col items-center space-y-1"><i class="fa-solid fa-comment-dots text-lg"></i><span class="text-[10px] font-medium">Messages</span></button>
                 <button data-tab="profile" class="nav-btn text-slate-400 flex flex-col items-center space-y-1"><i class="fa-solid fa-user text-lg"></i><span class="text-[10px] font-medium">Profile</span></button>
@@ -253,19 +253,17 @@
 
         logoutBtn.addEventListener('click', () => signOut(auth));
 
-        // Change Password Handler (Without success alert popup)
+        // Change Password Handler (Silently updates password without success popup)
         document.getElementById('save-password-btn').addEventListener('click', async () => {
             const newPassword = document.getElementById('new-password-input').value;
-            if (!newPassword) {
-                return;
-            }
+            if (!newPassword) return;
             const user = auth.currentUser;
             if (user) {
                 try {
                     await updatePassword(user, newPassword);
                     document.getElementById('new-password-input').value = '';
                 } catch (err) {
-                    console.error(err.message);
+                    alert("Error: " + err.message);
                 }
             }
         });
@@ -274,8 +272,8 @@
         const navBtns = document.querySelectorAll('.nav-btn');
         navBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                navBtns.forEach(b => b.classList.replace('text-indigo-500', 'text-slate-400'));
-                btn.classList.replace('text-slate-400', 'text-indigo-500');
+                navBtns.forEach(b => b.classList.replace('text-amber-500', 'text-slate-400'));
+                btn.classList.replace('text-slate-400', 'text-amber-500');
                 const tab = btn.getAttribute('data-tab');
                 document.querySelectorAll('#content-area > div').forEach(d => d.classList.add('hidden'));
                 document.getElementById(`tab-${tab}`).classList.remove('hidden');
@@ -337,7 +335,7 @@
                     div.className = "bg-slate-800/40 border border-slate-800 rounded-2xl p-4 space-y-3";
                     div.innerHTML = `
                         <div class="flex items-center space-x-2">
-                            <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-xs">${post.email.charAt(0).toUpperCase()}</div>
+                            <div class="w-8 h-8 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs">${post.email.charAt(0).toUpperCase()}</div>
                             <span class="text-xs font-semibold text-slate-300">${post.email}</span>
                         </div>
                         ${post.text ? `<p class="text-sm text-slate-200">${post.text}</p>` : ''}
@@ -360,13 +358,13 @@
                     div.className = "flex items-center justify-between bg-slate-800/50 p-3 rounded-xl border border-slate-800";
                     div.innerHTML = `
                         <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm">${u.username.charAt(0).toUpperCase()}</div>
+                            <div class="w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-sm">${u.username.charAt(0).toUpperCase()}</div>
                             <div>
                                 <h4 class="text-sm font-semibold">${u.username}</h4>
                                 <p class="text-xs text-slate-400">${u.email}</p>
                             </div>
                         </div>
-                        <button onclick="startChat('${u.uid}', '${u.username}')" class="bg-indigo-600/20 text-indigo-400 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-indigo-600 hover:text-white transition active:opacity-50">Chat</button>
+                        <button onclick="startChat('${u.uid}', '${u.username}')" class="bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-amber-500 hover:text-slate-950 transition active:opacity-50">Chat</button>
                     `;
                     list.appendChild(div);
                 });
