@@ -147,7 +147,7 @@
                     </div>
                 </div>
 
-                <!-- Profile Tab (Including Change Password Option) -->
+                <!-- Profile Tab -->
                 <div id="tab-profile" class="p-4 space-y-6 hidden">
                     <div class="flex flex-col items-center text-center space-y-3">
                         <div class="w-20 h-20 rounded-full bg-slate-800 border-2 border-indigo-500 overflow-hidden flex items-center justify-center text-2xl font-bold text-indigo-400" id="profile-avatar-container">
@@ -166,7 +166,8 @@
                             <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">New Password</label>
                             <input type="password" id="new-password-input" placeholder="Enter new password" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
                         </div>
-                        <button id="save-password-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 rounded-xl text-xs transition active:opacity-50">Save Password</button>
+                        <!-- Save Button with Yellow color and active:opacity-50 dim effect -->
+                        <button id="save-password-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-2 rounded-xl text-xs transition active:opacity-50">Save</button>
                     </div>
 
                     <div class="border-t border-slate-800 pt-4">
@@ -252,18 +253,14 @@
 
         logoutBtn.addEventListener('click', () => signOut(auth));
 
-        // Change Password Handler with dim/active effect
+        // Change Password Handler (Silently updates password without success popup)
         document.getElementById('save-password-btn').addEventListener('click', async () => {
             const newPassword = document.getElementById('new-password-input').value;
-            if (!newPassword) {
-                alert("Please enter a new password.");
-                return;
-            }
+            if (!newPassword) return;
             const user = auth.currentUser;
             if (user) {
                 try {
                     await updatePassword(user, newPassword);
-                    alert("Password updated successfully!");
                     document.getElementById('new-password-input').value = '';
                 } catch (err) {
                     alert("Error: " + err.message);
