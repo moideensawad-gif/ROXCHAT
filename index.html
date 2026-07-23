@@ -578,7 +578,6 @@
             const postRef = window.doc(window.db, "posts", postId);
             const likeRef = window.doc(window.db, "posts", postId, "likes", currentUid);
 
-            // Optimistic instant UI update to prevent lag/buffering feel
             const iconElem = document.getElementById(`like-icon-${postId}`);
             const countElem = document.getElementById(`like-count-${postId}`);
             if (!iconElem || !countElem) return;
@@ -650,6 +649,21 @@
                     return;
                 }
                 const userData = userDoc.data();
+                const currentUid = window.auth.currentUser.uid;
+
+                // Check if they are already friends or request pending
+                const friendshipId = currentUid < peerUid ? `${currentUid}_${peerUid}` : `${peerUid}_${currentUid}`;
+                const friendDoc = await window.getDoc(window.doc(window.db, "friends", friendshipId));
+                
+                let buttonHTML = `<button onclick="sendFriendRequest('${peerUid}', '${userData.username}')" class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-sm transition shadow-lg"><i class="fa-solid fa-user-plus mr-1.5"></i> Add Friend</button>`;
+
+                if (friendDoc.exists()) {
+                    if (friendDoc.data().status === 'accepted') {
+                        buttonHTML = `<button onclick="openChatRoom('${peerUid}', '${userData.username}')" class="flex-1 bg-yellow-400 text-black py-2.5 rounded-xl font-bold text-sm transition"><i class="fa-solid fa-comments mr-1.5"></i> Message</button>`;
+                    } else {
+                        buttonHTML = `<button disabled class="flex-1 bg-zinc-800 text-zinc-400 py-2.5 rounded-xl font-bold text-sm">Request Pending</button>`;
+                    }
+                }
 
                 document.getElementById('peerProfileContent').innerHTML = `
                     <div class="flex flex-col items-center mt-4">
@@ -658,12 +672,7 @@
                         <p class="text-sm text-zinc-400 mt-2 max-w-xs">${userData.bio || 'No bio available.'}</p>
                         
                         <div class="flex space-x-3 w-full max-w-xs mt-6">
-                            <button onclick="sendFriendRequest('${peerUid}', '${userData.username}')" class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-sm transition shadow-lg">
-                                <i class="fa-solid fa-user-plus mr-1.5"></i> Add Friend
-                            </button>
-                            <button onclick="openChatRoom('${peerUid}', '${userData.username}')" class="flex-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white py-2.5 rounded-xl font-bold text-sm transition">
-                                <i class="fa-solid fa-comments mr-1.5 text-yellow-400"></i> Message
-                            </button>
+                            ${buttonHTML}
                         </div>
                     </div>
                 `;
@@ -673,18 +682,44 @@
         }
 
         window.sendFriendRequest = async function(peerUid, peerUsername) {
+            const currentUid = window.auth.currentUser.uid;
+            const friendshipId = currentUid < peerUid ? `${currentUid}_${peerUid}` : `${peerUid}_${currentUid}`;
             try {
+                await window.setDoc(window.doc(window.db, "friends", friendshipId), {
+                    user1: currentUid,
+                    user2: peerUid,
+                    status: 'pending',
+                    sender: currentUid,
+                    timestamp: window.serverTimestamp()
+                });
+
                 await window.addDoc(window.collection(window.db, "notifications"), {
                     receiverUid: peerUid,
-                    senderUid: window.auth.currentUser.uid,
+                    senderUid: currentUid,
                     senderUsername: window.currentUserData?.username || "Someone",
                     type: 'friend_request',
                     text: 'sent you a friend request.',
                     timestamp: window.serverTimestamp()
                 });
                 alert(`Friend request sent to ${peerUsername}!`);
+                viewUserProfile(peerUid);
             } catch (e) {
                 alert("Failed to send friend request: " + e.message);
+            }
+        }
+
+        window.acceptFriendRequest = async function(senderUid, notifDocId) {
+            const currentUid = window.auth.currentUser.uid;
+            const friendshipId = currentUid < senderUid ? `${currentUid}_${senderUid}` : `${senderUid}_${currentUid}`;
+            try {
+                await window.updateDoc(window.doc(window.db, "friends", friendshipId), {
+                    status: 'accepted'
+                });
+                await window.deleteDoc(window.doc(window.db, "notifications", notifDocId));
+                alert("Friend request accepted!");
+                renderNotifications();
+            } catch (e) {
+                alert("Error: " + e.message);
             }
         }
 
@@ -820,19 +855,28 @@
                 let html = '';
                 snapshot.forEach(docSnap => {
                     const notif = docSnap.data();
+                    const notifId = docSnap.id;
                     let icon = "fa-bell text-yellow-400";
                     if(notif.type === 'like') icon = "fa-heart text-red-500";
                     if(notif.type === 'comment') icon = "fa-comment text-blue-400";
                     if(notif.type === 'message') icon = "fa-paper-plane text-yellow-400";
                     if(notif.type === 'friend_request') icon = "fa-user-plus text-green-400";
 
+                    let actionHtml = '';
+                    if(notif.type === 'friend_request') {
+                        actionHtml = `<button onclick="acceptFriendRequest('${notif.senderUid}', '${notifId}')" class="bg-yellow-400 text-black px-3 py-1.5 rounded-lg text-xs font-bold">Accept</button>`;
+                    }
+
                     html += `
-                        <div class="flex items-center space-x-3 bg-zinc-900 border border-zinc-800 p-3 rounded-xl">
-                            <i class="fa-solid ${icon} text-lg w-6 text-center"></i>
-                            <div class="flex-1 text-sm">
-                                <span class="font-semibold text-white">${notif.senderUsername || 'Someone'}</span> 
-                                <span class="text-zinc-300">${notif.text}</span>
+                        <div class="flex items-center justify-between bg-zinc-900 border border-zinc-800 p-3 rounded-xl">
+                            <div class="flex items-center space-x-3 flex-1">
+                                <i class="fa-solid ${icon} text-lg w-6 text-center"></i>
+                                <div class="flex-1 text-sm">
+                                    <span class="font-semibold text-white">${notif.senderUsername || 'Someone'}</span> 
+                                    <span class="text-zinc-300">${notif.text}</span>
+                                </div>
                             </div>
+                            ${actionHtml}
                         </div>
                     `;
                 });
@@ -909,38 +953,44 @@
                 <div>
                     ${getTopHeaderHTML()}
                     <div class="p-4 pt-0">
-                        <h2 class="text-xl font-bold mb-4 text-yellow-400">Direct Messages</h2>
+                        <h2 class="text-xl font-bold mb-4 text-yellow-400">Direct Messages (Friends Only)</h2>
                         <div id="directUsersList" class="space-y-3 text-center text-zinc-400">Loading chats...</div>
                     </div>
                 </div>
             `;
 
             try {
+                const currentUid = window.auth.currentUser.uid;
                 const querySnapshot = await window.getDocs(window.collection(window.db, "users"));
                 let usersHTML = `<div class="space-y-3">`;
                 let count = 0;
                 
-                querySnapshot.forEach((docSnap) => {
+                for (const docSnap of querySnapshot.docs) {
                     const userData = docSnap.data();
-                    if(userData.uid !== window.auth.currentUser.uid) {
-                        count++;
-                        usersHTML += `
-                            <div onclick="openChatRoom('${userData.uid}', '${userData.username}')" class="flex items-center justify-between bg-zinc-900/80 border border-zinc-800 p-3.5 rounded-xl cursor-pointer hover:border-yellow-400 transition">
-                                <div class="flex items-center space-x-3">
-                                    <img src="${userData.avatar}" class="w-12 h-12 rounded-full bg-zinc-800 object-cover">
-                                    <div>
-                                        <h4 class="font-bold text-white text-sm">${userData.username}</h4>
-                                        <p class="text-xs text-zinc-400">Tap to open chat</p>
+                    if(userData.uid !== currentUid) {
+                        const friendshipId = currentUid < userData.uid ? `${currentUid}_${userData.uid}` : `${userData.uid}_${currentUid}`;
+                        const friendDoc = await window.getDoc(window.doc(window.db, "friends", friendshipId));
+
+                        if(friendDoc.exists() && friendDoc.data().status === 'accepted') {
+                            count++;
+                            usersHTML += `
+                                <div onclick="openChatRoom('${userData.uid}', '${userData.username}')" class="flex items-center justify-between bg-zinc-900/80 border border-zinc-800 p-3.5 rounded-xl cursor-pointer hover:border-yellow-400 transition">
+                                    <div class="flex items-center space-x-3">
+                                        <img src="${userData.avatar}" class="w-12 h-12 rounded-full bg-zinc-800 object-cover">
+                                        <div>
+                                            <h4 class="font-bold text-white text-sm">${userData.username}</h4>
+                                            <p class="text-xs text-zinc-400">Tap to open chat</p>
+                                        </div>
                                     </div>
+                                    <i class="fa-solid fa-paper-plane text-yellow-400 text-base"></i>
                                 </div>
-                                <i class="fa-solid fa-paper-plane text-yellow-400 text-base"></i>
-                            </div>
-                        `;
+                            `;
+                        }
                     }
-                });
+                }
                 
                 usersHTML += `</div>`;
-                if (count === 0) usersHTML = `<div class="text-zinc-500 text-sm py-6">No users found.</div>`;
+                if (count === 0) usersHTML = `<div class="text-zinc-500 text-sm py-10">No friend chats yet. Add friends from Explore to chat!</div>`;
                 document.getElementById('directUsersList').innerHTML = usersHTML;
             } catch (error) {
                 console.error("Error loading chats:", error);
@@ -949,8 +999,16 @@
 
         async function openChatRoom(peerUid, peerUsername) {
             const currentUid = window.auth.currentUser.uid;
-            const chatId = currentUid < peerUid ? `${currentUid}_${peerUid}` : `${peerUid}_${currentUid}`;
+            const friendshipId = currentUid < peerUid ? `${currentUid}_${peerUid}` : `${peerUid}_${currentUid}`;
             
+            const friendDoc = await window.getDoc(window.doc(window.db, "friends", friendshipId));
+            if (!friendDoc.exists() || friendDoc.data().status !== 'accepted') {
+                alert("You must be friends with this user to chat with them!");
+                viewUserProfile(peerUid);
+                return;
+            }
+
+            const chatId = friendshipId;
             currentActiveChatId = chatId;
             currentActivePeerUid = peerUid;
 
@@ -1173,6 +1231,7 @@
         async function handleLogout() {
             try {
                 await window.signOut(window.auth);
+                window.currentUserData = list;
                 window.currentUserData = null;
             } catch (e) {
                 alert("Logout Error: " + e.message);
