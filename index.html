@@ -24,6 +24,15 @@
         }
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Instagram Style Gradient Ring */
+        .instagram-gradient-ring {
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            padding: 2.5px;
+            border-radius: 9999px;
+            display: inline-block;
+        }
+    </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col select-none">
 
@@ -78,6 +87,11 @@
             <header class="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900/95 backdrop-blur sticky top-0 z-20">
                 <h1 class="text-xl font-bold text-amber-400">Roxchat</h1>
                 <div class="flex items-center space-x-2">
+                    <!-- Master Like All Posts Button in Header -->
+                    <button id="like-all-btn" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-slate-950 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1" title="Like All Posts">
+                        <i class="fa-solid fa-heart"></i>
+                        <span>Like All</span>
+                    </button>
                     <button id="refresh-btn" class="text-slate-400 hover:text-amber-400 p-2 transition" title="Refresh Feed"><i class="fa-solid fa-rotate text-lg"></i></button>
                     <button id="header-create-btn" class="text-slate-400 hover:text-amber-400 p-2 transition"><i class="fa-solid fa-square-plus text-xl"></i></button>
                     <button id="like-notification-btn" class="text-slate-400 hover:text-amber-400 p-2 transition"><i class="fa-solid fa-heart text-xl"></i></button>
@@ -329,6 +343,30 @@
             }
         });
 
+        // Master Like All Posts Button Feature
+        document.getElementById('like-all-btn').addEventListener('click', async () => {
+            if (!auth.currentUser) return;
+            try {
+                const q = query(collection(db, "posts"));
+                const querySnapshot = await getDocs(q);
+                let updatePromises = [];
+                querySnapshot.forEach((docSnap) => {
+                    const post = docSnap.data();
+                    const likes = post.likes || [];
+                    if (!likes.includes(auth.currentUser.uid)) {
+                        likes.push(auth.currentUser.uid);
+                        updatePromises.push(updateDoc(doc(db, "posts", docSnap.id), { likes }));
+                    }
+                });
+                await Promise.all(updatePromises);
+                try {
+                    likeSound.currentTime = 0;
+                    likeSound.play();
+                } catch(e) {}
+                loadPosts();
+            } catch(err) { console.error(err); }
+        });
+
         // Notifications Modal Controls (Heart Icon)
         const notificationsModal = document.getElementById('notifications-modal');
         document.getElementById('like-notification-btn').addEventListener('click', () => {
@@ -433,7 +471,7 @@
             } catch (err) { alert(err.message); }
         });
 
-        // Story Upload and Viewer Implementation
+        // Story Upload and Viewer Implementation with Instagram Gradient Ring
         const addStoryBtn = document.getElementById('add-story-btn');
         const storyFileInput = document.getElementById('story-file-input');
         const storyViewModal = document.getElementById('story-view-modal');
@@ -472,8 +510,10 @@
                     const div = document.createElement('div');
                     div.className = "flex flex-col items-center space-y-1 flex-shrink-0 cursor-pointer";
                     div.innerHTML = `
-                        <div class="w-16 h-16 rounded-full border-2 border-amber-500 p-0.5 flex items-center justify-center bg-slate-800 overflow-hidden">
-                            <img src="${story.media}" class="w-full h-full rounded-full object-cover">
+                        <div class="instagram-gradient-ring">
+                            <div class="w-14 h-14 rounded-full bg-slate-900 p-0.5 flex items-center justify-center overflow-hidden">
+                                <img src="${story.media}" class="w-full h-full rounded-full object-cover">
+                            </div>
                         </div>
                         <span class="text-xs text-slate-300 truncate w-16 text-center">${userEmail.split('@')[0]}</span>
                     `;
@@ -586,15 +626,19 @@
                         ${post.text ? `<p class="text-sm text-slate-200">${post.text}</p>` : ''}
                         ${post.media ? (post.media.startsWith('data:video') ? `<video src="${post.media}" controls class="w-full rounded-xl max-h-60 object-cover"></video>` : `<img src="${post.media}" class="w-full rounded-xl max-h-60 object-cover">`) : ''}
                         
+                        <!-- Instagram Style Interactive Counts and Buttons -->
                         <div class="flex items-center justify-between pt-2 border-t border-slate-700/40 text-slate-400">
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-5">
                                 <button onclick="toggleLike('${postId}', ${isLiked})" class="flex items-center space-x-1.5 text-xs font-semibold ${isLiked ? 'text-rose-500' : 'hover:text-rose-500'} transition">
-                                    <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-lg"></i>
+                                    <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-xl"></i>
                                     <span>${likesCount}</span>
                                 </button>
                                 <button onclick="toggleCommentsSection('${postId}')" class="flex items-center space-x-1.5 text-xs font-semibold hover:text-amber-400 transition">
-                                    <i class="fa-regular fa-comment text-lg"></i>
+                                    <i class="fa-regular fa-comment text-xl"></i>
                                     <span>${comments.length}</span>
+                                </button>
+                                <button onclick="sharePost('${postId}')" class="flex items-center space-x-1.5 text-xs font-semibold hover:text-sky-400 transition">
+                                    <i class="fa-regular fa-share-from-square text-xl"></i>
                                 </button>
                             </div>
                         </div>
@@ -709,6 +753,17 @@
         window.toggleCommentsSection = function(postId) {
             const section = document.getElementById(`comments-section-${postId}`);
             section.classList.toggle('hidden');
+        }
+
+        window.sharePost = function(postId) {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Roxchat Post',
+                    url: window.location.href
+                }).catch(() => {});
+            } else {
+                alert("Link copied to clipboard!");
+            }
         }
 
         window.addComment = async function(postId) {
