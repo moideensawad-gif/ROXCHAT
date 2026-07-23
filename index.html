@@ -826,7 +826,7 @@
                                     <label class="text-xs text-zinc-400 ml-1">Bio</label>
                                     <textarea id="editBio" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 resize-none h-16">${userData.bio || ''}</textarea>
                                 </div>
-                                <button onclick="saveProfileChanges()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-sm transition shadow-md">Save Changes</button>
+                                <button id="saveProfileBtn" onclick="saveProfileChanges()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-sm transition shadow-md">Save</button>
                             </div>
                             
                             <div class="w-full max-w-xs mt-8 pt-6 border-t border-zinc-800/80 text-left">
@@ -1000,8 +1000,13 @@
                     ...updatedData
                 };
 
+                // Save അടിച്ചതിനു ശേഷം ബട്ടൺ ഡിം ആക്കി മാറ്റുന്നു
+                const saveBtn = document.getElementById('saveProfileBtn');
+                if(saveBtn) {
+                    saveBtn.className = "w-full bg-zinc-800 text-zinc-400 py-2.5 rounded-xl font-bold text-sm transition shadow-none cursor-default";
+                }
+
                 alert("Profile and settings updated successfully!");
-                renderProfile();
             } catch (e) {
                 alert("Error updating profile: " + e.message);
             }
