@@ -31,6 +31,7 @@
     <input type="file" id="postFileInput" accept="image/*,video/*" class="hidden" onchange="handlePostUpload(event)">
     <input type="file" id="storyFileInput" accept="image/*" class="hidden" onchange="handleStoryUpload(event)">
     <input type="file" id="avatarFileInput" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)">
+    <input type="file" id="chatFileInput" accept="image/*,video/*" class="hidden" onchange="handleChatMediaUpload(event)">
 
     <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/80 flex justify-around py-4 z-50 shadow-lg">
         <button onclick="switchTab('home')" id="nav-home" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-house-chimney"></i></button>
@@ -102,8 +103,9 @@
         let audioChunks = [];
         window.currentUserData = null;
         let tempAvatarBase64 = null;
+        let currentActiveChatId = null;
+        let currentActivePeerUid = null;
 
-        // Pull to refresh
         let touchStartY = 0;
         let isPulling = false;
 
@@ -291,6 +293,38 @@
             }
         }
 
+        async function handleChatMediaUpload(event) {
+            const file = event.target.files[0];
+            if (!file || !currentActiveChatId) return;
+
+            const isVideo = file.type.startsWith('video');
+            
+            const loadingAlert = document.createElement('div');
+            loadingAlert.id = 'mediaUploadingAlert';
+            loadingAlert.className = 'fixed top-4 left-0 right-0 mx-auto w-max bg-yellow-400 text-black px-4 py-2 rounded-full text-xs font-bold shadow-lg z-50 flex items-center space-x-2';
+            loadingAlert.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Sending media...</span>`;
+            document.body.appendChild(loadingAlert);
+
+            try {
+                let mediaBase64 = "";
+                if (isVideo) {
+                    mediaBase64 = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    });
+                } else {
+                    mediaBase64 = await compressImage(file, 800, 0.7);
+                }
+
+                await sendPrivateMessage(currentActiveChatId, currentActivePeerUid, null, null, mediaBase64, isVideo);
+                if (document.getElementById('mediaUploadingAlert')) document.getElementById('mediaUploadingAlert').remove();
+            } catch (err) {
+                if (document.getElementById('mediaUploadingAlert')) document.getElementById('mediaUploadingAlert').remove();
+                alert("Failed to send media: " + err.message);
+            }
+        }
+
         function getTopHeaderHTML() {
             return `
                 <div class="flex justify-between items-center mb-4 px-4 pt-4">
@@ -357,7 +391,7 @@
                             ${isSignup ? '<input type="text" id="username" placeholder="Username (Unique)" class="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">' : ''}
                             <input type="email" id="email" placeholder="Email address" class="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">
                             <input type="password" id="password" placeholder="Password" class="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">
-                            <button onclick="${isSignup ? 'handleSignup()' : 'handleLogin()'}" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black p-3.5 rounded-xl font-bold text-sm transition shadow-lg shadow-yellow-400/10 mt-2">${isSignup ? 'Create Account' : 'Sign In'}</button>
+                            <button id="authSubmitBtn" onclick="${isSignup ? 'handleSignup()' : 'handleLogin()'}" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black p-3.5 rounded-xl font-bold text-sm transition shadow-lg shadow-yellow-400/10 mt-2">${isSignup ? 'Create Account' : 'Sign In'}</button>
                         </div>
                     </div>
                     <div class="w-full max-w-sm bg-zinc-950 border border-zinc-800/80 p-4 rounded-xl mt-3 text-center">
@@ -373,10 +407,21 @@
         async function handleLogin() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            
+            const btn = document.getElementById('authSubmitBtn');
+            if(btn) {
+                btn.className = "w-full bg-zinc-800 text-zinc-500 p-3.5 rounded-xl font-bold text-sm transition mt-2 cursor-not-allowed";
+                btn.innerText = "Signing in...";
+            }
+
             try {
                 await window.signInWithEmailAndPassword(window.auth, email, password);
             } catch (error) {
                 alert("Login Error: " + error.message);
+                if(btn) {
+                    btn.className = "w-full bg-yellow-400 hover:bg-yellow-500 text-black p-3.5 rounded-xl font-bold text-sm transition shadow-lg shadow-yellow-400/10 mt-2";
+                    btn.innerText = "Sign In";
+                }
             }
         }
 
@@ -387,12 +432,22 @@
 
             if (!usernameInput) return alert("Please enter a username!");
 
+            const btn = document.getElementById('authSubmitBtn');
+            if(btn) {
+                btn.className = "w-full bg-zinc-800 text-zinc-500 p-3.5 rounded-xl font-bold text-sm transition mt-2 cursor-not-allowed";
+                btn.innerText = "Creating Account...";
+            }
+
             try {
                 const q = window.query(window.collection(window.db, "users"), window.where("username", "==", usernameInput));
                 const querySnapshot = await window.getDocs(q);
                 
                 if (!querySnapshot.empty) {
                     alert("Username is already taken. Choose another one.");
+                    if(btn) {
+                        btn.className = "w-full bg-yellow-400 hover:bg-yellow-500 text-black p-3.5 rounded-xl font-bold text-sm transition shadow-lg shadow-yellow-400/10 mt-2";
+                        btn.innerText = "Create Account";
+                    }
                     return;
                 }
 
@@ -414,6 +469,10 @@
                 switchTab('home');
             } catch (error) {
                 alert("Signup Error: " + error.message);
+                if(btn) {
+                    btn.className = "w-full bg-yellow-400 hover:bg-yellow-500 text-black p-3.5 rounded-xl font-bold text-sm transition shadow-lg shadow-yellow-400/10 mt-2";
+                    btn.innerText = "Create Account";
+                }
             }
         }
 
@@ -643,6 +702,9 @@
             const currentUid = window.auth.currentUser.uid;
             const chatId = currentUid < peerUid ? `${currentUid}_${peerUid}` : `${peerUid}_${currentUid}`;
             
+            currentActiveChatId = chatId;
+            currentActivePeerUid = peerUid;
+
             document.getElementById('app').innerHTML = `
                 <div class="flex flex-col h-screen bg-black">
                     <div class="flex items-center justify-between p-4 bg-zinc-950 border-b border-zinc-800">
@@ -656,6 +718,7 @@
                     </div>
                     
                     <div class="fixed bottom-16 left-0 right-0 max-w-md mx-auto p-3 bg-zinc-950 border-t border-zinc-800 flex items-center space-x-2">
+                        <button onclick="document.getElementById('chatFileInput').click()" class="text-zinc-400 hover:text-yellow-400 text-xl px-2" title="Send Photo/Video"><i class="fa-solid fa-paperclip"></i></button>
                         <input type="text" id="chatInput" placeholder="Message..." class="flex-1 bg-zinc-900 border border-zinc-800 text-white p-3 rounded-xl text-sm focus:outline-none focus:border-yellow-400">
                         <button onclick="toggleVoiceRecord('${chatId}', '${peerUid}')" id="micBtn" class="bg-zinc-800 hover:bg-zinc-700 text-yellow-400 px-3.5 py-3 rounded-xl text-sm"><i class="fa-solid fa-microphone"></i></button>
                         <button onclick="sendPrivateMessage('${chatId}', '${peerUid}')" class="bg-yellow-400 text-black px-4 py-3 rounded-xl font-bold text-sm">Send</button>
@@ -666,10 +729,10 @@
             loadPrivateMessages(chatId);
         }
 
-        async function sendPrivateMessage(chatId, peerUid, customText = null, audioUrl = null) {
+        async function sendPrivateMessage(chatId, peerUid, customText = null, audioUrl = null, mediaUrl = null, isVideo = false) {
             const input = document.getElementById('chatInput');
             const text = customText || (input ? input.value.trim() : '');
-            if (!text && !audioUrl) return;
+            if (!text && !audioUrl && !mediaUrl) return;
             
             if (!window.currentUserData && window.auth.currentUser) {
                 await window.preloadUserData();
@@ -684,6 +747,10 @@
                 if(audioUrl) {
                     msgData.audioUrl = audioUrl;
                     msgData.text = "[Voice Note]";
+                } else if(mediaUrl) {
+                    msgData.mediaUrl = mediaUrl;
+                    msgData.isVideo = isVideo;
+                    msgData.text = isVideo ? "[Video]" : "[Photo]";
                 } else {
                     msgData.text = text;
                 }
@@ -691,13 +758,16 @@
                 await window.addDoc(window.collection(window.db, "chats", chatId, "messages"), msgData);
 
                 const senderUsername = window.currentUserData ? window.currentUserData.username : "Someone";
+                let notifText = `sent you a message.`;
+                if(audioUrl) notifText = `sent you a voice note.`;
+                if(mediaUrl) notifText = isVideo ? `sent you a video.` : `sent you a photo.`;
 
                 await window.addDoc(window.collection(window.db, "notifications"), {
                     receiverUid: peerUid,
                     senderUid: window.auth.currentUser.uid,
                     senderUsername: senderUsername,
                     type: 'message',
-                    text: audioUrl ? `sent you a voice note.` : `sent you a message: "${text.substring(0, 20)}..."`,
+                    text: notifText,
                     timestamp: window.serverTimestamp()
                 });
 
@@ -760,6 +830,12 @@
                     let contentHtml = msg.text;
                     if(msg.audioUrl) {
                         contentHtml = `<audio controls class="h-8 max-w-[200px]"><source src="${msg.audioUrl}" type="audio/webm">Your browser does not support audio.</audio>`;
+                    } else if(msg.mediaUrl) {
+                        if(msg.isVideo) {
+                            contentHtml = `<video src="${msg.mediaUrl}" controls class="max-w-full rounded-xl max-h-[250px] object-cover"></video>`;
+                        } else {
+                            contentHtml = `<img src="${msg.mediaUrl}" class="max-w-full rounded-xl max-h-[250px] object-cover">`;
+                        }
                     }
 
                     html += `
@@ -826,7 +902,7 @@
                                     <label class="text-xs text-zinc-400 ml-1">Bio</label>
                                     <textarea id="editBio" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 resize-none h-16">${userData.bio || ''}</textarea>
                                 </div>
-                                <button id="saveProfileBtn" onclick="saveProfileChanges()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-sm transition shadow-md">Save</button>
+                                <button id="saveProfileBtn" onclick="saveProfileChanges()" class="w-full bg-yellow-400 text-black py-2.5 rounded-xl font-bold text-sm transition shadow-md">Save</button>
                             </div>
                             
                             <div class="w-full max-w-xs mt-8 pt-6 border-t border-zinc-800/80 text-left">
@@ -974,12 +1050,22 @@
                 return;
             }
 
+            const saveBtn = document.getElementById('saveProfileBtn');
+            if(saveBtn) {
+                saveBtn.className = "w-full bg-zinc-800 text-zinc-500 py-2.5 rounded-xl font-bold text-sm transition shadow-none cursor-default";
+                saveBtn.innerText = "Saved Successfully!";
+            }
+
             try {
                 if (window.currentUserData && window.currentUserData.username !== newUsername) {
                     const q = window.query(window.collection(window.db, "users"), window.where("username", "==", newUsername));
                     const querySnapshot = await window.getDocs(q);
                     if (!querySnapshot.empty) {
                         alert("Username is already taken by another user!");
+                        if(saveBtn) {
+                            saveBtn.className = "w-full bg-yellow-400 text-black py-2.5 rounded-xl font-bold text-sm transition shadow-md";
+                            saveBtn.innerText = "Save";
+                        }
                         return;
                     }
                 }
@@ -1000,15 +1086,19 @@
                     ...updatedData
                 };
 
-                // Save അടിച്ചതിനു ശേഷം ബട്ടൺ ഡിം ആക്കി മാറ്റുന്നു
-                const saveBtn = document.getElementById('saveProfileBtn');
-                if(saveBtn) {
-                    saveBtn.className = "w-full bg-zinc-800 text-zinc-400 py-2.5 rounded-xl font-bold text-sm transition shadow-none cursor-default";
-                }
+                setTimeout(() => {
+                    if(saveBtn) {
+                        saveBtn.className = "w-full bg-yellow-400 text-black py-2.5 rounded-xl font-bold text-sm transition shadow-md";
+                        saveBtn.innerText = "Save";
+                    }
+                }, 2000);
 
-                alert("Profile and settings updated successfully!");
             } catch (e) {
                 alert("Error updating profile: " + e.message);
+                if(saveBtn) {
+                    saveBtn.className = "w-full bg-yellow-400 text-black py-2.5 rounded-xl font-bold text-sm transition shadow-md";
+                    saveBtn.innerText = "Save";
+                }
             }
         }
 
