@@ -1,1242 +1,391 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Roxchat</title>
-    <meta name="description" content="Custom unique social chat app with Firebase">
-    <meta name="theme-color" content="#000000">
-    
-    <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="./Icon-192.png">
-
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 500: '#6366f1', 600: '#4f46e5' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .brand-font { font-family: 'Pacifico', cursive; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    </style>
 </head>
-<body class="bg-black text-white antialiased selection:bg-yellow-500 selection:text-black">
-    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col justify-between pb-24 relative">
-        <div class="flex items-center justify-center h-screen text-yellow-400">
-            <i class="fa-solid fa-spinner fa-spin text-3xl"></i>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- App Container -->
+    <div id="app" class="max-w-md mx-auto w-full bg-slate-900 min-h-screen flex flex-col shadow-2xl relative overflow-hidden border-x border-slate-800">
+        
+        <!-- Authentication View -->
+        <div id="auth-view" class="flex-1 flex flex-col justify-center p-6 hidden">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500 mb-2">Roxchat</h1>
+                <p class="text-slate-400 text-sm">Connect, Share, and Chat with Friends</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Email Address</label>
+                    <input type="email" id="login-email" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Password</label>
+                    <input type="password" id="login-password" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">Sign In</button>
+                <p class="text-center text-sm text-slate-400 mt-4">
+                    Don't have an account? <button type="button" id="show-register" class="text-indigo-400 font-semibold hover:underline">Sign Up</button>
+                </p>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Username</label>
+                    <input type="text" id="reg-username" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Email Address</label>
+                    <input type="email" id="reg-email" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Password</label>
+                    <input type="password" id="reg-password" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">Create Account</button>
+                <p class="text-center text-sm text-slate-400 mt-4">
+                    Already have an account? <button type="button" id="show-login" class="text-indigo-400 font-semibold hover:underline">Sign In</button>
+                </p>
+            </form>
+        </div>
+
+        <!-- Main App View -->
+        <div id="main-view" class="flex-1 flex flex-col hidden">
+            
+            <!-- Top Header -->
+            <header class="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900/80 backdrop-blur sticky top-0 z-20">
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">Roxchat</h1>
+                <div class="flex items-center space-x-3">
+                    <button id="logout-btn" class="text-slate-400 hover:text-white p-2"><i class="fa-solid fa-right-from-bracket text-lg"></i></button>
+                </div>
+            </header>
+
+            <!-- Dynamic Content Area -->
+            <main id="content-area" class="flex-1 overflow-y-auto pb-20">
+                
+                <!-- Feed Tab -->
+                <div id="tab-feed" class="space-y-4 p-4">
+                    <!-- Stories Bar -->
+                    <div class="flex space-x-3 overflow-x-auto pb-2 scrollbar-none">
+                        <div class="flex flex-col items-center space-y-1 flex-shrink-0 cursor-pointer" id="add-story-btn">
+                            <div class="w-16 h-16 rounded-full border-2 border-dashed border-indigo-500 flex items-center justify-center bg-slate-800 text-indigo-400">
+                                <i class="fa-solid fa-plus text-xl"></i>
+                            </div>
+                            <span class="text-xs text-slate-400">Add Story</span>
+                        </div>
+                        <div id="stories-container" class="flex space-x-3"></div>
+                    </div>
+
+                    <!-- Create Post Box -->
+                    <div class="bg-slate-800/50 border border-slate-800 rounded-2xl p-4 shadow-sm">
+                        <textarea id="post-text" placeholder="What's on your mind?" rows="2" class="w-full bg-transparent resize-none focus:outline-none text-sm placeholder-slate-500"></textarea>
+                        <div id="post-media-preview" class="hidden relative mt-2 rounded-xl overflow-hidden max-h-48 bg-black"></div>
+                        <div class="flex items-center justify-between border-t border-slate-700/50 pt-3 mt-3">
+                            <label class="cursor-pointer text-indigo-400 hover:text-indigo-300 text-sm flex items-center space-x-1">
+                                <i class="fa-solid fa-image"></i>
+                                <span class="text-xs font-medium">Media</span>
+                                <input type="file" id="post-media-input" accept="image/*,video/*" class="hidden">
+                            </label>
+                            <button id="create-post-btn" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-1.5 rounded-xl text-xs font-semibold text-white transition active:opacity-50">Post</button>
+                        </div>
+                    </div>
+
+                    <!-- Posts Feed Container -->
+                    <div id="posts-container" class="space-y-4"></div>
+                </div>
+
+                <!-- Explore Tab -->
+                <div id="tab-explore" class="p-4 hidden">
+                    <div class="relative mb-4">
+                        <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-500 text-sm"></i>
+                        <input type="text" id="search-users" placeholder="Search users..." class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div id="users-list" class="space-y-3"></div>
+                </div>
+
+                <!-- Messages Tab -->
+                <div id="tab-messages" class="flex flex-col h-[calc(100vh-7.5rem)] hidden">
+                    <div id="chats-list-view" class="p-4 space-y-3 flex-1 overflow-y-auto">
+                        <h3 class="text-xs font-bold uppercase text-slate-500 tracking-wider mb-2">Friends & Chats</h3>
+                        <div id="friends-chat-list" class="space-y-2"></div>
+                    </div>
+                    
+                    <!-- Active Chat Room -->
+                    <div id="active-chat-room" class="flex flex-col h-full hidden bg-slate-900 absolute inset-0 z-30">
+                        <div class="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900">
+                            <button id="close-chat" class="text-slate-400 hover:text-white"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+                            <span id="chat-room-title" class="font-bold text-sm"></span>
+                            <div class="w-6"></div>
+                        </div>
+                        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3"></div>
+                        <div class="p-3 border-t border-slate-800 flex items-center space-x-2 bg-slate-900">
+                            <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
+                            <button id="send-audio-btn" class="text-slate-400 hover:text-indigo-400 p-2"><i class="fa-solid fa-microphone text-lg"></i></button>
+                            <button id="send-chat-btn" class="bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold active:opacity-50"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Tab (Including Change Password Option) -->
+                <div id="tab-profile" class="p-4 space-y-6 hidden">
+                    <div class="flex flex-col items-center text-center space-y-3">
+                        <div class="w-20 h-20 rounded-full bg-slate-800 border-2 border-indigo-500 overflow-hidden flex items-center justify-center text-2xl font-bold text-indigo-400" id="profile-avatar-container">
+                            <span id="profile-initial">U</span>
+                        </div>
+                        <div>
+                            <h2 id="profile-username" class="text-lg font-bold">Username</h2>
+                            <p id="profile-email" class="text-xs text-slate-400">email@example.com</p>
+                        </div>
+                    </div>
+
+                    <!-- Change Password Section -->
+                    <div class="bg-slate-800/40 border border-slate-800 rounded-2xl p-4 space-y-3">
+                        <h3 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Change Password</h3>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">New Password</label>
+                            <input type="password" id="new-password-input" placeholder="Enter new password" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <button id="save-password-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 rounded-xl text-xs transition active:opacity-50">Save Password</button>
+                    </div>
+
+                    <div class="border-t border-slate-800 pt-4">
+                        <h3 class="text-xs font-bold uppercase text-slate-500 tracking-wider mb-3">My Posts</h3>
+                        <div id="user-posts-container" class="space-y-4"></div>
+                    </div>
+                </div>
+
+            </main>
+
+            <!-- Bottom Navigation Bar -->
+            <nav class="h-16 border-t border-slate-800 bg-slate-900/90 backdrop-blur flex items-center justify-around px-2 fixed bottom-0 max-w-md w-full z-20">
+                <button data-tab="feed" class="nav-btn text-indigo-500 flex flex-col items-center space-y-1"><i class="fa-solid fa-house text-lg"></i><span class="text-[10px] font-medium">Home</span></button>
+                <button data-tab="explore" class="nav-btn text-slate-400 flex flex-col items-center space-y-1"><i class="fa-solid fa-compass text-lg"></i><span class="text-[10px] font-medium">Explore</span></button>
+                <button data-tab="messages" class="nav-btn text-slate-400 flex flex-col items-center space-y-1"><i class="fa-solid fa-comment-dots text-lg"></i><span class="text-[10px] font-medium">Messages</span></button>
+                <button data-tab="profile" class="nav-btn text-slate-400 flex flex-col items-center space-y-1"><i class="fa-solid fa-user text-lg"></i><span class="text-[10px] font-medium">Profile</span></button>
+            </nav>
+
         </div>
     </div>
 
-    <!-- Hidden file inputs -->
-    <input type="file" id="postFileInput" accept="image/*,video/*" class="hidden" onchange="handlePostUpload(event)">
-    <input type="file" id="storyFileInput" accept="image/*" class="hidden" onchange="handleStoryUpload(event)">
-    <input type="file" id="avatarFileInput" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)">
-    <input type="file" id="chatFileInput" accept="image/*,video/*" class="hidden" onchange="handleChatMediaUpload(event)">
-
-    <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/80 flex justify-around py-4 z-50 shadow-lg">
-        <button onclick="switchTab('home')" id="nav-home" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-house-chimney"></i></button>
-        <button onclick="switchTab('chat')" id="nav-chat" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-comments"></i></button>
-        <button onclick="switchTab('explore')" id="nav-explore" class="text-zinc-400 text-2xl transition transform active:scale-90" title="Search Reels & Friends"><i class="fa-solid fa-magnifying-glass"></i></button>
-        <button onclick="switchTab('reels')" id="nav-reels" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-bolt"></i></button>
-        <button onclick="switchTab('profile')" id="nav-profile" class="text-zinc-400 text-2xl transition transform active:scale-90"><i class="fa-solid fa-circle-user"></i></button>
-    </nav>
-
+    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, setDoc, getDoc, updateDoc, deleteDoc, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updatePassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, setDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyAaqyhWJg8QmFzB4xKR5sJT8UetZEqZGrs",
-            authDomain: "roxchat-529a0.firebaseapp.com",
-            projectId: "roxchat-529a0",
-            storageBucket: "roxchat-529a0.firebasestorage.app",
-            messagingSenderId: "711075232006",
-            appId: "1:711075232006:web:0f52e8d2eb707573ae8687",
-            measurementId: "G-1JCBDGNB45"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        window.auth = auth;
-        window.db = db;
-        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
-        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
-        window.signOut = signOut;
-        window.updatePassword = updatePassword;
-        window.addDoc = addDoc;
-        window.getDocs = getDocs;
-        window.getDoc = getDoc;
-        window.updateDoc = updateDoc;
-        window.deleteDoc = deleteDoc;
-        window.collection = collection;
-        window.query = query;
-        window.orderBy = orderBy;
-        window.where = where;
-        window.serverTimestamp = serverTimestamp;
-        window.doc = doc;
-        window.setDoc = setDoc;
+        // DOM Elements
+        const authView = document.getElementById('auth-view');
+        const mainView = document.getElementById('main-view');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const showRegisterBtn = document.getElementById('show-register');
+        const showLoginBtn = document.getElementById('show-login');
+        const logoutBtn = document.getElementById('logout-btn');
 
-        onAuthStateChanged(auth, async (user) => {
+        showRegisterBtn.addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); });
+        showLoginBtn.addEventListener('click', () => { registerForm.classList.add('hidden'); loginForm.classList.remove('hidden'); });
+
+        onAuthStateChanged(auth, (user) => {
             if (user) {
-                document.getElementById('bottomNav').classList.remove('hidden');
-                await window.preloadUserData();
-                switchTab('home');
+                authView.classList.add('hidden');
+                mainView.classList.remove('hidden');
+                initApp(user);
             } else {
-                document.getElementById('bottomNav').classList.add('hidden');
-                window.currentUserData = null;
-                renderLogin();
+                mainView.classList.add('hidden');
+                authView.classList.remove('hidden');
             }
         });
-    </script>
 
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW failed:', err));
-            });
-        }
-
-        let currentTab = 'home';
-        let mediaRecorder = null;
-        let audioChunks = [];
-        window.currentUserData = null;
-        let tempAvatarBase64 = null;
-        let currentActiveChatId = null;
-        let currentActivePeerUid = null;
-
-        let touchStartY = 0;
-        let isPulling = false;
-
-        function timeAgo(timestamp) {
-            if (!timestamp) return "Just now";
-            const now = new Date();
-            const past = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-            const seconds = Math.floor((now - past) / 1000);
-
-            let interval = seconds / 31536000;
-            if (interval > 1) return Math.floor(interval) + "y ago";
-            interval = seconds / 2592000;
-            if (interval > 1) return Math.floor(interval) + "mo ago";
-            interval = seconds / 86400;
-            if (interval > 1) return Math.floor(interval) + "d ago";
-            interval = seconds / 3600;
-            if (interval > 1) return Math.floor(interval) + "h ago";
-            interval = seconds / 60;
-            if (interval > 1) return Math.floor(interval) + "m ago";
-            return "Just now";
-        }
-
-        function playNotificationSound() {
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            const username = document.getElementById('reg-username').value;
             try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
-                oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); 
-
-                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.3);
-            } catch (e) {
-                console.log("Audio Context error:", e);
-            }
-        }
-
-        window.addEventListener('touchstart', e => {
-            if (window.scrollY === 0) {
-                touchStartY = e.touches[0].clientY;
-                isPulling = true;
-            }
+                const res = await createUserWithEmailAndPassword(auth, email, password);
+                await setDoc(doc(db, "users", res.user.uid), { uid: res.user.uid, username, email, createdAt: serverTimestamp() });
+            } catch (err) { alert(err.message); }
         });
 
-        window.addEventListener('touchmove', e => {
-            if (!isPulling) return;
-            const touchY = e.touches[0].clientY;
-            const diff = touchY - touchStartY;
-            if (diff > 120 && window.scrollY === 0) {
-                isPulling = false;
-                triggerRefresh();
-            }
-        });
-
-        window.addEventListener('touchend', () => {
-            isPulling = false;
-        });
-
-        function triggerRefresh() {
-            const indicator = document.createElement('div');
-            indicator.id = 'refreshIndicator';
-            indicator.className = 'fixed top-4 left-0 right-0 mx-auto w-max bg-yellow-400 text-black px-4 py-1.5 rounded-full text-xs font-bold shadow-lg z-50 flex items-center space-x-2 animate-bounce';
-            indicator.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Refreshing feed...</span>`;
-            document.body.appendChild(indicator);
-
-            setTimeout(() => {
-                if (indicator) indicator.remove();
-                if (currentTab === 'home') renderHome();
-                else if (currentTab === 'reels') renderReels();
-                else if (currentTab === 'explore') renderExplore();
-                else if (currentTab === 'chat') renderChatInboxList();
-                else if (currentTab === 'profile') renderProfile();
-            }, 800);
-        }
-
-        window.preloadUserData = async function() {
-            if (!window.auth.currentUser) return;
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
             try {
-                const userRef = window.doc(window.db, "users", window.auth.currentUser.uid);
-                let userDoc = await window.getDoc(userRef);
-                if (userDoc.exists()) {
-                    window.currentUserData = userDoc.data();
-                    tempAvatarBase64 = window.currentUserData.avatar;
-                } else {
-                    window.currentUserData = {
-                        uid: window.auth.currentUser.uid,
-                        username: window.auth.currentUser.email ? window.auth.currentUser.email.split('@')[0] : "user",
-                        email: window.auth.currentUser.email || "",
-                        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=" + window.auth.currentUser.uid,
-                        bio: "Hey there! I am using Roxchat.",
-                        isPrivate: false,
-                        pushNotifications: true
-                    };
-                    tempAvatarBase64 = window.currentUserData.avatar;
-                    await window.setDoc(userRef, { ...window.currentUserData, createdAt: window.serverTimestamp() });
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (err) { alert(err.message); }
+        });
+
+        logoutBtn.addEventListener('click', () => signOut(auth));
+
+        // Change Password Handler with dim/active effect
+        document.getElementById('save-password-btn').addEventListener('click', async () => {
+            const newPassword = document.getElementById('new-password-input').value;
+            if (!newPassword) {
+                alert("Please enter a new password.");
+                return;
+            }
+            const user = auth.currentUser;
+            if (user) {
+                try {
+                    await updatePassword(user, newPassword);
+                    alert("Password updated successfully!");
+                    document.getElementById('new-password-input').value = '';
+                } catch (err) {
+                    alert("Error: " + err.message);
                 }
-            } catch (e) {
-                console.error("Preload error:", e);
             }
+        });
+
+        // Tab Navigation Logic
+        const navBtns = document.querySelectorAll('.nav-btn');
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                navBtns.forEach(b => b.classList.replace('text-indigo-500', 'text-slate-400'));
+                btn.classList.replace('text-slate-400', 'text-indigo-500');
+                const tab = btn.getAttribute('data-tab');
+                document.querySelectorAll('#content-area > div').forEach(d => d.classList.add('hidden'));
+                document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            });
+        });
+
+        function initApp(user) {
+            document.getElementById('profile-email').textContent = user.email;
+            document.getElementById('profile-initial').textContent = user.email.charAt(0).toUpperCase();
+            loadPosts();
+            loadExploreUsers();
         }
 
-        function triggerPostPicker() { document.getElementById('postFileInput').click(); }
-        function triggerStoryPicker() { document.getElementById('storyFileInput').click(); }
-        function triggerAvatarPicker() { document.getElementById('avatarFileInput').click(); }
-
-        function compressImage(file, maxWidth = 800, quality = 0.7) {
-            return new Promise((resolve) => {
+        let currentMediaBase64 = null;
+        document.getElementById('post-media-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        let width = img.width;
-                        let height = img.height;
-                        if (width > maxWidth) {
-                            height = Math.round((height * maxWidth) / width);
-                            width = maxWidth;
-                        }
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', quality));
-                    };
-                    img.src = e.target.result;
+                reader.onload = function(uploadEvent) {
+                    currentMediaBase64 = uploadEvent.target.result;
+                    const preview = document.getElementById('post-media-preview');
+                    preview.innerHTML = file.type.startsWith('video') 
+                        ? `<video src="${currentMediaBase64}" controls class="w-full h-40 object-cover"></video>`
+                        : `<img src="${currentMediaBase64}" class="w-full h-40 object-cover">`;
+                    preview.classList.remove('hidden');
                 };
                 reader.readAsDataURL(file);
-            });
-        }
-
-        async function handlePostUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (!window.currentUserData && window.auth.currentUser) {
-                await window.preloadUserData();
             }
+        });
 
-            const isVideo = file.type.startsWith('video');
-            const caption = prompt("Enter a caption for your post:") || "";
-
-            const loadingAlert = document.createElement('div');
-            loadingAlert.id = 'uploadingAlert';
-            loadingAlert.className = 'fixed top-4 left-0 right-0 mx-auto w-max bg-yellow-400 text-black px-4 py-2 rounded-full text-xs font-bold shadow-lg z-50 flex items-center space-x-2';
-            loadingAlert.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Uploading post...</span>`;
-            document.body.appendChild(loadingAlert);
-
+        document.getElementById('create-post-btn').addEventListener('click', async () => {
+            const text = document.getElementById('post-text').value;
+            if (!text && !currentMediaBase64) return;
             try {
-                let mediaBase64 = "";
-                if (isVideo) {
-                    mediaBase64 = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => resolve(e.target.result);
-                        reader.readAsDataURL(file);
-                    });
-                } else {
-                    mediaBase64 = await compressImage(file, 800, 0.7);
-                }
-
-                await window.addDoc(window.collection(window.db, "posts"), {
-                    uid: window.auth.currentUser.uid,
-                    username: window.currentUserData ? window.currentUserData.username : "User",
-                    avatar: window.currentUserData ? window.currentUserData.avatar : "https://api.dicebear.com/7.x/avataaars/svg?seed=user",
-                    mediaUrl: mediaBase64,
-                    isVideo: isVideo,
-                    caption: caption,
-                    likesCount: 0,
-                    commentsCount: 0,
-                    sharesCount: 0,
-                    createdAt: window.serverTimestamp()
+                await addDoc(collection(db, "posts"), {
+                    uid: auth.currentUser.uid,
+                    email: auth.currentUser.email,
+                    text,
+                    media: currentMediaBase64 || null,
+                    createdAt: serverTimestamp()
                 });
+                document.getElementById('post-text').value = '';
+                document.getElementById('post-media-preview').classList.add('hidden');
+                currentMediaBase64 = null;
+                loadPosts();
+            } catch (err) { alert(err.message); }
+        });
 
-                if (document.getElementById('uploadingAlert')) document.getElementById('uploadingAlert').remove();
-                alert("Post Published Successfully!");
-                renderHome();
-            } catch (err) {
-                if (document.getElementById('uploadingAlert')) document.getElementById('uploadingAlert').remove();
-                alert("Failed to publish post: " + err.message);
-            }
-        }
-
-        async function handleAvatarUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            tempAvatarBase64 = await compressImage(file, 300, 0.7);
-            const avatarPreview = document.getElementById('profileAvatarPreview');
-            if (avatarPreview) avatarPreview.src = tempAvatarBase64;
-        }
-
-        async function handleStoryUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            if (!window.currentUserData && window.auth.currentUser) {
-                await window.preloadUserData();
-            }
+        async function loadPosts() {
+            const container = document.getElementById('posts-container');
+            container.innerHTML = '<p class="text-center text-xs text-slate-500">Loading posts...</p>';
             try {
-                const base64Image = await compressImage(file, 700, 0.7);
-                await window.addDoc(window.collection(window.db, "stories"), {
-                    uid: window.auth.currentUser.uid,
-                    username: window.currentUserData ? window.currentUserData.username : "User",
-                    avatar: window.currentUserData ? window.currentUserData.avatar : "https://api.dicebear.com/7.x/avataaars/svg?seed=user",
-                    imageUrl: base64Image,
-                    createdAt: window.serverTimestamp()
-                });
-                alert("Story Posted Successfully!");
-                renderHome();
-            } catch (err) {
-                alert("Failed to post story: " + err.message);
-            }
-        }
-
-        async function handleChatMediaUpload(event) {
-            const file = event.target.files[0];
-            if (!file || !currentActiveChatId) return;
-            const isVideo = file.type.startsWith('video');
-            
-            const loadingAlert = document.createElement('div');
-            loadingAlert.id = 'mediaUploadingAlert';
-            loadingAlert.className = 'fixed top-4 left-0 right-0 mx-auto w-max bg-yellow-400 text-black px-4 py-2 rounded-full text-xs font-bold shadow-lg z-50 flex items-center space-x-2';
-            loadingAlert.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Sending media...</span>`;
-            document.body.appendChild(loadingAlert);
-
-            try {
-                let mediaBase64 = "";
-                if (isVideo) {
-                    mediaBase64 = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => resolve(e.target.result);
-                        reader.readAsDataURL(file);
-                    });
-                } else {
-                    mediaBase64 = await compressImage(file, 800, 0.7);
-                }
-
-                await sendPrivateMessage(currentActiveChatId, currentActivePeerUid, null, null, mediaBase64, isVideo);
-                if (document.getElementById('mediaUploadingAlert')) document.getElementById('mediaUploadingAlert').remove();
-            } catch (err) {
-                if (document.getElementById('mediaUploadingAlert')) document.getElementById('mediaUploadingAlert').remove();
-                alert("Failed to send media: " + err.message);
-            }
-        }
-
-        function getTopHeaderHTML() {
-            return `
-                <div class="flex justify-between items-center mb-4 px-4 pt-4">
-                    <h1 class="text-2xl brand-font text-yellow-400">Roxchat</h1>
-                    <div class="flex items-center space-x-4 text-xl">
-                        <button onclick="triggerPostPicker()" class="text-zinc-300 hover:text-yellow-400 transition" title="Create New Post"><i class="fa-solid fa-plus-circle"></i></button>
-                        <button onclick="renderNotifications()" class="text-zinc-300 hover:text-yellow-400 transition relative" title="Notifications">
-                            <i class="fa-solid fa-heart"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function getStoriesBarHTML() {
-            let userAvatar = window.currentUserData?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=myuser';
-            return `
-                <div class="flex space-x-3 overflow-x-auto no-scrollbar px-4 mb-4 py-1">
-                    <div class="flex flex-col items-center flex-shrink-0 cursor-pointer" onclick="triggerStoryPicker()">
-                        <div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-500 to-amber-300 relative">
-                            <div class="w-full h-full bg-black rounded-full flex items-center justify-center overflow-hidden">
-                                <img src="${userAvatar}" class="w-full h-full object-cover">
-                            </div>
-                            <div class="absolute bottom-0 right-0 bg-yellow-400 text-black rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold border-2 border-black">+</div>
-                        </div>
-                        <span class="text-[11px] text-zinc-300 mt-1">Your Story</span>
-                    </div>
-                </div>
-            `;
-        }
-
-        function switchTab(tab) {
-            currentTab = tab;
-            const tabs = ['home', 'chat', 'explore', 'reels', 'profile'];
-            tabs.forEach(t => {
-                const btn = document.getElementById(`nav-${t}`);
-                if (btn) {
-                    if (t === tab) {
-                        btn.classList.remove('text-zinc-400');
-                        btn.classList.add('text-yellow-400');
-                    } else {
-                        btn.classList.remove('text-yellow-400');
-                        btn.classList.add('text-zinc-400');
-                    }
-                }
-            });
-
-            if (tab === 'home') renderHome();
-            else if (tab === 'explore') renderExplore();
-            else if (tab === 'reels') renderReels();
-            else if (tab === 'chat') renderChatInboxList();
-            else if (tab === 'profile') renderProfile();
-        }
-
-        function renderLogin(isSignup = false) {
-            document.getElementById('app').innerHTML = `
-                <div class="p-6 flex flex-col justify-center items-center min-h-screen bg-black">
-                    <div class="w-full max-w-sm bg-zinc-950 border border-zinc-800/80 p-8 rounded-2xl shadow-xl">
-                        <div class="text-center mb-8">
-                            <h1 class="text-4xl brand-font tracking-wide text-yellow-400">Roxchat</h1>
-                            <p class="text-xs text-zinc-500 mt-2">Connect with your world differently</p>
-                        </div>
-                        <div class="space-y-3.5">
-                            ${isSignup ? '<input type="text" id="username" placeholder="Username (Unique)" class="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">' : ''}
-                            <input type="email" id="email" placeholder="Email address" class="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">
-                            <input type="password" id="password" placeholder="Password" class="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 transition">
-                            <button id="authSubmitBtn" onclick="${isSignup ? 'handleSignup()' : 'handleLogin()'}" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black p-3.5 rounded-xl font-bold text-sm transition shadow-lg shadow-yellow-400/10 mt-2">${isSignup ? 'Create Account' : 'Sign In'}</button>
-                        </div>
-                    </div>
-                    <div class="w-full max-w-sm bg-zinc-950 border border-zinc-800/80 p-4 rounded-xl mt-3 text-center">
-                        <p class="text-xs text-zinc-400">
-                            ${isSignup ? 'Already have an account?' : "Don't have an account?"} 
-                            <span class="text-yellow-400 font-bold cursor-pointer ml-1" onclick="renderLogin(${!isSignup})">${isSignup ? 'Sign In' : 'Sign up'}</span>
-                        </p>
-                    </div>
-                </div>
-            `;
-        }
-
-        async function handleLogin() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            try {
-                await window.signInWithEmailAndPassword(window.auth, email, password);
-            } catch (error) {
-                alert("Login Error: " + error.message);
-            }
-        }
-
-        async function handleSignup() {
-            const usernameInput = document.getElementById('username').value.trim().toLowerCase();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            if (!usernameInput) return alert("Please enter a username!");
-
-            try {
-                const q = window.query(window.collection(window.db, "users"), window.where("username", "==", usernameInput));
-                const querySnapshot = await window.getDocs(q);
-                if (!querySnapshot.empty) {
-                    alert("Username is already taken.");
-                    return;
-                }
-
-                const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
-                const user = userCredential.user;
-
-                window.currentUserData = {
-                    uid: user.uid,
-                    username: usernameInput,
-                    email: email,
-                    bio: "Hey there! I am using Roxchat.",
-                    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=" + usernameInput,
-                    isPrivate: false,
-                    pushNotifications: true,
-                    createdAt: window.serverTimestamp()
-                };
-
-                await window.setDoc(window.doc(window.db, "users", user.uid), window.currentUserData);
-                switchTab('home');
-            } catch (error) {
-                alert("Signup Error: " + error.message);
-            }
-        }
-
-        async function renderHome() {
-            const appDiv = document.getElementById('app');
-            appDiv.innerHTML = `
-                <div>
-                    ${getTopHeaderHTML()}
-                    ${getStoriesBarHTML()}
-                    <div id="postsFeedContainer" class="space-y-4 px-4 pb-6">
-                        <div class="text-center text-zinc-500 text-sm py-10">Loading posts feed...</div>
-                    </div>
-                </div>
-            `;
-
-            try {
-                const q = window.query(window.collection(window.db, "posts"), window.orderBy("createdAt", "desc"));
-                const querySnapshot = await window.getDocs(q);
-                const feedContainer = document.getElementById('postsFeedContainer');
-
-                if (querySnapshot.empty) {
-                    feedContainer.innerHTML = `
-                        <div class="text-center py-10 text-zinc-500 text-sm">
-                            <p>No posts in feed yet.</p>
-                            <span class="text-xs text-zinc-600">Tap (+) icon top right to upload!</span>
-                        </div>
-                    `;
-                    return;
-                }
-
-                let html = '';
-                const currentUid = window.auth.currentUser.uid;
-
-                for (const docSnap of querySnapshot.docs) {
-                    const post = docSnap.data();
-                    const postId = docSnap.id;
-
-                    const likeRef = window.doc(window.db, "posts", postId, "likes", currentUid);
-                    const likeDoc = await window.getDoc(likeRef);
-                    const isLiked = likeDoc.exists();
-
-                    let mediaContent = `<img src="${post.mediaUrl}" class="w-full object-cover max-h-[450px]" loading="lazy">`;
-                    if (post.isVideo) {
-                        mediaContent = `<video src="${post.mediaUrl}" controls class="w-full object-cover max-h-[450px]"></video>`;
-                    }
-
-                    const likesCount = post.likesCount || 0;
-                    const commentsCount = post.commentsCount || 0;
-                    const sharesCount = post.sharesCount || 0;
-                    const postTimeFormatted = timeAgo(post.createdAt);
-
-                    html += `
-                        <div class="bg-zinc-950 border border-zinc-900 rounded-2xl overflow-hidden shadow-lg mb-4" id="post-card-${postId}">
-                            <div class="flex items-center justify-between p-3">
-                                <div class="flex items-center space-x-2.5 cursor-pointer" onclick="viewUserProfile('${post.uid}')">
-                                    <img src="${post.avatar}" class="w-9 h-9 rounded-full bg-zinc-800 object-cover">
-                                    <div>
-                                        <span class="font-bold text-sm text-white hover:text-yellow-400 transition">${post.username}</span>
-                                        <p class="text-[10px] text-zinc-500">${postTimeFormatted}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-black flex items-center justify-center">
-                                ${mediaContent}
-                            </div>
-                            <!-- Instagram Style Action Bar -->
-                            <div class="px-4 py-3 flex items-center justify-between border-b border-zinc-900">
-                                <div class="flex items-center space-x-5">
-                                    <button onclick="toggleLikePost('${postId}')" id="like-btn-${postId}" class="flex items-center space-x-1.5 text-xl transition active:scale-125">
-                                        <i id="like-icon-${postId}" class="${isLiked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart text-white'}"></i>
-                                        <span id="like-count-${postId}" class="text-xs font-bold text-zinc-300">${likesCount}</span>
-                                    </button>
-                                    <button onclick="openCommentsModal('${postId}')" class="flex items-center space-x-1.5 text-xl text-white transition active:scale-125">
-                                        <i class="fa-regular fa-comment"></i>
-                                        <span class="text-xs font-bold text-zinc-300">${commentsCount}</span>
-                                    </button>
-                                    <button onclick="sharePost('${postId}')" class="flex items-center space-x-1.5 text-xl text-white transition active:scale-125">
-                                        <i class="fa-regular fa-paper-plane"></i>
-                                        <span class="text-xs font-bold text-zinc-300">${sharesCount}</span>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="p-3 text-sm">
-                                <p class="text-zinc-200"><strong class="text-white mr-2 cursor-pointer" onclick="viewUserProfile('${post.uid}')">${post.username}</strong>${post.caption || ''}</p>
-                            </div>
-                        </div>
-                    `;
-                }
-                feedContainer.innerHTML = html;
-            } catch (e) {
-                console.error("Error loading feed:", e);
-            }
-        }
-
-        window.toggleLikePost = async function(postId) {
-            const currentUid = window.auth.currentUser.uid;
-            const postRef = window.doc(window.db, "posts", postId);
-            const likeRef = window.doc(window.db, "posts", postId, "likes", currentUid);
-
-            const iconElem = document.getElementById(`like-icon-${postId}`);
-            const countElem = document.getElementById(`like-count-${postId}`);
-            if (!iconElem || !countElem) return;
-
-            let currentCount = parseInt(countElem.innerText) || 0;
-            const isCurrentlyLiked = iconElem.classList.contains('fa-solid');
-
-            if (isCurrentlyLiked) {
-                iconElem.className = 'fa-regular fa-heart text-white';
-                countElem.innerText = Math.max(0, currentCount - 1);
-            } else {
-                iconElem.className = 'fa-solid fa-heart text-red-500';
-                countElem.innerText = currentCount + 1;
-            }
-
-            try {
-                const likeDoc = await window.getDoc(likeRef);
-                const postDoc = await window.getDoc(postRef);
-
-                if (likeDoc.exists()) {
-                    await window.deleteDoc(likeRef);
-                    let actualLikes = Math.max(0, (postDoc.data().likesCount || 1) - 1);
-                    await window.updateDoc(postRef, { likesCount: actualLikes });
-                } else {
-                    await window.setDoc(likeRef, { timestamp: window.serverTimestamp() });
-                    let actualLikes = (postDoc.data().likesCount || 0) + 1;
-                    await window.updateDoc(postRef, { likesCount: actualLikes });
-
-                    if (postDoc.data().uid !== currentUid) {
-                        await window.addDoc(window.collection(window.db, "notifications"), {
-                            receiverUid: postDoc.data().uid,
-                            senderUid: currentUid,
-                            senderUsername: window.currentUserData?.username || "Someone",
-                            type: 'like',
-                            text: 'liked your post.',
-                            timestamp: window.serverTimestamp()
-                        });
-                    }
-                }
-            } catch (e) {
-                console.error("Error toggling like:", e);
-            }
-        }
-
-        window.viewUserProfile = async function(peerUid) {
-            if (peerUid === window.auth.currentUser.uid) {
-                switchTab('profile');
-                return;
-            }
-
-            const appDiv = document.getElementById('app');
-            appDiv.innerHTML = `
-                <div class="flex flex-col h-screen bg-black">
-                    <div class="flex items-center justify-between p-4 bg-zinc-950 border-b border-zinc-800">
-                        <button onclick="switchTab('home')" class="text-zinc-400 text-lg"><i class="fa-solid fa-arrow-left"></i></button>
-                        <h2 class="font-bold text-white">Profile</h2>
-                        <div class="w-6"></div>
-                    </div>
-                    <div id="peerProfileContent" class="p-6 text-center">
-                        <i class="fa-solid fa-spinner fa-spin text-yellow-400 text-2xl mt-10"></i>
-                    </div>
-                </div>
-            `;
-
-            try {
-                const userDoc = await window.getDoc(window.doc(window.db, "users", peerUid));
-                if (!userDoc.exists()) {
-                    document.getElementById('peerProfileContent').innerHTML = `<p class="text-zinc-500 text-sm">User not found.</p>`;
-                    return;
-                }
-                const userData = userDoc.data();
-                const currentUid = window.auth.currentUser.uid;
-
-                // Check if they are already friends or request pending
-                const friendshipId = currentUid < peerUid ? `${currentUid}_${peerUid}` : `${peerUid}_${currentUid}`;
-                const friendDoc = await window.getDoc(window.doc(window.db, "friends", friendshipId));
-                
-                let buttonHTML = `<button onclick="sendFriendRequest('${peerUid}', '${userData.username}')" class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-sm transition shadow-lg"><i class="fa-solid fa-user-plus mr-1.5"></i> Add Friend</button>`;
-
-                if (friendDoc.exists()) {
-                    if (friendDoc.data().status === 'accepted') {
-                        buttonHTML = `<button onclick="openChatRoom('${peerUid}', '${userData.username}')" class="flex-1 bg-yellow-400 text-black py-2.5 rounded-xl font-bold text-sm transition"><i class="fa-solid fa-comments mr-1.5"></i> Message</button>`;
-                    } else {
-                        buttonHTML = `<button disabled class="flex-1 bg-zinc-800 text-zinc-400 py-2.5 rounded-xl font-bold text-sm">Request Pending</button>`;
-                    }
-                }
-
-                document.getElementById('peerProfileContent').innerHTML = `
-                    <div class="flex flex-col items-center mt-4">
-                        <img src="${userData.avatar}" class="w-24 h-24 rounded-full border-2 border-yellow-400 bg-zinc-800 object-cover mb-4">
-                        <h3 class="text-lg font-bold text-white">${userData.username}</h3>
-                        <p class="text-sm text-zinc-400 mt-2 max-w-xs">${userData.bio || 'No bio available.'}</p>
-                        
-                        <div class="flex space-x-3 w-full max-w-xs mt-6">
-                            ${buttonHTML}
-                        </div>
-                    </div>
-                `;
-            } catch (e) {
-                console.error("Error loading user profile:", e);
-            }
-        }
-
-        window.sendFriendRequest = async function(peerUid, peerUsername) {
-            const currentUid = window.auth.currentUser.uid;
-            const friendshipId = currentUid < peerUid ? `${currentUid}_${peerUid}` : `${peerUid}_${currentUid}`;
-            try {
-                await window.setDoc(window.doc(window.db, "friends", friendshipId), {
-                    user1: currentUid,
-                    user2: peerUid,
-                    status: 'pending',
-                    sender: currentUid,
-                    timestamp: window.serverTimestamp()
-                });
-
-                await window.addDoc(window.collection(window.db, "notifications"), {
-                    receiverUid: peerUid,
-                    senderUid: currentUid,
-                    senderUsername: window.currentUserData?.username || "Someone",
-                    type: 'friend_request',
-                    text: 'sent you a friend request.',
-                    timestamp: window.serverTimestamp()
-                });
-                alert(`Friend request sent to ${peerUsername}!`);
-                viewUserProfile(peerUid);
-            } catch (e) {
-                alert("Failed to send friend request: " + e.message);
-            }
-        }
-
-        window.acceptFriendRequest = async function(senderUid, notifDocId) {
-            const currentUid = window.auth.currentUser.uid;
-            const friendshipId = currentUid < senderUid ? `${currentUid}_${senderUid}` : `${senderUid}_${currentUid}`;
-            try {
-                await window.updateDoc(window.doc(window.db, "friends", friendshipId), {
-                    status: 'accepted'
-                });
-                await window.deleteDoc(window.doc(window.db, "notifications", notifDocId));
-                alert("Friend request accepted!");
-                renderNotifications();
-            } catch (e) {
-                alert("Error: " + e.message);
-            }
-        }
-
-        window.openCommentsModal = async function(postId) {
-            const appDiv = document.getElementById('app');
-            appDiv.innerHTML = `
-                <div class="flex flex-col h-screen bg-black">
-                    <div class="flex items-center justify-between p-4 bg-zinc-950 border-b border-zinc-800">
-                        <button onclick="renderHome()" class="text-zinc-400 text-lg"><i class="fa-solid fa-arrow-left"></i></button>
-                        <h2 class="font-bold text-white">Comments</h2>
-                        <div class="w-6"></div>
-                    </div>
-                    <div id="commentsContainer" class="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
-                        <div class="text-center text-zinc-500 text-xs">Loading comments...</div>
-                    </div>
-                    <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-3 bg-zinc-950 border-t border-zinc-800 flex items-center space-x-2">
-                        <input type="text" id="commentInput" placeholder="Add a comment..." class="flex-1 bg-zinc-900 border border-zinc-800 text-white p-3 rounded-xl text-sm focus:outline-none focus:border-yellow-400">
-                        <button onclick="postComment('${postId}')" class="bg-yellow-400 text-black px-4 py-3 rounded-xl font-bold text-sm">Post</button>
-                    </div>
-                </div>
-            `;
-            loadComments(postId);
-        }
-
-        async function loadComments(postId) {
-            const container = document.getElementById('commentsContainer');
-            try {
-                const q = window.query(window.collection(window.db, "posts", postId, "comments"), window.orderBy("timestamp", "asc"));
-                const snapshot = await window.getDocs(q);
-
-                if (snapshot.empty) {
-                    container.innerHTML = `<div class="text-center text-zinc-500 text-sm py-10">No comments yet. Be the first to comment!</div>`;
-                    return;
-                }
-
-                let html = '';
-                snapshot.forEach(docSnap => {
-                    const com = docSnap.data();
-                    html += `
-                        <div class="bg-zinc-900/60 border border-zinc-800 p-3 rounded-xl">
-                            <div class="flex items-center space-x-2 mb-1">
-                                <span class="font-bold text-xs text-yellow-400">${com.username}</span>
-                            </div>
-                            <p class="text-sm text-zinc-200">${com.text}</p>
-                        </div>
-                    `;
-                });
-                container.innerHTML = html;
-            } catch (e) {
-                console.error("Error loading comments:", e);
-            }
-        }
-
-        window.postComment = async function(postId) {
-            const input = document.getElementById('commentInput');
-            const text = input.value.trim();
-            if (!text) return;
-
-            if (!window.currentUserData && window.auth.currentUser) {
-                await window.preloadUserData();
-            }
-
-            try {
-                await window.addDoc(window.collection(window.db, "posts", postId, "comments"), {
-                    uid: window.auth.currentUser.uid,
-                    username: window.currentUserData?.username || "User",
-                    text: text,
-                    timestamp: window.serverTimestamp()
-                });
-
-                const postRef = window.doc(window.db, "posts", postId);
-                const postDoc = await window.getDoc(postRef);
-                const currentCount = postDoc.data().commentsCount || 0;
-                await window.updateDoc(postRef, { commentsCount: currentCount + 1 });
-
-                input.value = '';
-                loadComments(postId);
-            } catch (e) {
-                alert("Failed to post comment: " + e.message);
-            }
-        }
-
-        window.sharePost = async function(postId) {
-            try {
-                const postRef = window.doc(window.db, "posts", postId);
-                const postDoc = await window.getDoc(postRef);
-                const currentShares = postDoc.data().sharesCount || 0;
-                await window.updateDoc(postRef, { sharesCount: currentShares + 1 });
-
-                if (navigator.share) {
-                    await navigator.share({
-                        title: 'Check out this post on Roxchat',
-                        url: window.location.href
-                    });
-                } else {
-                    navigator.clipboard.writeText(window.location.href);
-                    alert("Post link copied to clipboard!");
-                }
-                renderHome();
-            } catch (e) {
-                console.error("Error sharing post:", e);
-            }
-        }
-
-        async function renderNotifications() {
-            const appDiv = document.getElementById('app');
-            appDiv.innerHTML = `
-                <div class="p-4">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-xl font-bold text-yellow-400">Notifications</h2>
-                        <button onclick="switchTab('home')" class="text-zinc-400 text-sm"><i class="fa-solid fa-arrow-left"></i> Back</button>
-                    </div>
-                    <div id="notifList" class="space-y-3">
-                        <div class="text-center text-zinc-500 text-sm py-10">Loading notifications...</div>
-                    </div>
-                </div>
-            `;
-
-            try {
-                const q = window.query(
-                    window.collection(window.db, "notifications"), 
-                    window.where("receiverUid", "==", window.auth.currentUser.uid),
-                    window.orderBy("timestamp", "desc")
-                );
-                const snapshot = await window.getDocs(q);
-                const notifList = document.getElementById('notifList');
-                
-                if (snapshot.empty) {
-                    notifList.innerHTML = `<div class="text-center text-zinc-500 text-sm py-10">No notifications yet.</div>`;
-                    return;
-                }
-
-                let html = '';
-                snapshot.forEach(docSnap => {
-                    const notif = docSnap.data();
-                    const notifId = docSnap.id;
-                    let icon = "fa-bell text-yellow-400";
-                    if(notif.type === 'like') icon = "fa-heart text-red-500";
-                    if(notif.type === 'comment') icon = "fa-comment text-blue-400";
-                    if(notif.type === 'message') icon = "fa-paper-plane text-yellow-400";
-                    if(notif.type === 'friend_request') icon = "fa-user-plus text-green-400";
-
-                    let actionHtml = '';
-                    if(notif.type === 'friend_request') {
-                        actionHtml = `<button onclick="acceptFriendRequest('${notif.senderUid}', '${notifId}')" class="bg-yellow-400 text-black px-3 py-1.5 rounded-lg text-xs font-bold">Accept</button>`;
-                    }
-
-                    html += `
-                        <div class="flex items-center justify-between bg-zinc-900 border border-zinc-800 p-3 rounded-xl">
-                            <div class="flex items-center space-x-3 flex-1">
-                                <i class="fa-solid ${icon} text-lg w-6 text-center"></i>
-                                <div class="flex-1 text-sm">
-                                    <span class="font-semibold text-white">${notif.senderUsername || 'Someone'}</span> 
-                                    <span class="text-zinc-300">${notif.text}</span>
-                                </div>
-                            </div>
-                            ${actionHtml}
-                        </div>
-                    `;
-                });
-                notifList.innerHTML = html;
-            } catch (e) {
-                console.error("Error loading notifications:", e);
-            }
-        }
-
-        async function renderExplore() {
-            const appDiv = document.getElementById('app');
-            appDiv.innerHTML = `
-                <div>
-                    ${getTopHeaderHTML()}
-                    <div class="p-4 pt-0">
-                        <h2 class="text-xl font-bold mb-4 text-yellow-400">Search Friends</h2>
-                        <div class="mb-4">
-                            <input type="text" id="searchInput" placeholder="Search users..." oninput="filterSearchUsers(this.value)" class="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400">
-                        </div>
-                        <div id="exploreUsersList" class="space-y-3 text-center text-zinc-400">Loading users...</div>
-                    </div>
-                </div>
-            `;
-            
-            try {
-                const querySnapshot = await window.getDocs(window.collection(window.db, "users"));
-                window.allExploreUsers = [];
+                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+                container.innerHTML = '';
                 querySnapshot.forEach((docSnap) => {
-                    const userData = docSnap.data();
-                    if(userData.uid !== window.auth.currentUser.uid) {
-                        window.allExploreUsers.push(userData);
-                    }
-                });
-                renderUserSearchResults(window.allExploreUsers);
-            } catch (error) {
-                console.error("Error loading users:", error);
-            }
-        }
-
-        function renderUserSearchResults(users) {
-            let usersListDiv = document.getElementById('exploreUsersList');
-            if(!usersListDiv) return;
-            
-            if(users.length === 0) {
-                usersListDiv.innerHTML = `<div class="text-zinc-500 text-sm py-6">No users found.</div>`;
-                return;
-            }
-
-            let usersHTML = `<div class="space-y-3">`;
-            users.forEach((userData) => {
-                usersHTML += `
-                    <div onclick="viewUserProfile('${userData.uid}')" class="flex items-center justify-between bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl cursor-pointer hover:border-yellow-400 transition">
-                        <div class="flex items-center space-x-3">
-                            <img src="${userData.avatar}" class="w-10 h-10 rounded-full bg-zinc-800 object-cover">
-                            <span class="font-semibold text-white">${userData.username}</span>
+                    const post = docSnap.data();
+                    const div = document.createElement('div');
+                    div.className = "bg-slate-800/40 border border-slate-800 rounded-2xl p-4 space-y-3";
+                    div.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-xs">${post.email.charAt(0).toUpperCase()}</div>
+                            <span class="text-xs font-semibold text-slate-300">${post.email}</span>
                         </div>
-                        <i class="fa-solid fa-chevron-right text-zinc-500 text-sm"></i>
-                    </div>
-                `;
-            });
-            usersHTML += `</div>`;
-            usersListDiv.innerHTML = usersHTML;
-        }
-
-        window.filterSearchUsers = function(queryText) {
-            if(!window.allExploreUsers) return;
-            const filtered = window.allExploreUsers.filter(u => u.username.toLowerCase().includes(queryText.toLowerCase()));
-            renderUserSearchResults(filtered);
-        }
-
-        async function renderChatInboxList() {
-            const appDiv = document.getElementById('app');
-            appDiv.innerHTML = `
-                <div>
-                    ${getTopHeaderHTML()}
-                    <div class="p-4 pt-0">
-                        <h2 class="text-xl font-bold mb-4 text-yellow-400">Direct Messages (Friends Only)</h2>
-                        <div id="directUsersList" class="space-y-3 text-center text-zinc-400">Loading chats...</div>
-                    </div>
-                </div>
-            `;
-
-            try {
-                const currentUid = window.auth.currentUser.uid;
-                const querySnapshot = await window.getDocs(window.collection(window.db, "users"));
-                let usersHTML = `<div class="space-y-3">`;
-                let count = 0;
-                
-                for (const docSnap of querySnapshot.docs) {
-                    const userData = docSnap.data();
-                    if(userData.uid !== currentUid) {
-                        const friendshipId = currentUid < userData.uid ? `${currentUid}_${userData.uid}` : `${userData.uid}_${currentUid}`;
-                        const friendDoc = await window.getDoc(window.doc(window.db, "friends", friendshipId));
-
-                        if(friendDoc.exists() && friendDoc.data().status === 'accepted') {
-                            count++;
-                            usersHTML += `
-                                <div onclick="openChatRoom('${userData.uid}', '${userData.username}')" class="flex items-center justify-between bg-zinc-900/80 border border-zinc-800 p-3.5 rounded-xl cursor-pointer hover:border-yellow-400 transition">
-                                    <div class="flex items-center space-x-3">
-                                        <img src="${userData.avatar}" class="w-12 h-12 rounded-full bg-zinc-800 object-cover">
-                                        <div>
-                                            <h4 class="font-bold text-white text-sm">${userData.username}</h4>
-                                            <p class="text-xs text-zinc-400">Tap to open chat</p>
-                                        </div>
-                                    </div>
-                                    <i class="fa-solid fa-paper-plane text-yellow-400 text-base"></i>
-                                </div>
-                            `;
-                        }
-                    }
-                }
-                
-                usersHTML += `</div>`;
-                if (count === 0) usersHTML = `<div class="text-zinc-500 text-sm py-10">No friend chats yet. Add friends from Explore to chat!</div>`;
-                document.getElementById('directUsersList').innerHTML = usersHTML;
-            } catch (error) {
-                console.error("Error loading chats:", error);
-            }
-        }
-
-        async function openChatRoom(peerUid, peerUsername) {
-            const currentUid = window.auth.currentUser.uid;
-            const friendshipId = currentUid < peerUid ? `${currentUid}_${peerUid}` : `${peerUid}_${currentUid}`;
-            
-            const friendDoc = await window.getDoc(window.doc(window.db, "friends", friendshipId));
-            if (!friendDoc.exists() || friendDoc.data().status !== 'accepted') {
-                alert("You must be friends with this user to chat with them!");
-                viewUserProfile(peerUid);
-                return;
-            }
-
-            const chatId = friendshipId;
-            currentActiveChatId = chatId;
-            currentActivePeerUid = peerUid;
-
-            document.getElementById('app').innerHTML = `
-                <div class="flex flex-col h-screen bg-black">
-                    <div class="flex items-center justify-between p-4 bg-zinc-950 border-b border-zinc-800">
-                        <button onclick="switchTab('chat')" class="text-zinc-400 text-lg"><i class="fa-solid fa-arrow-left"></i></button>
-                        <h2 class="font-bold text-white">${peerUsername}</h2>
-                        <div class="w-6"></div>
-                    </div>
-                    
-                    <div id="messageContainer" class="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
-                        <div class="text-center text-zinc-500 text-xs">Private chat room with ${peerUsername}.</div>
-                    </div>
-                    
-                    <div class="fixed bottom-16 left-0 right-0 max-w-md mx-auto p-3 bg-zinc-950 border-t border-zinc-800 flex items-center space-x-2">
-                        <button onclick="document.getElementById('chatFileInput').click()" class="text-zinc-400 hover:text-yellow-400 text-xl px-2"><i class="fa-solid fa-paperclip"></i></button>
-                        <input type="text" id="chatInput" placeholder="Message..." class="flex-1 bg-zinc-900 border border-zinc-800 text-white p-3 rounded-xl text-sm focus:outline-none focus:border-yellow-400">
-                        <button onclick="toggleVoiceRecord('${chatId}', '${peerUid}')" id="micBtn" class="bg-zinc-800 hover:bg-zinc-700 text-yellow-400 px-3.5 py-3 rounded-xl text-sm"><i class="fa-solid fa-microphone"></i></button>
-                        <button onclick="sendPrivateMessage('${chatId}', '${peerUid}')" class="bg-yellow-400 text-black px-4 py-3 rounded-xl font-bold text-sm">Send</button>
-                    </div>
-                </div>
-            `;
-            loadPrivateMessages(chatId);
-        }
-
-        async function sendPrivateMessage(chatId, peerUid, customText = null, audioUrl = null, mediaUrl = null, isVideo = false) {
-            const input = document.getElementById('chatInput');
-            const text = customText || (input ? input.value.trim() : '');
-            if (!text && !audioUrl && !mediaUrl) return;
-            
-            if (!window.currentUserData && window.auth.currentUser) {
-                await window.preloadUserData();
-            }
-
-            try {
-                let msgData = {
-                    sender: window.auth.currentUser.uid,
-                    timestamp: window.serverTimestamp()
-                };
-
-                if(audioUrl) {
-                    msgData.audioUrl = audioUrl;
-                    msgData.text = "[Voice Note]";
-                } else if(mediaUrl) {
-                    msgData.mediaUrl = mediaUrl;
-                    msgData.isVideo = isVideo;
-                    msgData.text = isVideo ? "[Video]" : "[Photo]";
-                } else {
-                    msgData.text = text;
-                }
-
-                await window.addDoc(window.collection(window.db, "chats", chatId, "messages"), msgData);
-
-                const senderUsername = window.currentUserData ? window.currentUserData.username : "Someone";
-                let notifText = `sent you a message.`;
-                if(audioUrl) notifText = `sent you a voice note.`;
-                if(mediaUrl) notifText = isVideo ? `sent you a video.` : `sent you a photo.`;
-
-                await window.addDoc(window.collection(window.db, "notifications"), {
-                    receiverUid: peerUid,
-                    senderUid: window.auth.currentUser.uid,
-                    senderUsername: senderUsername,
-                    type: 'message',
-                    text: notifText,
-                    timestamp: window.serverTimestamp()
-                });
-
-                if(input && !customText) input.value = '';
-                loadPrivateMessages(chatId);
-            } catch (e) {
-                console.error("Error sending message: ", e);
-            }
-        }
-
-        async function toggleVoiceRecord(chatId, peerUid) {
-            const micBtn = document.getElementById('micBtn');
-            if (!mediaRecorder || mediaRecorder.state === "inactive") {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-
-                    mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
-                    mediaRecorder.onstop = async () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                        const reader = new FileReader();
-                        reader.readAsDataURL(audioBlob);
-                        reader.onloadend = async () => {
-                            await sendPrivateMessage(chatId, peerUid, null, reader.result);
-                        };
-                    };
-
-                    mediaRecorder.start();
-                    micBtn.classList.remove('bg-zinc-800', 'text-yellow-400');
-                    micBtn.classList.add('bg-red-600', 'text-white', 'animate-pulse');
-                } catch (e) {
-                    alert("Microphone access denied.");
-                }
-            } else {
-                mediaRecorder.stop();
-                micBtn.classList.remove('bg-red-600', 'text-white', 'animate-pulse');
-                micBtn.classList.add('bg-zinc-800', 'text-yellow-400');
-            }
-        }
-
-        async function loadPrivateMessages(chatId) {
-            const container = document.getElementById('messageContainer');
-            try {
-                const q = window.query(window.collection(window.db, "chats", chatId, "messages"), window.orderBy("timestamp", "asc"));
-                const snapshot = await window.getDocs(q);
-                
-                let html = '';
-                let messageCount = 0;
-                snapshot.forEach(docSnap => {
-                    const msg = docSnap.data();
-                    messageCount++;
-                    const isMe = msg.sender === window.auth.currentUser.uid;
-                    
-                    let contentHtml = msg.text;
-                    if(msg.audioUrl) {
-                        contentHtml = `<audio controls class="h-8 max-w-[200px]"><source src="${msg.audioUrl}" type="audio/webm"></audio>`;
-                    } else if(msg.mediaUrl) {
-                        if(msg.isVideo) {
-                            contentHtml = `<video src="${msg.mediaUrl}" controls class="max-w-full rounded-xl max-h-[250px] object-cover"></video>`;
-                        } else {
-                            contentHtml = `<img src="${msg.mediaUrl}" class="max-w-full rounded-xl max-h-[250px] object-cover">`;
-                        }
-                    }
-
-                    html += `
-                        <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
-                            <div class="max-w-[70%] p-3 rounded-2xl text-sm ${isMe ? 'bg-yellow-400 text-black rounded-br-none' : 'bg-zinc-900 text-white border border-zinc-800 rounded-bl-none'}">
-                                ${contentHtml}
-                            </div>
-                        </div>
+                        ${post.text ? `<p class="text-sm text-slate-200">${post.text}</p>` : ''}
+                        ${post.media ? (post.media.startsWith('data:video') ? `<video src="${post.media}" controls class="w-full rounded-xl max-h-60 object-cover"></video>` : `<img src="${post.media}" class="w-full rounded-xl max-h-60 object-cover">`) : ''}
                     `;
+                    container.appendChild(div);
                 });
-                
-                if (!container.dataset.lastCount || parseInt(container.dataset.lastCount) < messageCount) {
-                    if (snapshot.docs.length > 0) {
-                        const lastMsg = snapshot.docs[snapshot.docs.length - 1].data();
-                        if (lastMsg.sender !== window.auth.currentUser.uid) playNotificationSound();
-                    }
-                }
-                container.dataset.lastCount = messageCount;
-                container.innerHTML = html;
-                container.scrollTop = container.scrollHeight;
-            } catch (e) {
-                console.error("Error loading messages:", e);
-            }
+            } catch (err) { container.innerHTML = '<p class="text-center text-xs text-red-500">Failed to load posts.</p>'; }
         }
 
-        function renderReels() {
-            document.getElementById('app').innerHTML = `
-                <div>
-                    ${getTopHeaderHTML()}
-                    <div class="p-4 text-zinc-400 text-center">
-                        <p class="mb-2">Reels feed is up to date!</p>
-                        <span class="text-xs text-zinc-600">(Pull down to refresh)</span>
-                    </div>
-                </div>
-            `;
-        }
-
-        async function renderProfile() {
-            if (!window.currentUserData) await window.preloadUserData();
-            const userData = window.currentUserData || {
-                username: "user",
-                avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=default",
-                bio: "Hey there!",
-                isPrivate: false,
-                pushNotifications: true
-            };
-            if(!tempAvatarBase64) tempAvatarBase64 = userData.avatar;
-
-            document.getElementById('app').innerHTML = `
-                <div>
-                    ${getTopHeaderHTML()}
-                    <div class="p-4 text-center">
-                        <div class="flex flex-col items-center mt-2">
-                            <div class="relative group mb-3 cursor-pointer" onclick="triggerAvatarPicker()">
-                                <img id="profileAvatarPreview" src="${tempAvatarBase64}" class="w-24 h-24 rounded-full border-2 border-yellow-400 bg-zinc-800 object-cover">
-                            </div>
-                            <div class="w-full max-w-xs space-y-3 mt-1 text-left">
-                                <input type="text" id="editUsername" value="${userData.username || ''}" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400">
-                                <textarea id="editBio" class="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-yellow-400 resize-none h-16">${userData.bio || ''}</textarea>
-                                <button id="saveProfileBtn" onclick="saveProfileChanges()" class="w-full bg-yellow-400 text-black py-2.5 rounded-xl font-bold text-sm transition">Save</button>
-                            </div>
-                            <div class="w-full max-w-xs mt-8 pt-6 border-t border-zinc-800 text-center">
-                                <button onclick="handleLogout()" class="w-full bg-zinc-900 border border-zinc-800 text-red-400 py-2.5 rounded-xl font-bold text-sm">Log Out</button>
+        async function loadExploreUsers() {
+            const list = document.getElementById('users-list');
+            try {
+                const querySnapshot = await getDocs(collection(db, "users"));
+                list.innerHTML = '';
+                querySnapshot.forEach((docSnap) => {
+                    const u = docSnap.data();
+                    if(u.uid === auth.currentUser?.uid) return;
+                    const div = document.createElement('div');
+                    div.className = "flex items-center justify-between bg-slate-800/50 p-3 rounded-xl border border-slate-800";
+                    div.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm">${u.username.charAt(0).toUpperCase()}</div>
+                            <div>
+                                <h4 class="text-sm font-semibold">${u.username}</h4>
+                                <p class="text-xs text-slate-400">${u.email}</p>
                             </div>
                         </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        async function saveProfileChanges() {
-            const newUsername = document.getElementById('editUsername').value.trim().toLowerCase();
-            const newBio = document.getElementById('editBio').value.trim();
-            if (!newUsername) return alert("Username cannot be empty!");
-
-            try {
-                const userRef = window.doc(window.db, "users", window.auth.currentUser.uid);
-                await window.updateDoc(userRef, {
-                    username: newUsername,
-                    avatar: tempAvatarBase64,
-                    bio: newBio
+                        <button onclick="startChat('${u.uid}', '${u.username}')" class="bg-indigo-600/20 text-indigo-400 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-indigo-600 hover:text-white transition active:opacity-50">Chat</button>
+                    `;
+                    list.appendChild(div);
                 });
-                window.currentUserData.username = newUsername;
-                window.currentUserData.bio = newBio;
-                window.currentUserData.avatar = tempAvatarBase64;
-                alert("Profile Updated Successfully!");
-            } catch (e) {
-                alert("Error updating profile: " + e.message);
-            }
+            } catch (err) { console.error(err); }
         }
 
-        async function handleLogout() {
-            try {
-                await window.signOut(window.auth);
-                window.currentUserData = list;
-                window.currentUserData = null;
-            } catch (e) {
-                alert("Logout Error: " + e.message);
-            }
+        window.startChat = function(uid, username) {
+            document.getElementById('chats-list-view').classList.add('hidden');
+            const room = document.getElementById('active-chat-room');
+            room.classList.remove('hidden');
+            document.getElementById('chat-room-title').textContent = username;
         }
+
+        document.getElementById('close-chat').addEventListener('click', () => {
+            document.getElementById('active-chat-room').classList.add('hidden');
+            document.getElementById('chats-list-view').classList.remove('hidden');
+        });
+
     </script>
 </body>
 </html>
