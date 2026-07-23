@@ -110,6 +110,25 @@
         let touchStartY = 0;
         let isPulling = false;
 
+        function timeAgo(timestamp) {
+            if (!timestamp) return "Just now";
+            const now = new Date();
+            const past = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            const seconds = Math.floor((now - past) / 1000);
+
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + "y ago";
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + "mo ago";
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + "d ago";
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + "h ago";
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + "m ago";
+            return "Just now";
+        }
+
         function playNotificationSound() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -509,13 +528,17 @@
                     const likesCount = post.likesCount || 0;
                     const commentsCount = post.commentsCount || 0;
                     const sharesCount = post.sharesCount || 0;
+                    const postTimeFormatted = timeAgo(post.createdAt);
 
                     html += `
-                        <div class="bg-zinc-950 border border-zinc-900 rounded-2xl overflow-hidden shadow-lg mb-4">
+                        <div class="bg-zinc-950 border border-zinc-900 rounded-2xl overflow-hidden shadow-lg mb-4" id="post-card-${postId}">
                             <div class="flex items-center justify-between p-3">
-                                <div class="flex items-center space-x-2.5">
+                                <div class="flex items-center space-x-2.5 cursor-pointer" onclick="viewUserProfile('${post.uid}')">
                                     <img src="${post.avatar}" class="w-9 h-9 rounded-full bg-zinc-800 object-cover">
-                                    <span class="font-bold text-sm text-white">${post.username}</span>
+                                    <div>
+                                        <span class="font-bold text-sm text-white hover:text-yellow-400 transition">${post.username}</span>
+                                        <p class="text-[10px] text-zinc-500">${postTimeFormatted}</p>
+                                    </div>
                                 </div>
                             </div>
                             <div class="bg-black flex items-center justify-center">
@@ -524,9 +547,9 @@
                             <!-- Instagram Style Action Bar -->
                             <div class="px-4 py-3 flex items-center justify-between border-b border-zinc-900">
                                 <div class="flex items-center space-x-5">
-                                    <button onclick="toggleLikePost('${postId}')" class="flex items-center space-x-1.5 text-xl transition active:scale-125">
-                                        <i class="${isLiked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart text-white'}"></i>
-                                        <span class="text-xs font-bold text-zinc-300">${likesCount}</span>
+                                    <button onclick="toggleLikePost('${postId}')" id="like-btn-${postId}" class="flex items-center space-x-1.5 text-xl transition active:scale-125">
+                                        <i id="like-icon-${postId}" class="${isLiked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart text-white'}"></i>
+                                        <span id="like-count-${postId}" class="text-xs font-bold text-zinc-300">${likesCount}</span>
                                     </button>
                                     <button onclick="openCommentsModal('${postId}')" class="flex items-center space-x-1.5 text-xl text-white transition active:scale-125">
                                         <i class="fa-regular fa-comment"></i>
@@ -539,7 +562,7 @@
                                 </div>
                             </div>
                             <div class="p-3 text-sm">
-                                <p class="text-zinc-200"><strong class="text-white mr-2">${post.username}</strong>${post.caption || ''}</p>
+                                <p class="text-zinc-200"><strong class="text-white mr-2 cursor-pointer" onclick="viewUserProfile('${post.uid}')">${post.username}</strong>${post.caption || ''}</p>
                             </div>
                         </div>
                     `;
@@ -555,19 +578,34 @@
             const postRef = window.doc(window.db, "posts", postId);
             const likeRef = window.doc(window.db, "posts", postId, "likes", currentUid);
 
+            // Optimistic instant UI update to prevent lag/buffering feel
+            const iconElem = document.getElementById(`like-icon-${postId}`);
+            const countElem = document.getElementById(`like-count-${postId}`);
+            if (!iconElem || !countElem) return;
+
+            let currentCount = parseInt(countElem.innerText) || 0;
+            const isCurrentlyLiked = iconElem.classList.contains('fa-solid');
+
+            if (isCurrentlyLiked) {
+                iconElem.className = 'fa-regular fa-heart text-white';
+                countElem.innerText = Math.max(0, currentCount - 1);
+            } else {
+                iconElem.className = 'fa-solid fa-heart text-red-500';
+                countElem.innerText = currentCount + 1;
+            }
+
             try {
                 const likeDoc = await window.getDoc(likeRef);
                 const postDoc = await window.getDoc(postRef);
-                let currentLikes = postDoc.data().likesCount || 0;
 
                 if (likeDoc.exists()) {
                     await window.deleteDoc(likeRef);
-                    currentLikes = Math.max(0, currentLikes - 1);
-                    await window.updateDoc(postRef, { likesCount: currentLikes });
+                    let actualLikes = Math.max(0, (postDoc.data().likesCount || 1) - 1);
+                    await window.updateDoc(postRef, { likesCount: actualLikes });
                 } else {
                     await window.setDoc(likeRef, { timestamp: window.serverTimestamp() });
-                    currentLikes += 1;
-                    await window.updateDoc(postRef, { likesCount: currentLikes });
+                    let actualLikes = (postDoc.data().likesCount || 0) + 1;
+                    await window.updateDoc(postRef, { likesCount: actualLikes });
 
                     if (postDoc.data().uid !== currentUid) {
                         await window.addDoc(window.collection(window.db, "notifications"), {
@@ -580,9 +618,73 @@
                         });
                     }
                 }
-                renderHome();
             } catch (e) {
                 console.error("Error toggling like:", e);
+            }
+        }
+
+        window.viewUserProfile = async function(peerUid) {
+            if (peerUid === window.auth.currentUser.uid) {
+                switchTab('profile');
+                return;
+            }
+
+            const appDiv = document.getElementById('app');
+            appDiv.innerHTML = `
+                <div class="flex flex-col h-screen bg-black">
+                    <div class="flex items-center justify-between p-4 bg-zinc-950 border-b border-zinc-800">
+                        <button onclick="switchTab('home')" class="text-zinc-400 text-lg"><i class="fa-solid fa-arrow-left"></i></button>
+                        <h2 class="font-bold text-white">Profile</h2>
+                        <div class="w-6"></div>
+                    </div>
+                    <div id="peerProfileContent" class="p-6 text-center">
+                        <i class="fa-solid fa-spinner fa-spin text-yellow-400 text-2xl mt-10"></i>
+                    </div>
+                </div>
+            `;
+
+            try {
+                const userDoc = await window.getDoc(window.doc(window.db, "users", peerUid));
+                if (!userDoc.exists()) {
+                    document.getElementById('peerProfileContent').innerHTML = `<p class="text-zinc-500 text-sm">User not found.</p>`;
+                    return;
+                }
+                const userData = userDoc.data();
+
+                document.getElementById('peerProfileContent').innerHTML = `
+                    <div class="flex flex-col items-center mt-4">
+                        <img src="${userData.avatar}" class="w-24 h-24 rounded-full border-2 border-yellow-400 bg-zinc-800 object-cover mb-4">
+                        <h3 class="text-lg font-bold text-white">${userData.username}</h3>
+                        <p class="text-sm text-zinc-400 mt-2 max-w-xs">${userData.bio || 'No bio available.'}</p>
+                        
+                        <div class="flex space-x-3 w-full max-w-xs mt-6">
+                            <button onclick="sendFriendRequest('${peerUid}', '${userData.username}')" class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 rounded-xl font-bold text-sm transition shadow-lg">
+                                <i class="fa-solid fa-user-plus mr-1.5"></i> Add Friend
+                            </button>
+                            <button onclick="openChatRoom('${peerUid}', '${userData.username}')" class="flex-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white py-2.5 rounded-xl font-bold text-sm transition">
+                                <i class="fa-solid fa-comments mr-1.5 text-yellow-400"></i> Message
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                console.error("Error loading user profile:", e);
+            }
+        }
+
+        window.sendFriendRequest = async function(peerUid, peerUsername) {
+            try {
+                await window.addDoc(window.collection(window.db, "notifications"), {
+                    receiverUid: peerUid,
+                    senderUid: window.auth.currentUser.uid,
+                    senderUsername: window.currentUserData?.username || "Someone",
+                    type: 'friend_request',
+                    text: 'sent you a friend request.',
+                    timestamp: window.serverTimestamp()
+                });
+                alert(`Friend request sent to ${peerUsername}!`);
+            } catch (e) {
+                alert("Failed to send friend request: " + e.message);
             }
         }
 
@@ -722,6 +824,7 @@
                     if(notif.type === 'like') icon = "fa-heart text-red-500";
                     if(notif.type === 'comment') icon = "fa-comment text-blue-400";
                     if(notif.type === 'message') icon = "fa-paper-plane text-yellow-400";
+                    if(notif.type === 'friend_request') icon = "fa-user-plus text-green-400";
 
                     html += `
                         <div class="flex items-center space-x-3 bg-zinc-900 border border-zinc-800 p-3 rounded-xl">
@@ -781,12 +884,12 @@
             let usersHTML = `<div class="space-y-3">`;
             users.forEach((userData) => {
                 usersHTML += `
-                    <div onclick="openChatRoom('${userData.uid}', '${userData.username}')" class="flex items-center justify-between bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl cursor-pointer hover:border-yellow-400 transition">
+                    <div onclick="viewUserProfile('${userData.uid}')" class="flex items-center justify-between bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl cursor-pointer hover:border-yellow-400 transition">
                         <div class="flex items-center space-x-3">
                             <img src="${userData.avatar}" class="w-10 h-10 rounded-full bg-zinc-800 object-cover">
                             <span class="font-semibold text-white">${userData.username}</span>
                         </div>
-                        <i class="fa-solid fa-comments text-yellow-400 text-lg"></i>
+                        <i class="fa-solid fa-chevron-right text-zinc-500 text-sm"></i>
                     </div>
                 `;
             });
