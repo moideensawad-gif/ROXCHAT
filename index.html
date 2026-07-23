@@ -109,6 +109,30 @@
         let touchStartY = 0;
         let isPulling = false;
 
+        // Notification Beep Sound System using Web Audio API
+        function playNotificationSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5 note
+                oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5 note
+
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            } catch (e) {
+                console.log("Audio Context error:", e);
+            }
+        }
+
         window.addEventListener('touchstart', e => {
             if (window.scrollY === 0) {
                 touchStartY = e.touches[0].clientY;
@@ -823,8 +847,10 @@
                 const snapshot = await window.getDocs(q);
                 
                 let html = '';
+                let messageCount = 0;
                 snapshot.forEach(docSnap => {
                     const msg = docSnap.data();
+                    messageCount++;
                     const isMe = msg.sender === window.auth.currentUser.uid;
                     
                     let contentHtml = msg.text;
@@ -846,6 +872,18 @@
                         </div>
                     `;
                 });
+                
+                // Play notification sound if incoming message from another user
+                if (!container.dataset.lastCount || parseInt(container.dataset.lastCount) < messageCount) {
+                    if (snapshot.docs.length > 0) {
+                        const lastMsg = snapshot.docs[snapshot.docs.length - 1].data();
+                        if (lastMsg.sender !== window.auth.currentUser.uid) {
+                            playNotificationSound();
+                        }
+                    }
+                }
+                container.dataset.lastCount = messageCount;
+
                 container.innerHTML = html;
                 container.scrollTop = container.scrollHeight;
             } catch (e) {
