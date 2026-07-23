@@ -29,6 +29,7 @@
 
     <div id="app" class="max-w-md mx-auto w-full bg-slate-900 min-h-screen flex flex-col shadow-2xl relative overflow-hidden border-x border-slate-800">
         
+        <!-- Auth View -->
         <div id="auth-view" class="flex-1 flex flex-col justify-center p-6 hidden">
             <div class="text-center mb-8">
                 <h1 class="text-4xl font-black text-amber-400 mb-2">Roxchat</h1>
@@ -70,18 +71,21 @@
             </form>
         </div>
 
+        <!-- Main View -->
         <div id="main-view" class="flex-1 flex flex-col hidden">
             
+            <!-- Header (Instagram Style: Logo + Top Plus & Heart Buttons) -->
             <header class="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900/95 backdrop-blur sticky top-0 z-20">
                 <h1 class="text-xl font-bold text-amber-400">Roxchat</h1>
                 <div class="flex items-center space-x-3">
+                    <button id="header-create-btn" class="text-slate-400 hover:text-amber-400 p-2 transition"><i class="fa-solid fa-square-plus text-xl"></i></button>
                     <button id="like-notification-btn" class="text-slate-400 hover:text-amber-400 p-2 transition"><i class="fa-solid fa-heart text-xl"></i></button>
-                    <button id="logout-btn-header" class="text-slate-400 hover:text-white p-2 hidden"><i class="fa-solid fa-right-from-bracket text-lg"></i></button>
                 </div>
             </header>
 
             <main id="content-area" class="flex-1 overflow-y-auto pb-24">
                 
+                <!-- Feed Tab -->
                 <div id="tab-feed" class="space-y-4 p-4">
                     <div class="flex space-x-3 overflow-x-auto pb-2 scrollbar-none">
                         <div class="flex flex-col items-center space-y-1 flex-shrink-0 cursor-pointer" id="add-story-btn">
@@ -93,15 +97,10 @@
                         <div id="stories-container" class="flex space-x-3"></div>
                     </div>
 
+                    <!-- Feed Text-Only Post Creator Box (Media Removed from here) -->
                     <div class="bg-slate-800/50 border border-slate-800 rounded-2xl p-4 shadow-sm">
                         <textarea id="post-text" placeholder="What's on your mind?" rows="2" class="w-full bg-transparent resize-none focus:outline-none text-sm placeholder-slate-500"></textarea>
-                        <div id="post-media-preview" class="hidden relative mt-2 rounded-xl overflow-hidden max-h-48 bg-black"></div>
-                        <div class="flex items-center justify-between border-t border-slate-700/50 pt-3 mt-3">
-                            <label class="cursor-pointer text-amber-400 hover:text-amber-300 text-sm flex items-center space-x-1">
-                                <i class="fa-solid fa-image"></i>
-                                <span class="text-xs font-medium">Media</span>
-                                <input type="file" id="post-media-input" accept="image/*,video/*" class="hidden">
-                            </label>
+                        <div class="flex items-center justify-end border-t border-slate-700/50 pt-3 mt-3">
                             <button id="create-post-btn" class="bg-amber-500 hover:bg-amber-400 px-4 py-1.5 rounded-xl text-xs font-semibold text-slate-950 transition active:opacity-50">Post</button>
                         </div>
                     </div>
@@ -109,6 +108,7 @@
                     <div id="posts-container" class="space-y-4"></div>
                 </div>
 
+                <!-- Explore Tab -->
                 <div id="tab-explore" class="p-4 hidden">
                     <div class="relative mb-4">
                         <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-500 text-sm"></i>
@@ -117,6 +117,15 @@
                     <div id="users-list" class="space-y-3"></div>
                 </div>
 
+                <!-- Reels Tab -->
+                <div id="tab-reels" class="p-4 space-y-4 hidden">
+                    <h2 class="text-sm font-bold uppercase text-slate-400 tracking-wider">Reels</h2>
+                    <div id="reels-container" class="space-y-6">
+                        <p class="text-center text-xs text-slate-500">No reels available yet.</p>
+                    </div>
+                </div>
+
+                <!-- Messages Tab -->
                 <div id="tab-messages" class="flex flex-col h-[calc(100vh-7.5rem)] hidden">
                     <div id="chats-list-view" class="p-4 space-y-3 flex-1 overflow-y-auto">
                         <h3 class="text-xs font-bold uppercase text-slate-500 tracking-wider mb-2">Friends & Chats</h3>
@@ -138,6 +147,7 @@
                     </div>
                 </div>
 
+                <!-- Profile Tab -->
                 <div id="tab-profile" class="p-4 space-y-6 hidden">
                     <div class="flex flex-col items-center text-center space-y-2">
                         <div class="w-20 h-20 rounded-full bg-slate-800 border-2 border-amber-500 overflow-hidden flex items-center justify-center text-2xl font-bold text-amber-400 cursor-pointer relative shadow-lg" id="profile-avatar-container">
@@ -160,6 +170,47 @@
                         <button id="save-profile-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-40">Save Changes</button>
                     </div>
 
+                    <div class="space-y-3 pt-2">
+                        <h3 class="text-xs font-bold uppercase text-amber-400 tracking-wider flex items-center space-x-1.5">
+                            <i class="fa-solid fa-gear"></i>
+                            <span>ROXCHAT SETTINGS & SUPPORT</span>
+                        </h3>
+                        
+                        <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                            <span class="text-sm text-slate-200">Private Account</span>
+                            <input type="checkbox" id="setting-private" class="w-4 h-4 accent-amber-500 rounded cursor-pointer">
+                        </div>
+
+                        <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                            <span class="text-sm text-slate-200">Push Notifications</span>
+                            <input type="checkbox" id="setting-notifications" checked class="w-4 h-4 accent-amber-500 rounded cursor-pointer">
+                        </div>
+
+                        <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/70 transition">
+                            <span class="text-sm text-rose-400 flex items-center space-x-2">
+                                <i class="fa-solid fa-ban"></i>
+                                <span>Blocked Accounts</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
+                        </div>
+
+                        <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/70 transition">
+                            <span class="text-sm text-amber-400 flex items-center space-x-2">
+                                <i class="fa-solid fa-bookmark"></i>
+                                <span>Saved Messages</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
+                        </div>
+
+                        <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/70 transition">
+                            <span class="text-sm text-slate-200 flex items-center space-x-2">
+                                <i class="fa-solid fa-circle-question text-sky-400"></i>
+                                <span>Help / Report a Problem</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
+                        </div>
+                    </div>
+
                     <div class="pt-2">
                         <button id="logout-btn-profile" class="w-full bg-slate-800 hover:bg-slate-700 text-rose-400 font-semibold py-3 rounded-xl text-xs border border-slate-700 transition active:opacity-50">Log Out</button>
                     </div>
@@ -167,13 +218,35 @@
 
             </main>
 
+            <!-- Bottom Navigation Bar -->
             <nav class="h-20 border-t border-slate-800 bg-slate-900/95 backdrop-blur flex items-center justify-around px-2 fixed bottom-0 max-w-md w-full z-20 pb-4">
                 <button data-tab="feed" class="nav-btn text-amber-500 flex flex-col items-center space-y-1 p-2 active:scale-95 transition-transform"><i class="fa-solid fa-house text-2xl"></i></button>
                 <button data-tab="explore" class="nav-btn text-slate-400 flex flex-col items-center space-y-1 p-2 active:scale-95 transition-transform"><i class="fa-solid fa-compass text-2xl"></i></button>
+                <button data-tab="reels" class="nav-btn text-slate-400 flex flex-col items-center space-y-1 p-2 active:scale-95 transition-transform"><i class="fa-solid fa-clapperboard text-2xl"></i></button>
                 <button data-tab="messages" class="nav-btn text-slate-400 flex flex-col items-center space-y-1 p-2 active:scale-95 transition-transform"><i class="fa-solid fa-comment-dots text-2xl"></i></button>
                 <button data-tab="profile" class="nav-btn text-slate-400 flex flex-col items-center space-y-1 p-2 active:scale-95 transition-transform"><i class="fa-solid fa-user text-2xl"></i></button>
             </nav>
 
+        </div>
+    </div>
+
+    <!-- Create Post Modal (Top Plus Button for Media/Reels & Caption) -->
+    <div id="create-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-4 space-y-4 relative">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-sm text-amber-400">Create New Post / Reel</h3>
+                <button id="close-modal-btn" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <textarea id="modal-post-text" placeholder="Write a caption..." rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 resize-none focus:outline-none focus:border-amber-500 text-sm"></textarea>
+            <div id="modal-media-preview" class="hidden relative rounded-xl overflow-hidden max-h-40 bg-black"></div>
+            <div class="flex items-center justify-between">
+                <label class="cursor-pointer text-amber-400 hover:text-amber-300 text-sm flex items-center space-x-1">
+                    <i class="fa-solid fa-image text-lg"></i>
+                    <span class="text-xs font-medium">Add Photo/Video</span>
+                    <input type="file" id="modal-media-input" accept="image/*,video/*" class="hidden">
+                </label>
+            </div>
+            <button id="modal-submit-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-2.5 rounded-xl text-sm transition active:opacity-50">Share</button>
         </div>
     </div>
 
@@ -206,7 +279,6 @@
         const registerForm = document.getElementById('register-form');
         const showRegisterBtn = document.getElementById('show-register');
         const showLoginBtn = document.getElementById('show-login');
-        const logoutBtnHeader = document.getElementById('logout-btn-header');
         const logoutBtnProfile = document.getElementById('logout-btn-profile');
         const likeSound = document.getElementById('like-sound');
 
@@ -224,6 +296,11 @@
                 document.getElementById(`tab-${tab}`).classList.remove('hidden');
             });
         });
+
+        // Modal Controls for Header Create Button
+        const createModal = document.getElementById('create-modal');
+        document.getElementById('header-create-btn').addEventListener('click', () => createModal.classList.remove('hidden'));
+        document.getElementById('close-modal-btn').addEventListener('click', () => createModal.classList.add('hidden'));
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -256,9 +333,7 @@
             } catch (err) { alert(err.message); }
         });
 
-        const handleLogout = () => signOut(auth);
-        logoutBtnHeader.addEventListener('click', handleLogout);
-        logoutBtnProfile.addEventListener('click', handleLogout);
+        logoutBtnProfile.addEventListener('click', () => signOut(auth));
 
         function initApp(user) {
             loadUserProfile(user);
@@ -316,39 +391,63 @@
             } catch (err) { alert(err.message); }
         });
 
-        let currentMediaBase64 = null;
-        document.getElementById('post-media-input').addEventListener('change', function(e) {
+        // Feed Text-Only Post Creator
+        document.getElementById('create-post-btn').addEventListener('click', async () => {
+            const text = document.getElementById('post-text').value;
+            if (!text) return;
+            try {
+                await addDoc(collection(db, "posts"), {
+                    uid: auth.currentUser.uid,
+                    email: auth.currentUser.email,
+                    text,
+                    media: null,
+                    isReel: false,
+                    likes: [],
+                    comments: [],
+                    createdAt: serverTimestamp()
+                });
+                document.getElementById('post-text').value = '';
+                loadPosts();
+            } catch (err) { alert(err.message); }
+        });
+
+        // Modal Creator Media Handling (Top Plus Button)
+        let currentModalMediaBase64 = null;
+        document.getElementById('modal-media-input').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(uploadEvent) {
-                    currentMediaBase64 = uploadEvent.target.result;
-                    const preview = document.getElementById('post-media-preview');
+                    currentModalMediaBase64 = uploadEvent.target.result;
+                    const preview = document.getElementById('modal-media-preview');
                     preview.innerHTML = file.type.startsWith('video') 
-                        ? `<video src="${currentMediaBase64}" controls class="w-full h-40 object-cover"></video>`
-                        : `<img src="${currentMediaBase64}" class="w-full h-40 object-cover">`;
+                        ? `<video src="${currentModalMediaBase64}" controls class="w-full h-36 object-cover"></video>`
+                        : `<img src="${currentModalMediaBase64}" class="w-full h-36 object-cover">`;
                     preview.classList.remove('hidden');
                 };
                 reader.readAsDataURL(file);
             }
         });
 
-        document.getElementById('create-post-btn').addEventListener('click', async () => {
-            const text = document.getElementById('post-text').value;
-            if (!text && !currentMediaBase64) return;
+        document.getElementById('modal-submit-btn').addEventListener('click', async () => {
+            const text = document.getElementById('modal-post-text').value;
+            if (!text && !currentModalMediaBase64) return;
             try {
+                const isVideo = currentModalMediaBase64 && currentModalMediaBase64.startsWith('data:video');
                 await addDoc(collection(db, "posts"), {
                     uid: auth.currentUser.uid,
                     email: auth.currentUser.email,
                     text,
-                    media: currentMediaBase64 || null,
+                    media: currentModalMediaBase64 || null,
+                    isReel: isVideo,
                     likes: [],
                     comments: [],
                     createdAt: serverTimestamp()
                 });
-                document.getElementById('post-text').value = '';
-                document.getElementById('post-media-preview').classList.add('hidden');
-                currentMediaBase64 = null;
+                document.getElementById('modal-post-text').value = '';
+                document.getElementById('modal-media-preview').classList.add('hidden');
+                currentModalMediaBase64 = null;
+                createModal.classList.add('hidden');
                 loadPosts();
             } catch (err) { alert(err.message); }
         });
@@ -369,16 +468,22 @@
 
         async function loadPosts() {
             const container = document.getElementById('posts-container');
+            const reelsContainer = document.getElementById('reels-container');
             container.innerHTML = '<p class="text-center text-xs text-slate-500">Loading posts...</p>';
+            
             try {
                 const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
                 const querySnapshot = await getDocs(q);
                 container.innerHTML = '';
+                reelsContainer.innerHTML = '';
                 
                 if (querySnapshot.empty) {
                     container.innerHTML = '<p class="text-center text-xs text-slate-500">No posts available yet.</p>';
+                    reelsContainer.innerHTML = '<p class="text-center text-xs text-slate-500">No reels available yet.</p>';
                     return;
                 }
+
+                let hasReels = false;
 
                 querySnapshot.forEach((docSnap) => {
                     const post = docSnap.data();
@@ -411,9 +516,6 @@
                                     <i class="fa-regular fa-comment text-lg"></i>
                                     <span>${comments.length}</span>
                                 </button>
-                                <button onclick="sharePost('${post.text || 'Check out this post on Roxchat!'}')" class="hover:text-amber-400 transition">
-                                    <i class="fa-regular fa-share-from-square text-lg"></i>
-                                </button>
                             </div>
                         </div>
 
@@ -428,7 +530,32 @@
                         </div>
                     `;
                     container.appendChild(div);
+
+                    if (post.isReel && post.media) {
+                        hasReels = true;
+                        const reelDiv = document.createElement('div');
+                        reelDiv.className = "bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg relative";
+                        reelDiv.innerHTML = `
+                            <video src="${post.media}" controls autoplay loop muted class="w-full h-96 object-cover bg-black"></video>
+                            <div class="p-3 bg-slate-900/90 flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-7 h-7 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs">${post.email.charAt(0).toUpperCase()}</div>
+                                    <span class="text-xs font-semibold text-slate-300">${post.email}</span>
+                                </div>
+                                <button onclick="toggleLike('${postId}', ${isLiked})" class="flex items-center space-x-1 text-xs font-semibold ${isLiked ? 'text-rose-500' : 'text-slate-400'}">
+                                    <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-lg"></i>
+                                    <span>${likesCount}</span>
+                                </button>
+                            </div>
+                        `;
+                        reelsContainer.appendChild(reelDiv);
+                    }
                 });
+
+                if (!hasReels) {
+                    reelsContainer.innerHTML = '<p class="text-center text-xs text-slate-500">No reels available yet. Upload a video via the top (+) button!</p>';
+                }
+
             } catch (err) { 
                 console.error(err);
                 container.innerHTML = '<p class="text-center text-xs text-red-500">Failed to load posts.</p>'; 
@@ -469,15 +596,6 @@
                 input.value = '';
                 loadPosts();
             } catch (err) { alert(err.message); }
-        }
-
-        window.sharePost = function(text) {
-            if (navigator.share) {
-                navigator.share({ title: 'Roxchat Post', text: text }).catch(() => {});
-            } else {
-                navigator.clipboard.writeText(text);
-                alert("Post content copied to clipboard!");
-            }
         }
 
         async function loadExploreUsers() {
