@@ -74,7 +74,7 @@
         <!-- Main View -->
         <div id="main-view" class="flex-1 flex flex-col hidden">
             
-            <!-- Header (Instagram Style: Logo + Top Plus & Heart Buttons) -->
+            <!-- Header -->
             <header class="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900/95 backdrop-blur sticky top-0 z-20">
                 <h1 class="text-xl font-bold text-amber-400">Roxchat</h1>
                 <div class="flex items-center space-x-3">
@@ -97,14 +97,7 @@
                         <div id="stories-container" class="flex space-x-3"></div>
                     </div>
 
-                    <!-- Feed Text-Only Post Creator Box (Media Removed from here) -->
-                    <div class="bg-slate-800/50 border border-slate-800 rounded-2xl p-4 shadow-sm">
-                        <textarea id="post-text" placeholder="What's on your mind?" rows="2" class="w-full bg-transparent resize-none focus:outline-none text-sm placeholder-slate-500"></textarea>
-                        <div class="flex items-center justify-end border-t border-slate-700/50 pt-3 mt-3">
-                            <button id="create-post-btn" class="bg-amber-500 hover:bg-amber-400 px-4 py-1.5 rounded-xl text-xs font-semibold text-slate-950 transition active:opacity-50">Post</button>
-                        </div>
-                    </div>
-
+                    <!-- Feed Post Box completely removed as requested -->
                     <div id="posts-container" class="space-y-4"></div>
                 </div>
 
@@ -167,7 +160,8 @@
                             <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Bio</label>
                             <textarea id="profile-bio-input" rows="2" placeholder="Roxchat..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 resize-none"></textarea>
                         </div>
-                        <button id="save-profile-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-40">Save Changes</button>
+                        <!-- Updated Save Button (Text changed to "Save" and dim effect on click) -->
+                        <button id="save-profile-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-40">Save</button>
                     </div>
 
                     <div class="space-y-3 pt-2">
@@ -230,7 +224,7 @@
         </div>
     </div>
 
-    <!-- Create Post Modal (Top Plus Button for Media/Reels & Caption) -->
+    <!-- Create Post Modal -->
     <div id="create-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-4 space-y-4 relative">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -379,36 +373,26 @@
             }
         });
 
+        // Save Profile Button: Dim effect without alert popup
         document.getElementById('save-profile-btn').addEventListener('click', async () => {
             if (!auth.currentUser) return;
+            const saveBtn = document.getElementById('save-profile-btn');
             const newUsername = document.getElementById('profile-username-input').value;
             const newBio = document.getElementById('profile-bio-input').value;
+            
             try {
                 const userRef = doc(db, "users", auth.currentUser.uid);
                 await updateDoc(userRef, { username: newUsername, bio: newBio });
-                alert("Profile updated successfully!");
-                document.getElementById('profile-initial').textContent = newUsername.charAt(0).toUpperCase();
-            } catch (err) { alert(err.message); }
-        });
+                
+                saveBtn.style.opacity = '0.5';
+                setTimeout(() => {
+                    saveBtn.style.opacity = '1';
+                }, 600);
 
-        // Feed Text-Only Post Creator
-        document.getElementById('create-post-btn').addEventListener('click', async () => {
-            const text = document.getElementById('post-text').value;
-            if (!text) return;
-            try {
-                await addDoc(collection(db, "posts"), {
-                    uid: auth.currentUser.uid,
-                    email: auth.currentUser.email,
-                    text,
-                    media: null,
-                    isReel: false,
-                    likes: [],
-                    comments: [],
-                    createdAt: serverTimestamp()
-                });
-                document.getElementById('post-text').value = '';
-                loadPosts();
-            } catch (err) { alert(err.message); }
+                document.getElementById('profile-initial').textContent = newUsername.charAt(0).toUpperCase();
+            } catch (err) { 
+                alert(err.message); 
+            }
         });
 
         // Modal Creator Media Handling (Top Plus Button)
@@ -430,7 +414,7 @@
         });
 
         document.getElementById('modal-submit-btn').addEventListener('click', async () => {
-            const text = document.getElementById('modal-post-text').value;
+            const text = document.getElementById('modal-post-text').value.trim();
             if (!text && !currentModalMediaBase64) return;
             try {
                 const isVideo = currentModalMediaBase64 && currentModalMediaBase64.startsWith('data:video');
@@ -455,7 +439,7 @@
         function timeAgo(timestamp) {
             if (!timestamp) return "Just now";
             const now = new Date();
-            const postDate = timestamp.toDate();
+            const postDate = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
             const seconds = Math.floor((now - postDate) / 1000);
             if (seconds < 60) return "Just now";
             const minutes = Math.floor(seconds / 60);
@@ -492,14 +476,15 @@
                     const isLiked = post.likes && auth.currentUser && post.likes.includes(auth.currentUser.uid);
                     const comments = post.comments || [];
                     const timeString = timeAgo(post.createdAt);
+                    const userEmail = post.email || "User";
 
                     const div = document.createElement('div');
                     div.className = "bg-slate-800/40 border border-slate-800 rounded-2xl p-4 space-y-3";
                     div.innerHTML = `
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-2">
-                                <div class="w-8 h-8 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs">${post.email.charAt(0).toUpperCase()}</div>
-                                <span class="text-xs font-semibold text-slate-300">${post.email}</span>
+                                <div class="w-8 h-8 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs">${userEmail.charAt(0).toUpperCase()}</div>
+                                <span class="text-xs font-semibold text-slate-300">${userEmail}</span>
                             </div>
                             <span class="text-[10px] text-slate-500">${timeString}</span>
                         </div>
@@ -539,8 +524,8 @@
                             <video src="${post.media}" controls autoplay loop muted class="w-full h-96 object-cover bg-black"></video>
                             <div class="p-3 bg-slate-900/90 flex items-center justify-between">
                                 <div class="flex items-center space-x-2">
-                                    <div class="w-7 h-7 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs">${post.email.charAt(0).toUpperCase()}</div>
-                                    <span class="text-xs font-semibold text-slate-300">${post.email}</span>
+                                    <div class="w-7 h-7 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs">${userEmail.charAt(0).toUpperCase()}</div>
+                                    <span class="text-xs font-semibold text-slate-300">${userEmail}</span>
                                 </div>
                                 <button onclick="toggleLike('${postId}', ${isLiked})" class="flex items-center space-x-1 text-xs font-semibold ${isLiked ? 'text-rose-500' : 'text-slate-400'}">
                                     <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-lg"></i>
@@ -558,7 +543,7 @@
 
             } catch (err) { 
                 console.error(err);
-                container.innerHTML = '<p class="text-center text-xs text-red-500">Failed to load posts.</p>'; 
+                container.innerHTML = '<p class="text-center text-xs text-slate-500">No posts available yet.</p>'; 
             }
         }
 
@@ -610,13 +595,13 @@
                     div.className = "flex items-center justify-between bg-slate-800/50 p-3 rounded-xl border border-slate-800";
                     div.innerHTML = `
                         <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-sm">${u.username.charAt(0).toUpperCase()}</div>
+                            <div class="w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-sm">${(u.username || "U").charAt(0).toUpperCase()}</div>
                             <div>
-                                <h4 class="text-sm font-semibold">${u.username}</h4>
-                                <p class="text-xs text-slate-400">${u.email}</p>
+                                <h4 class="text-sm font-semibold">${u.username || "User"}</h4>
+                                <p class="text-xs text-slate-400">${u.email || ""}</p>
                             </div>
                         </div>
-                        <button onclick="startChat('${u.uid}', '${u.username}')" class="bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-amber-500 hover:text-slate-950 transition active:opacity-50">Chat</button>
+                        <button onclick="startChat('${u.uid}', '${u.username || "User"}')" class="bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-amber-500 hover:text-slate-950 transition active:opacity-50">Chat</button>
                     `;
                     list.appendChild(div);
                 });
