@@ -166,7 +166,7 @@
                             <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">New Password</label>
                             <input type="password" id="new-password-input" placeholder="Enter new password" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
                         </div>
-                        <!-- Save Button with Yellow color and active:opacity-50 dim effect -->
+                        <!-- Button with active:opacity-50 for dim effect when clicked -->
                         <button id="save-password-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-2 rounded-xl text-xs transition active:opacity-50">Save</button>
                     </div>
 
@@ -253,17 +253,19 @@
 
         logoutBtn.addEventListener('click', () => signOut(auth));
 
-        // Change Password Handler (Silently updates password without success popup)
+        // Change Password Handler (Without success alert popup)
         document.getElementById('save-password-btn').addEventListener('click', async () => {
             const newPassword = document.getElementById('new-password-input').value;
-            if (!newPassword) return;
+            if (!newPassword) {
+                return;
+            }
             const user = auth.currentUser;
             if (user) {
                 try {
                     await updatePassword(user, newPassword);
                     document.getElementById('new-password-input').value = '';
                 } catch (err) {
-                    alert("Error: " + err.message);
+                    console.error(err.message);
                 }
             }
         });
