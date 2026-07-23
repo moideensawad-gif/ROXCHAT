@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Roxchat</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -18,22 +17,18 @@
             }
         }
     </script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col">
 
-    <!-- App Container -->
     <div id="app" class="max-w-md mx-auto w-full bg-slate-900 min-h-screen flex flex-col shadow-2xl relative overflow-hidden border-x border-slate-800">
         
-        <!-- Authentication View -->
         <div id="auth-view" class="flex-1 flex flex-col justify-center p-6 hidden">
             <div class="text-center mb-8">
                 <h1 class="text-4xl font-black text-amber-400 mb-2">Roxchat</h1>
                 <p class="text-slate-400 text-sm">Connect, Share, and Chat with Friends</p>
             </div>
 
-            <!-- Login Form -->
             <form id="login-form" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Email Address</label>
@@ -49,7 +44,6 @@
                 </p>
             </form>
 
-            <!-- Register Form -->
             <form id="register-form" class="space-y-4 hidden">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Username</label>
@@ -70,10 +64,8 @@
             </form>
         </div>
 
-        <!-- Main App View -->
         <div id="main-view" class="flex-1 flex flex-col hidden">
             
-            <!-- Top Header -->
             <header class="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900/80 backdrop-blur sticky top-0 z-20">
                 <h1 class="text-xl font-bold text-amber-400">Roxchat</h1>
                 <div class="flex items-center space-x-3">
@@ -81,12 +73,9 @@
                 </div>
             </header>
 
-            <!-- Dynamic Content Area -->
             <main id="content-area" class="flex-1 overflow-y-auto pb-20">
                 
-                <!-- Feed Tab -->
                 <div id="tab-feed" class="space-y-4 p-4">
-                    <!-- Stories Bar -->
                     <div class="flex space-x-3 overflow-x-auto pb-2 scrollbar-none">
                         <div class="flex flex-col items-center space-y-1 flex-shrink-0 cursor-pointer" id="add-story-btn">
                             <div class="w-16 h-16 rounded-full border-2 border-dashed border-amber-500 flex items-center justify-center bg-slate-800 text-amber-400">
@@ -97,7 +86,6 @@
                         <div id="stories-container" class="flex space-x-3"></div>
                     </div>
 
-                    <!-- Create Post Box -->
                     <div class="bg-slate-800/50 border border-slate-800 rounded-2xl p-4 shadow-sm">
                         <textarea id="post-text" placeholder="What's on your mind?" rows="2" class="w-full bg-transparent resize-none focus:outline-none text-sm placeholder-slate-500"></textarea>
                         <div id="post-media-preview" class="hidden relative mt-2 rounded-xl overflow-hidden max-h-48 bg-black"></div>
@@ -111,11 +99,9 @@
                         </div>
                     </div>
 
-                    <!-- Posts Feed Container -->
                     <div id="posts-container" class="space-y-4"></div>
                 </div>
 
-                <!-- Explore Tab -->
                 <div id="tab-explore" class="p-4 hidden">
                     <div class="relative mb-4">
                         <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-500 text-sm"></i>
@@ -124,14 +110,12 @@
                     <div id="users-list" class="space-y-3"></div>
                 </div>
 
-                <!-- Messages Tab -->
                 <div id="tab-messages" class="flex flex-col h-[calc(100vh-7.5rem)] hidden">
                     <div id="chats-list-view" class="p-4 space-y-3 flex-1 overflow-y-auto">
                         <h3 class="text-xs font-bold uppercase text-slate-500 tracking-wider mb-2">Friends & Chats</h3>
                         <div id="friends-chat-list" class="space-y-2"></div>
                     </div>
                     
-                    <!-- Active Chat Room -->
                     <div id="active-chat-room" class="flex flex-col h-full hidden bg-slate-900 absolute inset-0 z-30">
                         <div class="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900">
                             <button id="close-chat" class="text-slate-400 hover:text-white"><i class="fa-solid fa-arrow-left text-lg"></i></button>
@@ -147,17 +131,15 @@
                     </div>
                 </div>
 
-                <!-- Profile Tab -->
                 <div id="tab-profile" class="p-4 space-y-6 hidden">
                     <div class="flex flex-col items-center text-center space-y-2">
-                        <div class="w-20 h-20 rounded-full bg-slate-800 border-2 border-amber-500 overflow-hidden flex items-center justify-center text-2xl font-bold text-amber-400 cursor-pointer relative" id="profile-avatar-container">
+                        <div class="w-20 h-20 rounded-full bg-slate-800 border-2 border-amber-500 overflow-hidden flex items-center justify-center text-2xl font-bold text-amber-400 cursor-pointer relative shadow-lg" id="profile-avatar-container">
                             <span id="profile-initial">U</span>
                             <input type="file" id="profile-pic-input" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer">
                         </div>
                         <p class="text-xs text-slate-400">Tap image to change photo</p>
                     </div>
 
-                    <!-- Profile Edit Form -->
                     <div class="space-y-3">
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Username</label>
@@ -165,12 +147,11 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Bio</label>
-                            <textarea id="profile-bio-input" rows="2" placeholder="Roxchat." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 resize-none"></textarea>
+                            <textarea id="profile-bio-input" rows="2" placeholder="Roxchat..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 resize-none"></textarea>
                         </div>
                         <button id="save-profile-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-40">Save</button>
                     </div>
 
-                    <!-- Roxchat Settings & Support -->
                     <div class="space-y-3 pt-2">
                         <h3 class="text-xs font-bold uppercase text-amber-400 tracking-wider flex items-center space-x-1.5">
                             <i class="fa-solid fa-gear"></i>
@@ -212,7 +193,6 @@
                         </div>
                     </div>
 
-                    <!-- Log Out Button -->
                     <div class="pt-2">
                         <button id="logout-btn-profile" class="w-full bg-slate-800 hover:bg-slate-700 text-rose-400 font-semibold py-3 rounded-xl text-xs border border-slate-700 transition active:opacity-50">Log Out</button>
                     </div>
@@ -225,7 +205,6 @@
 
             </main>
 
-            <!-- Bottom Navigation Bar -->
             <nav class="h-16 border-t border-slate-800 bg-slate-900/90 backdrop-blur flex items-center justify-around px-2 fixed bottom-0 max-w-md w-full z-20">
                 <button data-tab="feed" class="nav-btn text-amber-500 flex flex-col items-center space-y-1"><i class="fa-solid fa-house text-lg"></i><span class="text-[10px] font-medium">Home</span></button>
                 <button data-tab="explore" class="nav-btn text-slate-400 flex flex-col items-center space-y-1"><i class="fa-solid fa-compass text-lg"></i><span class="text-[10px] font-medium">Explore</span></button>
@@ -236,7 +215,6 @@
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
