@@ -158,6 +158,8 @@
                         </div>
                         <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3"></div>
                         <div class="p-3 border-t border-slate-800 flex items-center space-x-2 bg-[#0b0f19]">
+                            <input type="file" id="chat-media-input" accept="image/*" class="hidden">
+                            <button id="send-chat-image-btn" onclick="document.getElementById('chat-media-input').click()" class="text-slate-400 hover:text-amber-400 p-2" title="Send Image"><i class="fa-regular fa-image text-lg"></i></button>
                             <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500">
                             <button id="send-audio-btn" class="text-slate-400 hover:text-amber-400 p-2"><i class="fa-solid fa-microphone text-lg"></i></button>
                             <button id="send-chat-btn" class="bg-amber-500 text-slate-950 px-4 py-2.5 rounded-xl text-sm font-semibold active:opacity-50"><i class="fa-solid fa-paper-plane"></i></button>
@@ -347,6 +349,7 @@
     <div id="story-view-modal" class="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-4 hidden">
         <div class="absolute top-4 left-4 right-4 flex space-x-1 z-10" id="story-progress-bars"></div>
         <button id="close-story-view" class="absolute top-8 right-4 text-white text-2xl p-2 z-20"><i class="fa-solid fa-xmark"></i></button>
+        <button id="add-more-story-btn" class="absolute top-8 left-4 bg-amber-500 text-slate-950 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center space-x-1 z-20 shadow-lg" title="Add another story"><i class="fa-solid fa-plus"></i> <span>Add Story</span></button>
         <div class="flex-1 flex items-center justify-center w-full relative">
             <img id="story-display-img" class="max-w-full max-h-[80vh] rounded-xl object-contain" alt="Story">
             <button id="prev-story-btn" class="absolute left-2 text-white/70 hover:text-white text-3xl px-2 py-4"><i class="fa-solid fa-chevron-left"></i></button>
@@ -433,7 +436,6 @@
         });
         document.getElementById('close-notifications-btn').addEventListener('click', () => notificationsModal.classList.add('hidden'));
 
-        // Terms and Conditions Modal Handlers
         window.openTermsModal = function() {
             document.getElementById('terms-modal').classList.remove('hidden');
         }
@@ -441,7 +443,6 @@
             document.getElementById('terms-modal').classList.add('hidden');
         }
 
-        // Block / Unblock System Functions
         window.openBlockedAccountsModal = function() {
             document.getElementById('blocked-modal').classList.remove('hidden');
             loadBlockedUsers();
@@ -663,6 +664,10 @@
             }
         });
 
+        document.getElementById('add-more-story-btn').addEventListener('click', () => {
+            storyFileInput.click();
+        });
+
         storyFileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file || !auth.currentUser) return;
@@ -676,6 +681,7 @@
                         createdAt: serverTimestamp()
                     });
                     loadStories();
+                    storyViewModal.classList.add('hidden');
                 } catch (err) { alert(err.message); }
             };
             reader.readAsDataURL(file);
@@ -716,8 +722,9 @@
                     const myStories = userStoriesMap[auth.currentUser.uid];
                     myOuter.className = "instagram-gradient-ring flex-shrink-0 cursor-pointer w-16 h-16";
                     myOuter.innerHTML = `
-                        <div class="w-14 h-14 rounded-full bg-slate-900 p-0.5 flex items-center justify-center overflow-hidden">
+                        <div class="w-14 h-14 rounded-full bg-slate-900 p-0.5 flex items-center justify-center overflow-hidden relative">
                             <img src="${myStories[myStories.length - 1]}" class="w-full h-full rounded-full object-cover">
+                            <div class="absolute bottom-0 right-0 bg-amber-500 rounded-full w-4 h-4 flex items-center justify-center text-[10px] text-slate-950 font-bold border border-slate-900">+</div>
                         </div>
                     `;
                 } else {
@@ -1111,17 +1118,107 @@
             } catch (err) { console.error(err); }
         }
 
+        let activeChatUserId = null;
+
         window.startChat = function(uid, username) {
+            activeChatUserId = uid;
             document.getElementById('chats-list-view').classList.add('hidden');
             const room = document.getElementById('active-chat-room');
             room.classList.remove('hidden');
             document.getElementById('chat-room-title').textContent = username;
+            loadChatMessages();
         }
 
         document.getElementById('close-chat').addEventListener('click', () => {
             document.getElementById('active-chat-room').classList.add('hidden');
             document.getElementById('chats-list-view').classList.remove('hidden');
+            activeChatUserId = null;
         });
+
+        document.getElementById('send-chat-btn').addEventListener('click', async () => {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if(!text || !auth.currentUser || !activeChatUserId) return;
+            
+            try {
+                await addDoc(collection(db, "chats"), {
+                    senderId: auth.currentUser.uid,
+                    receiverId: activeChatUserId,
+                    text: text,
+                    media: null,
+                    createdAt: serverTimestamp()
+                });
+                input.value = '';
+                loadChatMessages();
+            } catch(e) { alert(e.message); }
+        });
+
+        document.getElementById('chat-media-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(!file || !auth.currentUser || !activeChatUserId) return;
+            const reader = new FileReader();
+            reader.onload = async function(uploadEvent) {
+                const base64Img = uploadEvent.target.result;
+                try {
+                    await addDoc(collection(db, "chats"), {
+                        senderId: auth.currentUser.uid,
+                        receiverId: activeChatUserId,
+                        text: "",
+                        media: base64Img,
+                        createdAt: serverTimestamp()
+                    });
+                    loadChatMessages();
+                } catch(e) { alert(e.message); }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        async function loadChatMessages() {
+            const chatContainer = document.getElementById('chat-messages');
+            chatContainer.innerHTML = '<p class="text-center text-xs text-slate-500">Loading messages...</p>';
+            if(!auth.currentUser || !activeChatUserId) return;
+
+            try {
+                const q = query(collection(db, "chats"), orderBy("createdAt", "asc"));
+                const querySnapshot = await getDocs(q);
+                chatContainer.innerHTML = '';
+                let hasMsgs = false;
+
+                querySnapshot.forEach((docSnap) => {
+                    const msg = docSnap.data();
+                    const isRelevant = (msg.senderId === auth.currentUser.uid && msg.receiverId === activeChatUserId) ||
+                                       (msg.senderId === activeChatUserId && msg.receiverId === auth.currentUser.uid);
+                    if(!isRelevant) return;
+
+                    hasMsgs = true;
+                    const isMe = msg.senderId === auth.currentUser.uid;
+                    const div = document.createElement('div');
+                    div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} mb-2`;
+                    
+                    let contentHtml = '';
+                    if(msg.text) {
+                        contentHtml += `<p class="text-xs">${msg.text}</p>`;
+                    }
+                    if(msg.media) {
+                        contentHtml += `<img src="${msg.media}" class="rounded-xl max-w-xs mt-1 max-h-48 object-cover">`;
+                    }
+
+                    div.innerHTML = `
+                        <div class="max-w-[75%] px-3 py-2 rounded-2xl ${isMe ? 'bg-amber-500 text-slate-950 rounded-br-none' : 'bg-slate-800 text-slate-200 rounded-bl-none'}">
+                            ${contentHtml}
+                        </div>
+                    `;
+                    chatContainer.appendChild(div);
+                });
+
+                if(!hasMsgs) {
+                    chatContainer.innerHTML = '<p class="text-center text-xs text-slate-500">No messages yet. Say hello!</p>';
+                }
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            } catch(e) {
+                console.error(e);
+            }
+        }
 
         document.getElementById('hd-call-btn').addEventListener('click', () => alert("Initiating HD Voice Call..."));
         document.getElementById('dm-video-btn').addEventListener('click', () => alert("Initiating DM Video Call..."));
