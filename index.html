@@ -33,9 +33,9 @@
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col select-none">
+<body class="bg-[#0b0f19] text-slate-100 font-sans antialiased min-h-screen flex flex-col select-none">
 
-    <div id="app" class="max-w-md mx-auto w-full bg-slate-900 min-h-screen flex flex-col shadow-2xl relative overflow-hidden border-x border-slate-800">
+    <div id="app" class="max-w-md mx-auto w-full bg-[#0b0f19] min-h-screen flex flex-col shadow-2xl relative overflow-hidden border-x border-slate-800">
         
         <!-- Auth View -->
         <div id="auth-view" class="flex-1 flex flex-col justify-center p-6 hidden">
@@ -44,7 +44,6 @@
                 <p class="text-slate-400 text-sm">Connect, Share, and Chat with Friends</p>
             </div>
 
-            <!-- Login Form -->
             <form id="login-form" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Email Address</label>
@@ -63,7 +62,6 @@
                 </p>
             </form>
 
-            <!-- Register Form -->
             <form id="register-form" class="space-y-4 hidden">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Username</label>
@@ -80,8 +78,14 @@
                         <i id="reg-eye-icon" class="fa-solid fa-eye-slash text-sm"></i>
                     </button>
                 </div>
+                <div class="flex items-center space-x-2 pt-1">
+                    <input type="checkbox" id="reg-terms-check" required class="w-4 h-4 accent-amber-500 rounded cursor-pointer">
+                    <label for="reg-terms-check" class="text-xs text-slate-400">
+                        I agree to the <button type="button" onclick="openTermsModal()" class="text-amber-400 hover:underline font-medium">Terms and Conditions</button>
+                    </label>
+                </div>
                 <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-50">Create Account</button>
-                <p class="text-center text-sm text-slate-400 mt-4">
+                <p class="text-center text-sm text-slate-400 mt-2">
                     Already have an account? <button type="button" id="show-login" class="text-amber-400 font-semibold hover:underline">Sign In</button>
                 </p>
             </form>
@@ -90,8 +94,7 @@
         <!-- Main View -->
         <div id="main-view" class="flex-1 flex flex-col hidden">
             
-            <!-- Header -->
-            <header class="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900/95 backdrop-blur sticky top-0 z-20">
+            <header class="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-[#0b0f19]/95 backdrop-blur sticky top-0 z-20">
                 <h1 class="text-xl font-bold text-amber-400">Roxchat</h1>
                 <div class="flex items-center space-x-2">
                     <button id="refresh-btn" class="text-slate-400 hover:text-amber-400 p-2 transition" title="Refresh Feed"><i class="fa-solid fa-rotate text-lg"></i></button>
@@ -142,8 +145,8 @@
                         <div id="friends-chat-list" class="space-y-2"></div>
                     </div>
                     
-                    <div id="active-chat-room" class="flex flex-col h-full hidden bg-slate-900 absolute inset-0 z-30">
-                        <div class="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900">
+                    <div id="active-chat-room" class="flex flex-col h-full hidden bg-[#0b0f19] absolute inset-0 z-30">
+                        <div class="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-[#0b0f19]">
                             <div class="flex items-center space-x-3">
                                 <button id="close-chat" class="text-slate-400 hover:text-white"><i class="fa-solid fa-arrow-left text-lg"></i></button>
                                 <span id="chat-room-title" class="font-bold text-sm"></span>
@@ -154,7 +157,7 @@
                             </div>
                         </div>
                         <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3"></div>
-                        <div class="p-3 border-t border-slate-800 flex items-center space-x-2 bg-slate-900">
+                        <div class="p-3 border-t border-slate-800 flex items-center space-x-2 bg-[#0b0f19]">
                             <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500">
                             <button id="send-audio-btn" class="text-slate-400 hover:text-amber-400 p-2"><i class="fa-solid fa-microphone text-lg"></i></button>
                             <button id="send-chat-btn" class="bg-amber-500 text-slate-950 px-4 py-2.5 rounded-xl text-sm font-semibold active:opacity-50"><i class="fa-solid fa-paper-plane"></i></button>
@@ -163,10 +166,10 @@
                 </div>
 
                 <!-- Profile Tab -->
-                <div id="tab-profile" class="p-4 space-y-6 hidden">
+                <div id="tab-profile" class="p-4 space-y-5 hidden">
                     <div class="flex flex-col items-center text-center space-y-2">
                         <div class="w-20 h-20 rounded-full bg-slate-800 border-2 border-amber-500 overflow-hidden flex items-center justify-center text-2xl font-bold text-amber-400 cursor-pointer relative shadow-lg" id="profile-avatar-container">
-                            <span id="profile-initial">U</span>
+                            <span id="profile-initial">S</span>
                             <img id="profile-img-preview" class="absolute inset-0 w-full h-full object-cover hidden" alt="Profile">
                             <input type="file" id="profile-pic-input" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer">
                         </div>
@@ -176,72 +179,80 @@
                     <div class="space-y-3">
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Username</label>
-                            <input type="text" id="profile-username-input" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500">
+                            <input type="text" id="profile-username-input" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Bio</label>
-                            <textarea id="profile-bio-input" rows="2" placeholder="Roxchat..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 resize-none"></textarea>
+                            <textarea id="profile-bio-input" rows="2" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 resize-none"></textarea>
                         </div>
                         <div class="relative">
                             <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">New Password (Optional)</label>
-                            <input type="password" id="profile-new-password" placeholder="Leave blank to keep current" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 pr-12 text-sm focus:outline-none focus:border-amber-500">
-                            <button type="button" onclick="togglePasswordVisibility('profile-new-password', 'profile-eye-icon')" class="absolute right-4 top-7 text-slate-400 hover:text-amber-400">
+                            <input type="password" id="profile-new-password" placeholder="Leave blank to keep current" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 pr-12 text-sm focus:outline-none focus:border-amber-500">
+                            <button type="button" onclick="togglePasswordVisibility('profile-new-password', 'profile-eye-icon')" class="absolute right-4 top-9 text-slate-400 hover:text-amber-400">
                                 <i id="profile-eye-icon" class="fa-solid fa-eye-slash text-sm"></i>
                             </button>
                         </div>
-                        <button id="save-profile-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-40">Save Changes</button>
+                        <button id="save-profile-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3.5 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-40">Save Changes</button>
                     </div>
 
-                    <div class="space-y-3 pt-2">
-                        <h3 class="text-xs font-bold uppercase text-amber-400 tracking-wider flex items-center space-x-1.5">
+                    <!-- Settings & Support -->
+                    <div class="space-y-3 pt-1">
+                        <h3 class="text-xs font-bold uppercase text-amber-400 tracking-wider flex items-center space-x-1.5 mb-2">
                             <i class="fa-solid fa-gear"></i>
                             <span>ROXCHAT SETTINGS & SUPPORT</span>
                         </h3>
                         
-                        <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
-                            <span class="text-sm text-slate-200">Private Account</span>
-                            <input type="checkbox" id="setting-private" class="w-4 h-4 accent-amber-500 rounded cursor-pointer">
+                        <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4 flex items-center justify-between">
+                            <span class="text-sm font-medium text-slate-200">Private Account</span>
+                            <input type="checkbox" id="setting-private" class="w-5 h-5 accent-amber-500 rounded cursor-pointer">
                         </div>
 
-                        <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
-                            <span class="text-sm text-slate-200">Push Notifications</span>
-                            <input type="checkbox" id="setting-notifications" checked class="w-4 h-4 accent-amber-500 rounded cursor-pointer">
+                        <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4 flex items-center justify-between">
+                            <span class="text-sm font-medium text-slate-200">Push Notifications</span>
+                            <input type="checkbox" id="setting-notifications" checked class="w-5 h-5 accent-amber-500 rounded cursor-pointer">
                         </div>
 
-                        <div onclick="openBlockedAccountsModal()" class="bg-slate-800/40 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/70 transition">
-                            <span class="text-sm text-rose-400 flex items-center space-x-2">
-                                <i class="fa-solid fa-ban"></i>
+                        <div onclick="openBlockedAccountsModal()" class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800 transition">
+                            <span class="text-sm font-medium text-rose-400 flex items-center space-x-2.5">
+                                <i class="fa-solid fa-ban text-base"></i>
                                 <span>Blocked Accounts</span>
                             </span>
                             <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
                         </div>
 
-                        <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/70 transition">
-                            <span class="text-sm text-amber-400 flex items-center space-x-2">
-                                <i class="fa-solid fa-bookmark"></i>
+                        <div onclick="openSavedMessages()" class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800 transition">
+                            <span class="text-sm font-medium text-amber-400 flex items-center space-x-2.5">
+                                <i class="fa-solid fa-bookmark text-base"></i>
                                 <span>Saved Messages</span>
                             </span>
                             <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
                         </div>
 
-                        <div onclick="openReportModal()" class="bg-slate-800/40 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/70 transition">
-                            <span class="text-sm text-slate-200 flex items-center space-x-2">
-                                <i class="fa-solid fa-circle-question text-sky-400"></i>
+                        <div onclick="openReportModal()" class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800 transition">
+                            <span class="text-sm font-medium text-slate-200 flex items-center space-x-2.5">
+                                <i class="fa-solid fa-circle-question text-sky-400 text-base"></i>
                                 <span>Help / Report a Problem</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
+                        </div>
+
+                        <div onclick="openTermsModal()" class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800 transition">
+                            <span class="text-sm font-medium text-slate-200 flex items-center space-x-2.5">
+                                <i class="fa-solid fa-file-contract text-amber-400 text-base"></i>
+                                <span>Terms and Conditions</span>
                             </span>
                             <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
                         </div>
                     </div>
 
-                    <div class="pt-2">
-                        <button id="logout-btn-profile" class="w-full bg-slate-800 hover:bg-slate-700 text-rose-400 font-semibold py-3 rounded-xl text-xs border border-slate-700 transition active:opacity-50">Log Out</button>
+                    <div class="pt-2 pb-4">
+                        <button id="logout-btn-profile" class="w-full bg-slate-800/80 hover:bg-slate-700 text-rose-400 font-semibold py-3.5 rounded-2xl text-sm border border-slate-700/60 transition active:opacity-50">Log Out</button>
                     </div>
                 </div>
 
             </main>
 
-            <!-- Bottom Navigation Bar -->
-            <nav class="h-20 border-t border-slate-800 bg-slate-900/95 backdrop-blur flex items-center justify-around px-2 fixed bottom-0 max-w-md w-full z-20 pb-4">
+            <nav class="h-20 border-t border-slate-800 bg-[#0b0f19]/95 backdrop-blur flex items-center justify-around px-2 fixed bottom-0 max-w-md w-full z-20 pb-4">
                 <button data-tab="feed" class="nav-btn text-amber-500 flex flex-col items-center space-y-1 p-2 active:scale-95 transition-transform"><i class="fa-solid fa-house text-2xl"></i></button>
                 <button data-tab="explore" class="nav-btn text-slate-400 flex flex-col items-center space-y-1 p-2 active:scale-95 transition-transform"><i class="fa-solid fa-compass text-2xl"></i></button>
                 <button data-tab="reels" class="nav-btn text-slate-400 flex flex-col items-center space-y-1 p-2 active:scale-95 transition-transform"><i class="fa-solid fa-clapperboard text-2xl"></i></button>
@@ -252,7 +263,7 @@
         </div>
     </div>
 
-    <!-- Create Post Modal -->
+    <!-- Modals -->
     <div id="create-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-4 space-y-4 relative">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -272,7 +283,6 @@
         </div>
     </div>
 
-    <!-- Notifications Modal -->
     <div id="notifications-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-4 space-y-4 relative max-h-[80vh] flex flex-col">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -295,6 +305,28 @@
             <div id="blocked-users-list" class="space-y-2 max-h-60 overflow-y-auto text-xs">
                 <p class="text-center text-slate-500 py-4">No blocked accounts.</p>
             </div>
+        </div>
+    </div>
+
+    <!-- Terms and Conditions Modal -->
+    <div id="terms-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 space-y-4 relative max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-sm text-amber-400 flex items-center space-x-2">
+                    <i class="fa-solid fa-file-contract"></i>
+                    <span>Terms and Conditions</span>
+                </h3>
+                <button onclick="closeTermsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto space-y-3 text-xs text-slate-300 leading-relaxed pr-1">
+                <p><strong>Welcome to Roxchat!</strong> By creating an account or using our platform, you agree to comply with and be bound by the following terms and conditions.</p>
+                <p><strong>1. Account Security:</strong> You are responsible for maintaining the confidentiality of your password and account details. Roxchat is not liable for any loss arising from unauthorized account access.</p>
+                <p><strong>2. User Conduct:</strong> Users must treat others with respect. Harassment, hate speech, sharing inappropriate media, or spamming is strictly prohibited and may result in immediate account blocking or termination.</p>
+                <p><strong>3. Content Ownership:</strong> You retain ownership of the posts, reels, and stories you upload. However, by posting on Roxchat, you grant us permission to display your content within the platform ecosystem.</p>
+                <p><strong>4. Privacy:</strong> We value your privacy. Your personal data is securely stored and managed according to our privacy guidelines. You can toggle private account settings at any time.</p>
+                <p><strong>5. Modifications:</strong> Roxchat reserves the right to modify these terms at any time. Continued use of the app implies your acceptance of the updated terms.</p>
+            </div>
+            <button onclick="closeTermsModal()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-2.5 rounded-xl text-sm transition active:opacity-50">I Understand</button>
         </div>
     </div>
 
@@ -401,12 +433,25 @@
         });
         document.getElementById('close-notifications-btn').addEventListener('click', () => notificationsModal.classList.add('hidden'));
 
+        // Terms and Conditions Modal Handlers
+        window.openTermsModal = function() {
+            document.getElementById('terms-modal').classList.remove('hidden');
+        }
+        window.closeTermsModal = function() {
+            document.getElementById('terms-modal').classList.add('hidden');
+        }
+
+        // Block / Unblock System Functions
         window.openBlockedAccountsModal = function() {
             document.getElementById('blocked-modal').classList.remove('hidden');
             loadBlockedUsers();
         }
         window.closeBlockedAccountsModal = function() {
             document.getElementById('blocked-modal').classList.add('hidden');
+        }
+
+        window.openSavedMessages = function() {
+            alert("Opening Saved Messages securely.");
         }
 
         window.openReportModal = function() {
@@ -459,6 +504,7 @@
                 userCache[auth.currentUser.uid].blocked.push(targetUid);
                 alert("User blocked successfully.");
                 loadExploreUsers();
+                loadPosts();
             } catch(e) { alert(e.message); }
         }
 
@@ -471,6 +517,7 @@
                 alert("User unblocked.");
                 loadBlockedUsers();
                 loadExploreUsers();
+                loadPosts();
             } catch(e) { alert(e.message); }
         }
 
@@ -493,7 +540,7 @@
             const username = document.getElementById('reg-username').value;
             try {
                 const res = await createUserWithEmailAndPassword(auth, email, password);
-                await setDoc(doc(db, "users", res.user.uid), { uid: res.user.uid, username, email, bio: "Roxchat.", profilePic: "", blocked: [], createdAt: serverTimestamp() });
+                await setDoc(doc(db, "users", res.user.uid), { uid: res.user.uid, username, email, bio: "Roxchat.", profilePic: "", isPrivate: false, notifications: true, blocked: [], createdAt: serverTimestamp() });
             } catch (err) { alert(err.message); }
         });
 
@@ -531,6 +578,8 @@
                 document.getElementById('profile-username-input').value = data.username || "";
                 document.getElementById('profile-bio-input').value = data.bio || "";
                 document.getElementById('profile-new-password').value = "";
+                document.getElementById('setting-private').checked = data.isPrivate || false;
+                document.getElementById('setting-notifications').checked = data.notifications !== false;
                 document.getElementById('profile-initial').textContent = (data.username || "U").charAt(0).toUpperCase();
                 if (data.profilePic) {
                     const imgPreview = document.getElementById('profile-img-preview');
@@ -567,12 +616,14 @@
             const newUsername = document.getElementById('profile-username-input').value.trim();
             const newBio = document.getElementById('profile-bio-input').value.trim();
             const newPassword = document.getElementById('profile-new-password').value.trim();
+            const isPrivate = document.getElementById('setting-private').checked;
+            const notifications = document.getElementById('setting-notifications').checked;
             
             if(!newUsername) { alert("Username cannot be empty"); return; }
 
             try {
                 const userRef = doc(db, "users", auth.currentUser.uid);
-                await setDoc(userRef, { username: newUsername, bio: newBio }, { merge: true });
+                await setDoc(userRef, { username: newUsername, bio: newBio, isPrivate, notifications }, { merge: true });
 
                 if (newPassword) {
                     await updatePassword(auth.currentUser, newPassword);
@@ -581,10 +632,12 @@
                 if(!userCache[auth.currentUser.uid]) userCache[auth.currentUser.uid] = {};
                 userCache[auth.currentUser.uid].username = newUsername;
                 userCache[auth.currentUser.uid].bio = newBio;
+                userCache[auth.currentUser.uid].isPrivate = isPrivate;
+                userCache[auth.currentUser.uid].notifications = notifications;
 
                 saveBtn.style.opacity = '0.5';
                 setTimeout(() => { saveBtn.style.opacity = '1'; }, 400);
-                alert("Profile updated successfully!");
+                alert("Profile and settings updated successfully!");
 
                 document.getElementById('profile-initial').textContent = newUsername.charAt(0).toUpperCase();
                 document.getElementById('profile-new-password').value = "";
@@ -640,12 +693,12 @@
             try {
                 const q = query(collection(db, "stories"), orderBy("createdAt", "desc"));
                 const querySnapshot = await getDocs(q);
-                
                 const now = new Date();
+                const blockedList = (auth.currentUser && userCache[auth.currentUser.uid]) ? (userCache[auth.currentUser.uid].blocked || []) : [];
                 
                 querySnapshot.forEach((docSnap) => {
                     const story = docSnap.data();
-                    if (!story.createdAt) return;
+                    if (!story.createdAt || blockedList.includes(story.uid)) return;
                     
                     const storyDate = story.createdAt.toDate ? story.createdAt.toDate() : new Date(story.createdAt);
                     const hoursDiff = (now - storyDate) / (1000 * 60 * 60);
@@ -904,6 +957,12 @@
         async function loadNotifications() {
             const list = document.getElementById('notifications-list');
             if(!auth.currentUser) return;
+            const userData = userCache[auth.currentUser.uid] || {};
+            if(userData.notifications === false) {
+                list.innerHTML = '<p class="text-center text-xs text-slate-500 py-4">Push Notifications are disabled in settings.</p>';
+                return;
+            }
+
             list.innerHTML = '<p class="text-center text-xs text-slate-500 py-4">Loading notifications...</p>';
             try {
                 const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
