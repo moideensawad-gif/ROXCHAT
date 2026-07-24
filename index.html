@@ -208,7 +208,7 @@
                             <input type="checkbox" id="setting-notifications" checked class="w-4 h-4 accent-amber-500 rounded cursor-pointer">
                         </div>
 
-                        <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/70 transition">
+                        <div onclick="openBlockedAccountsModal()" class="bg-slate-800/40 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/70 transition">
                             <span class="text-sm text-rose-400 flex items-center space-x-2">
                                 <i class="fa-solid fa-ban"></i>
                                 <span>Blocked Accounts</span>
@@ -224,7 +224,7 @@
                             <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
                         </div>
 
-                        <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/70 transition">
+                        <div onclick="openReportModal()" class="bg-slate-800/40 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/70 transition">
                             <span class="text-sm text-slate-200 flex items-center space-x-2">
                                 <i class="fa-solid fa-circle-question text-sky-400"></i>
                                 <span>Help / Report a Problem</span>
@@ -282,6 +282,31 @@
             <div id="notifications-list" class="flex-1 overflow-y-auto space-y-3">
                 <p class="text-center text-xs text-slate-500 py-4">No recent notifications.</p>
             </div>
+        </div>
+    </div>
+
+    <!-- Blocked Accounts Modal -->
+    <div id="blocked-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-4 space-y-4 relative">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-sm text-rose-400">Blocked Accounts</h3>
+                <button onclick="closeBlockedAccountsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="blocked-users-list" class="space-y-2 max-h-60 overflow-y-auto text-xs">
+                <p class="text-center text-slate-500 py-4">No blocked accounts.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="report-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-4 space-y-4 relative">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-sm text-amber-400">Report a Problem</h3>
+                <button onclick="closeReportModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <textarea id="report-text-input" placeholder="Describe the issue..." rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 resize-none focus:outline-none focus:border-amber-500 text-sm"></textarea>
+            <button onclick="submitReport()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-2.5 rounded-xl text-sm transition active:opacity-50">Submit Report</button>
         </div>
     </div>
 
@@ -376,6 +401,79 @@
         });
         document.getElementById('close-notifications-btn').addEventListener('click', () => notificationsModal.classList.add('hidden'));
 
+        window.openBlockedAccountsModal = function() {
+            document.getElementById('blocked-modal').classList.remove('hidden');
+            loadBlockedUsers();
+        }
+        window.closeBlockedAccountsModal = function() {
+            document.getElementById('blocked-modal').classList.add('hidden');
+        }
+
+        window.openReportModal = function() {
+            document.getElementById('report-modal').classList.remove('hidden');
+        }
+        window.closeReportModal = function() {
+            document.getElementById('report-modal').classList.add('hidden');
+        }
+        window.submitReport = async function() {
+            const text = document.getElementById('report-text-input').value.trim();
+            if(!text) return;
+            try {
+                await addDoc(collection(db, "reports"), { uid: auth.currentUser?.uid, text, createdAt: serverTimestamp() });
+                alert("Report submitted successfully.");
+                document.getElementById('report-text-input').value = '';
+                closeReportModal();
+            } catch(e) { alert(e.message); }
+        }
+
+        async function loadBlockedUsers() {
+            const list = document.getElementById('blocked-users-list');
+            if(!auth.currentUser) return;
+            try {
+                const data = userCache[auth.currentUser.uid] || {};
+                const blockedList = data.blocked || [];
+                list.innerHTML = '';
+                if(blockedList.length === 0) {
+                    list.innerHTML = '<p class="text-center text-slate-500 py-4">No blocked accounts.</p>';
+                    return;
+                }
+                blockedList.forEach(bId => {
+                    const bUser = userCache[bId] || { username: "User" };
+                    const div = document.createElement('div');
+                    div.className = "flex items-center justify-between bg-slate-800 p-2.5 rounded-xl";
+                    div.innerHTML = `
+                        <span>${bUser.username}</span>
+                        <button onclick="unblockUser('${bId}')" class="text-amber-400 font-semibold hover:underline">Unblock</button>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        window.blockUser = async function(targetUid) {
+            if(!auth.currentUser) return;
+            try {
+                const userRef = doc(db, "users", auth.currentUser.uid);
+                await updateDoc(userRef, { blocked: arrayUnion(targetUid) });
+                if(!userCache[auth.currentUser.uid].blocked) userCache[auth.currentUser.uid].blocked = [];
+                userCache[auth.currentUser.uid].blocked.push(targetUid);
+                alert("User blocked successfully.");
+                loadExploreUsers();
+            } catch(e) { alert(e.message); }
+        }
+
+        window.unblockUser = async function(targetUid) {
+            if(!auth.currentUser) return;
+            try {
+                const userRef = doc(db, "users", auth.currentUser.uid);
+                await updateDoc(userRef, { blocked: arrayRemove(targetUid) });
+                userCache[auth.currentUser.uid].blocked = userCache[auth.currentUser.uid].blocked.filter(id => id !== targetUid);
+                alert("User unblocked.");
+                loadBlockedUsers();
+                loadExploreUsers();
+            } catch(e) { alert(e.message); }
+        }
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 authView.classList.add('hidden');
@@ -395,7 +493,7 @@
             const username = document.getElementById('reg-username').value;
             try {
                 const res = await createUserWithEmailAndPassword(auth, email, password);
-                await setDoc(doc(db, "users", res.user.uid), { uid: res.user.uid, username, email, bio: "Roxchat.", profilePic: "", createdAt: serverTimestamp() });
+                await setDoc(doc(db, "users", res.user.uid), { uid: res.user.uid, username, email, bio: "Roxchat.", profilePic: "", blocked: [], createdAt: serverTimestamp() });
             } catch (err) { alert(err.message); }
         });
 
@@ -711,9 +809,12 @@
                 }
 
                 let hasReels = false;
+                const blockedList = (auth.currentUser && userCache[auth.currentUser.uid]) ? (userCache[auth.currentUser.uid].blocked || []) : [];
 
                 querySnapshot.forEach((docSnap) => {
                     const post = docSnap.data();
+                    if(blockedList.includes(post.uid)) return;
+
                     const postId = docSnap.id;
                     const userData = userCache[post.uid] || { username: "User", profilePic: "" };
                     const displayName = userData.username || "User";
@@ -924,9 +1025,13 @@
             const list = document.getElementById('users-list');
             try {
                 list.innerHTML = '';
+                const blockedList = (auth.currentUser && userCache[auth.currentUser.uid]) ? (userCache[auth.currentUser.uid].blocked || []) : [];
+
                 Object.keys(userCache).forEach((uid) => {
                     if(uid === auth.currentUser?.uid) return;
                     const u = userCache[uid];
+                    const isBlocked = blockedList.includes(uid);
+
                     const div = document.createElement('div');
                     div.className = "flex items-center justify-between bg-slate-800/50 p-3 rounded-xl border border-slate-800";
                     div.innerHTML = `
@@ -937,7 +1042,10 @@
                                 <p class="text-xs text-slate-400">${u.bio || "Roxchat User"}</p>
                             </div>
                         </div>
-                        <button onclick="startChat('${uid}', '${u.username || "User"}')" class="bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-amber-500 hover:text-slate-950 transition active:opacity-50">Chat</button>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="startChat('${uid}', '${u.username || "User"}')" class="bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-amber-500 hover:text-slate-950 transition active:opacity-50">Chat</button>
+                            <button onclick="${isBlocked ? `unblockUser('${uid}')` : `blockUser('${uid}')`}" class="bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg text-xs hover:bg-rose-500 hover:text-white transition">${isBlocked ? 'Unblock' : 'Block'}</button>
+                        </div>
                     `;
                     list.appendChild(div);
                 });
