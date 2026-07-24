@@ -207,7 +207,7 @@
                             <input type="checkbox" id="setting-notifications" checked class="w-5 h-5 accent-amber-500 rounded cursor-pointer">
                         </div>
 
-                        <!-- Change Password Section with Separate Update Button -->
+                        <!-- Change Password Section -->
                         <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4 space-y-3">
                             <span class="text-sm font-medium text-slate-200 flex items-center space-x-2.5">
                                 <i class="fa-solid fa-key text-amber-400 text-base"></i>
@@ -449,6 +449,11 @@
                 const tab = btn.getAttribute('data-tab');
                 document.querySelectorAll('#content-area > div').forEach(d => d.classList.add('hidden'));
                 document.getElementById(`tab-${tab}`).classList.remove('hidden');
+                
+                // Optimized lazy loading triggers for tabs
+                if (tab === 'messages') {
+                    loadChatsList();
+                }
             });
         });
 
@@ -615,6 +620,7 @@
             loadPosts(true);
             loadStories();
             loadExploreUsers();
+            loadChatsList();
         }
 
         async function loadUserProfile(user) {
@@ -1230,6 +1236,47 @@
                     list.appendChild(div);
                 });
             } catch (err) { console.error(err); }
+        }
+
+        async function loadChatsList() {
+            const list = document.getElementById('friends-chat-list');
+            if(!auth.currentUser) return;
+            list.innerHTML = '<p class="text-center text-xs text-slate-500 py-4">Loading chats...</p>';
+            
+            try {
+                const blockedList = userCache[auth.currentUser.uid]?.blocked || [];
+                list.innerHTML = '';
+                let count = 0;
+
+                Object.keys(userCache).forEach((uid) => {
+                    if(uid === auth.currentUser.uid || blockedList.includes(uid)) return;
+                    count++;
+                    const u = userCache[uid];
+                    const div = document.createElement('div');
+                    div.className = "flex items-center justify-between bg-slate-800/50 p-3 rounded-xl border border-slate-800 cursor-pointer hover:bg-slate-800 transition";
+                    div.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-sm overflow-hidden">
+                                ${u.profilePic ? `<img src="${u.profilePic}" class="w-full h-full object-cover">` : (u.username || "U").charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-semibold">${u.username || "User"}</h4>
+                                <p class="text-xs text-slate-400">Tap to chat</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
+                    `;
+                    div.addEventListener('click', () => { startChat(uid, u.username || "User"); });
+                    list.appendChild(div);
+                });
+
+                if(count === 0) {
+                    list.innerHTML = '<p class="text-center text-xs text-slate-500 py-4">No other users available.</p>';
+                }
+            } catch(e) {
+                console.error(e);
+                list.innerHTML = '<p class="text-center text-xs text-slate-500 py-4">Failed to load chats.</p>';
+            }
         }
 
         let activeChatUserId = null;
