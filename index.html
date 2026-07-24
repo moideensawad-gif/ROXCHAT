@@ -56,7 +56,7 @@
                         <i id="login-eye-icon" class="fa-solid fa-eye-slash text-sm"></i>
                     </button>
                 </div>
-                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-50">Sign In</button>
+                <button type="submit" id="login-submit-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-50">Sign In</button>
                 <p class="text-center text-sm text-slate-400 mt-4">
                     Don't have an account? <button type="button" id="show-register" class="text-amber-400 font-semibold hover:underline">Sign Up</button>
                 </p>
@@ -84,7 +84,7 @@
                         I agree to the <button type="button" onclick="openTermsModal()" class="text-amber-400 hover:underline font-medium">Terms and Conditions</button>
                     </label>
                 </div>
-                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-50">Create Account</button>
+                <button type="submit" id="register-submit-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-50">Create Account</button>
                 <p class="text-center text-sm text-slate-400 mt-2">
                     Already have an account? <button type="button" id="show-login" class="text-amber-400 font-semibold hover:underline">Sign In</button>
                 </p>
@@ -207,21 +207,21 @@
                             <input type="checkbox" id="setting-notifications" checked class="w-5 h-5 accent-amber-500 rounded cursor-pointer">
                         </div>
 
-                        <!-- Change Password moved inside Settings with "Change Password" label -->
+                        <!-- Change Password Section with Separate Update Button -->
                         <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4 space-y-3">
                             <span class="text-sm font-medium text-slate-200 flex items-center space-x-2.5">
                                 <i class="fa-solid fa-key text-amber-400 text-base"></i>
                                 <span>Change Password</span>
                             </span>
                             <div class="relative">
-                                <input type="password" id="profile-new-password" placeholder="Change Password" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 pr-12 text-sm focus:outline-none focus:border-amber-500">
+                                <input type="password" id="profile-new-password" placeholder="Enter new password" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 pr-12 text-sm focus:outline-none focus:border-amber-500">
                                 <button type="button" onclick="togglePasswordVisibility('profile-new-password', 'profile-eye-icon')" class="absolute right-4 top-3 text-slate-400 hover:text-amber-400">
                                     <i id="profile-eye-icon" class="fa-solid fa-eye-slash text-sm"></i>
                                 </button>
                             </div>
+                            <button id="update-password-btn" class="w-full bg-slate-700 hover:bg-slate-600 text-amber-400 font-semibold py-2.5 rounded-xl text-xs transition active:opacity-40">Update Password</button>
                         </div>
 
-                        <!-- Invite Friends Feature Added inside Settings -->
                         <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4 space-y-3">
                             <span class="text-sm font-medium text-slate-200 flex items-center space-x-2.5">
                                 <i class="fa-solid fa-user-plus text-amber-400 text-base"></i>
@@ -560,22 +560,40 @@
 
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const regBtn = document.getElementById('register-submit-btn');
+            regBtn.style.opacity = '0.4'; 
+            regBtn.style.pointerEvents = 'none';
+
             const email = document.getElementById('reg-email').value;
             const password = document.getElementById('reg-password').value;
             const username = document.getElementById('reg-username').value;
             try {
                 const res = await createUserWithEmailAndPassword(auth, email, password);
                 await setDoc(doc(db, "users", res.user.uid), { uid: res.user.uid, username, email, bio: "Roxchat.", profilePic: "", isPrivate: false, notifications: true, blocked: [], createdAt: serverTimestamp() });
-            } catch (err) { alert(err.message); }
+            } catch (err) { 
+                alert(err.message); 
+            } finally {
+                regBtn.style.opacity = '1';
+                regBtn.style.pointerEvents = 'auto';
+            }
         });
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const loginBtn = document.getElementById('login-submit-btn');
+            loginBtn.style.opacity = '0.4'; 
+            loginBtn.style.pointerEvents = 'none';
+
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-            } catch (err) { alert(err.message); }
+            } catch (err) { 
+                alert(err.message); 
+            } finally {
+                loginBtn.style.opacity = '1';
+                loginBtn.style.pointerEvents = 'auto';
+            }
         });
 
         logoutBtnProfile.addEventListener('click', () => signOut(auth));
@@ -638,21 +656,24 @@
         document.getElementById('save-profile-btn').addEventListener('click', async () => {
             if (!auth.currentUser) return;
             const saveBtn = document.getElementById('save-profile-btn');
+            saveBtn.style.opacity = '0.4'; 
+            saveBtn.style.pointerEvents = 'none';
+
             const newUsername = document.getElementById('profile-username-input').value.trim();
             const newBio = document.getElementById('profile-bio-input').value.trim();
-            const newPassword = document.getElementById('profile-new-password').value.trim();
             const isPrivate = document.getElementById('setting-private').checked;
             const notifications = document.getElementById('setting-notifications').checked;
             
-            if(!newUsername) { alert("Username cannot be empty"); return; }
+            if(!newUsername) { 
+                alert("Username cannot be empty"); 
+                saveBtn.style.opacity = '1';
+                saveBtn.style.pointerEvents = 'auto';
+                return; 
+            }
 
             try {
                 const userRef = doc(db, "users", auth.currentUser.uid);
                 await setDoc(userRef, { username: newUsername, bio: newBio, isPrivate, notifications }, { merge: true });
-
-                if (newPassword) {
-                    await updatePassword(auth.currentUser, newPassword);
-                }
                 
                 if(!userCache[auth.currentUser.uid]) userCache[auth.currentUser.uid] = {};
                 userCache[auth.currentUser.uid].username = newUsername;
@@ -660,15 +681,43 @@
                 userCache[auth.currentUser.uid].isPrivate = isPrivate;
                 userCache[auth.currentUser.uid].notifications = notifications;
 
-                saveBtn.style.opacity = '0.5';
-                setTimeout(() => { saveBtn.style.opacity = '1'; }, 400);
                 alert("Profile and settings updated successfully!");
 
                 document.getElementById('profile-initial').textContent = newUsername.charAt(0).toUpperCase();
-                document.getElementById('profile-new-password').value = "";
                 loadPosts(true);
                 loadStories();
-            } catch (err) { alert(err.message); }
+            } catch (err) { 
+                alert(err.message); 
+            } finally {
+                saveBtn.style.opacity = '1';
+                saveBtn.style.pointerEvents = 'auto';
+            }
+        });
+
+        // Update Password Button with Dim State
+        document.getElementById('update-password-btn').addEventListener('click', async () => {
+            if (!auth.currentUser) return;
+            const updatePassBtn = document.getElementById('update-password-btn');
+            const newPassword = document.getElementById('profile-new-password').value.trim();
+
+            if (!newPassword) {
+                alert("Please enter a new password.");
+                return;
+            }
+
+            updatePassBtn.style.opacity = '0.4';
+            updatePassBtn.style.pointerEvents = 'none';
+
+            try {
+                await updatePassword(auth.currentUser, newPassword);
+                alert("Password updated successfully!");
+                document.getElementById('profile-new-password').value = "";
+            } catch (err) {
+                alert("Failed to update password: " + err.message);
+            } finally {
+                updatePassBtn.style.opacity = '1';
+                updatePassBtn.style.pointerEvents = 'auto';
+            }
         });
 
         const myStoryBucket = document.getElementById('my-story-bucket');
@@ -834,8 +883,16 @@
         });
 
         document.getElementById('modal-submit-btn').addEventListener('click', async () => {
+            const shareBtn = document.getElementById('modal-submit-btn');
+            shareBtn.style.opacity = '0.4'; 
+            shareBtn.style.pointerEvents = 'none';
+
             const text = document.getElementById('modal-post-text').value.trim();
-            if (!text && !currentModalMediaBase64) return;
+            if (!text && !currentModalMediaBase64) {
+                shareBtn.style.opacity = '1';
+                shareBtn.style.pointerEvents = 'auto';
+                return;
+            }
             try {
                 const isVideo = currentModalMediaBase64 && currentModalMediaBase64.startsWith('data:video');
                 await addDoc(collection(db, "posts"), {
@@ -852,7 +909,12 @@
                 currentModalMediaBase64 = null;
                 createModal.classList.add('hidden');
                 loadPosts(true);
-            } catch (err) { alert(err.message); }
+            } catch (err) { 
+                alert(err.message); 
+            } finally {
+                shareBtn.style.opacity = '1';
+                shareBtn.style.pointerEvents = 'auto';
+            }
         });
 
         function timeAgo(timestamp) {
