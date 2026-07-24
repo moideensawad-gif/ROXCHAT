@@ -287,9 +287,14 @@
 
     <!-- Story Viewer Modal -->
     <input type="file" id="story-file-input" accept="image/*" class="hidden">
-    <div id="story-view-modal" class="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 hidden">
-        <button id="close-story-view" class="absolute top-4 right-4 text-white text-2xl p-2"><i class="fa-solid fa-xmark"></i></button>
-        <img id="story-display-img" class="max-w-full max-h-[80vh] rounded-xl object-contain" alt="Story">
+    <div id="story-view-modal" class="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-4 hidden">
+        <div class="absolute top-4 left-4 right-4 flex space-x-1 z-10" id="story-progress-bars"></div>
+        <button id="close-story-view" class="absolute top-8 right-4 text-white text-2xl p-2 z-20"><i class="fa-solid fa-xmark"></i></button>
+        <div class="flex-1 flex items-center justify-center w-full relative">
+            <img id="story-display-img" class="max-w-full max-h-[80vh] rounded-xl object-contain" alt="Story">
+            <button id="prev-story-btn" class="absolute left-2 text-white/70 hover:text-white text-3xl px-2 py-4"><i class="fa-solid fa-chevron-left"></i></button>
+            <button id="next-story-btn" class="absolute right-2 text-white/70 hover:text-white text-3xl px-2 py-4"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
     </div>
 
     <audio id="like-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
@@ -355,13 +360,12 @@
         document.getElementById('header-create-btn').addEventListener('click', () => createModal.classList.remove('hidden'));
         document.getElementById('close-modal-btn').addEventListener('click', () => createModal.classList.add('hidden'));
 
-        document.getElementById('refresh-btn').addEventListener('click', () => {
+        document.getElementById('refresh-btn').addEventListener('click', async () => {
             if(auth.currentUser) {
-                loadAllUserData().then(() => {
-                    loadPosts();
-                    loadStories();
-                    loadExploreUsers();
-                });
+                await loadAllUserData();
+                loadPosts();
+                loadStories();
+                loadExploreUsers();
             }
         });
 
@@ -401,9 +405,7 @@
             const password = document.getElementById('login-password').value;
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-            } catch (err) { 
-                alert(err.message); 
-            }
+            } catch (err) { alert(err.message); }
         });
 
         logoutBtnProfile.addEventListener('click', () => signOut(auth));
@@ -483,7 +485,7 @@
                 userCache[auth.currentUser.uid].bio = newBio;
 
                 saveBtn.style.opacity = '0.5';
-                setTimeout(() => { saveBtn.style.opacity = '1'; }, 600);
+                setTimeout(() => { saveBtn.style.opacity = '1'; }, 400);
                 alert("Profile updated successfully!");
 
                 document.getElementById('profile-initial').textContent = newUsername.charAt(0).toUpperCase();
@@ -498,12 +500,13 @@
         const storyViewModal = document.getElementById('story-view-modal');
         const storyDisplayImg = document.getElementById('story-display-img');
 
-        let myLatestStory = null;
+        let userStoriesMap = {};
+        let activeStoryList = [];
+        let currentStoryIndex = 0;
 
         myStoryBucket.addEventListener('click', () => {
-            if (myLatestStory) {
-                storyDisplayImg.src = myLatestStory;
-                storyViewModal.classList.remove('hidden');
+            if (auth.currentUser && userStoriesMap[auth.currentUser.uid] && userStoriesMap[auth.currentUser.uid].length > 0) {
+                openStoryViewer(userStoriesMap[auth.currentUser.uid]);
             } else {
                 storyFileInput.click();
             }
@@ -530,7 +533,7 @@
         async function loadStories() {
             const container = document.getElementById('stories-container');
             container.innerHTML = '';
-            myLatestStory = null;
+            userStoriesMap = {};
             
             const myOuter = document.getElementById('my-story-outer');
             const myLabel = document.getElementById('my-story-label');
@@ -540,28 +543,41 @@
                 const q = query(collection(db, "stories"), orderBy("createdAt", "desc"));
                 const querySnapshot = await getDocs(q);
                 
-                let seenUsers = new Set();
-                let hasMyStoryFound = false;
-
+                const now = new Date();
+                
                 querySnapshot.forEach((docSnap) => {
                     const story = docSnap.data();
+                    if (!story.createdAt) return;
+                    
+                    const storyDate = story.createdAt.toDate ? story.createdAt.toDate() : new Date(story.createdAt);
+                    const hoursDiff = (now - storyDate) / (1000 * 60 * 60);
+                    
+                    if (hoursDiff > 24) return;
+
                     const storyUid = story.uid;
-
-                    if (auth.currentUser && storyUid === auth.currentUser.uid && !hasMyStoryFound) {
-                        hasMyStoryFound = true;
-                        myLatestStory = story.media;
-                        myOuter.className = "instagram-gradient-ring flex-shrink-0 cursor-pointer w-16 h-16";
-                        myOuter.innerHTML = `
-                            <div class="w-14 h-14 rounded-full bg-slate-900 p-0.5 flex items-center justify-center overflow-hidden">
-                                <img src="${story.media}" class="w-full h-full rounded-full object-cover">
-                            </div>
-                        `;
-                        return;
+                    if (!userStoriesMap[storyUid]) {
+                        userStoriesMap[storyUid] = [];
                     }
+                    userStoriesMap[storyUid].push(story.media);
+                });
 
-                    if(seenUsers.has(storyUid)) return;
-                    seenUsers.add(storyUid);
+                if (auth.currentUser && userStoriesMap[auth.currentUser.uid] && userStoriesMap[auth.currentUser.uid].length > 0) {
+                    const myStories = userStoriesMap[auth.currentUser.uid];
+                    myOuter.className = "instagram-gradient-ring flex-shrink-0 cursor-pointer w-16 h-16";
+                    myOuter.innerHTML = `
+                        <div class="w-14 h-14 rounded-full bg-slate-900 p-0.5 flex items-center justify-center overflow-hidden">
+                            <img src="${myStories[myStories.length - 1]}" class="w-full h-full rounded-full object-cover">
+                        </div>
+                    `;
+                } else {
+                    myOuter.className = "w-16 h-16 rounded-full border-2 border-dashed border-amber-500 flex items-center justify-center bg-slate-800 text-amber-400 relative overflow-hidden";
+                    myOuter.innerHTML = `<i class="fa-solid fa-plus text-xl"></i>`;
+                }
 
+                Object.keys(userStoriesMap).forEach((storyUid) => {
+                    if (auth.currentUser && storyUid === auth.currentUser.uid) return;
+
+                    const storiesArr = userStoriesMap[storyUid];
                     const userData = userCache[storyUid] || { username: "User" };
                     const displayName = userData.username || "User";
 
@@ -570,26 +586,55 @@
                     div.innerHTML = `
                         <div class="instagram-gradient-ring">
                             <div class="w-14 h-14 rounded-full bg-slate-900 p-0.5 flex items-center justify-center overflow-hidden">
-                                <img src="${story.media}" class="w-full h-full rounded-full object-cover">
+                                <img src="${storiesArr[storiesArr.length - 1]}" class="w-full h-full rounded-full object-cover">
                             </div>
                         </div>
                         <span class="text-xs text-slate-300 truncate w-16 text-center">${displayName}</span>
                     `;
                     div.addEventListener('click', () => {
-                        storyDisplayImg.src = story.media;
-                        storyViewModal.classList.remove('hidden');
+                        openStoryViewer(storiesArr);
                     });
                     container.appendChild(div);
                 });
 
-                if(!hasMyStoryFound) {
-                    myOuter.className = "w-16 h-16 rounded-full border-2 border-dashed border-amber-500 flex items-center justify-center bg-slate-800 text-amber-400 relative overflow-hidden";
-                    myOuter.innerHTML = `
-                        <i id="my-story-plus-icon" class="fa-solid fa-plus text-xl"></i>
-                    `;
-                }
             } catch (e) { console.error(e); }
         }
+
+        function openStoryViewer(storiesArray) {
+            activeStoryList = storiesArray;
+            currentStoryIndex = 0;
+            updateStoryView();
+            storyViewModal.classList.remove('hidden');
+        }
+
+        function updateStoryView() {
+            if (activeStoryList.length === 0) return;
+            storyDisplayImg.src = activeStoryList[currentStoryIndex];
+            
+            const barsContainer = document.getElementById('story-progress-bars');
+            barsContainer.innerHTML = '';
+            activeStoryList.forEach((_, idx) => {
+                const bar = document.createElement('div');
+                bar.className = `flex-1 h-1 rounded-full ${idx <= currentStoryIndex ? 'bg-amber-400' : 'bg-slate-600'}`;
+                barsContainer.appendChild(bar);
+            });
+        }
+
+        document.getElementById('next-story-btn').addEventListener('click', () => {
+            if (currentStoryIndex < activeStoryList.length - 1) {
+                currentStoryIndex++;
+                updateStoryView();
+            } else {
+                storyViewModal.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('prev-story-btn').addEventListener('click', () => {
+            if (currentStoryIndex > 0) {
+                currentStoryIndex--;
+                updateStoryView();
+            }
+        });
 
         document.getElementById('close-story-view').addEventListener('click', () => {
             storyViewModal.classList.add('hidden');
