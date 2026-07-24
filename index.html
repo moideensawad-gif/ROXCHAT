@@ -25,7 +25,6 @@
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Instagram Style Gradient Ring */
         .instagram-gradient-ring {
             background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
             padding: 2.5px;
@@ -87,11 +86,6 @@
             <header class="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900/95 backdrop-blur sticky top-0 z-20">
                 <h1 class="text-xl font-bold text-amber-400">Roxchat</h1>
                 <div class="flex items-center space-x-2">
-                    <!-- Master Like All Posts Button in Header -->
-                    <button id="like-all-btn" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-slate-950 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1" title="Like All Posts">
-                        <i class="fa-solid fa-heart"></i>
-                        <span>Like All</span>
-                    </button>
                     <button id="refresh-btn" class="text-slate-400 hover:text-amber-400 p-2 transition" title="Refresh Feed"><i class="fa-solid fa-rotate text-lg"></i></button>
                     <button id="header-create-btn" class="text-slate-400 hover:text-amber-400 p-2 transition"><i class="fa-solid fa-square-plus text-xl"></i></button>
                     <button id="like-notification-btn" class="text-slate-400 hover:text-amber-400 p-2 transition"><i class="fa-solid fa-heart text-xl"></i></button>
@@ -262,7 +256,7 @@
         </div>
     </div>
 
-    <!-- Notifications Modal (Heart Icon Popup) -->
+    <!-- Notifications Modal -->
     <div id="notifications-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-4 space-y-4 relative max-h-[80vh] flex flex-col">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -282,7 +276,6 @@
         <img id="story-display-img" class="max-w-full max-h-[80vh] rounded-xl object-contain" alt="Story">
     </div>
 
-    <!-- Audio for Like Sound effect -->
     <audio id="like-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
     <script type="module">
@@ -314,10 +307,11 @@
         const logoutBtnProfile = document.getElementById('logout-btn-profile');
         const likeSound = document.getElementById('like-sound');
 
+        let userCache = {}; // Cache for custom usernames & profile pictures
+
         showRegisterBtn.addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); });
         showLoginBtn.addEventListener('click', () => { registerForm.classList.add('hidden'); loginForm.classList.remove('hidden'); });
 
-        // Zero-Delay Instant Tab Switching
         const navBtns = document.querySelectorAll('.nav-btn');
         navBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -329,45 +323,20 @@
             });
         });
 
-        // Modal Controls for Header Create Button
         const createModal = document.getElementById('create-modal');
         document.getElementById('header-create-btn').addEventListener('click', () => createModal.classList.remove('hidden'));
         document.getElementById('close-modal-btn').addEventListener('click', () => createModal.classList.add('hidden'));
 
-        // Refresh Button
         document.getElementById('refresh-btn').addEventListener('click', () => {
             if(auth.currentUser) {
-                loadPosts();
-                loadStories();
-                loadExploreUsers();
+                loadAllUserData().then(() => {
+                    loadPosts();
+                    loadStories();
+                    loadExploreUsers();
+                });
             }
         });
 
-        // Master Like All Posts Button Feature
-        document.getElementById('like-all-btn').addEventListener('click', async () => {
-            if (!auth.currentUser) return;
-            try {
-                const q = query(collection(db, "posts"));
-                const querySnapshot = await getDocs(q);
-                let updatePromises = [];
-                querySnapshot.forEach((docSnap) => {
-                    const post = docSnap.data();
-                    const likes = post.likes || [];
-                    if (!likes.includes(auth.currentUser.uid)) {
-                        likes.push(auth.currentUser.uid);
-                        updatePromises.push(updateDoc(doc(db, "posts", docSnap.id), { likes }));
-                    }
-                });
-                await Promise.all(updatePromises);
-                try {
-                    likeSound.currentTime = 0;
-                    likeSound.play();
-                } catch(e) {}
-                loadPosts();
-            } catch(err) { console.error(err); }
-        });
-
-        // Notifications Modal Controls (Heart Icon)
         const notificationsModal = document.getElementById('notifications-modal');
         document.getElementById('like-notification-btn').addEventListener('click', () => {
             notificationsModal.classList.remove('hidden');
@@ -379,6 +348,7 @@
             if (user) {
                 authView.classList.add('hidden');
                 mainView.classList.remove('hidden');
+                await loadAllUserData();
                 initApp(user);
             } else {
                 mainView.classList.add('hidden');
@@ -408,6 +378,16 @@
 
         logoutBtnProfile.addEventListener('click', () => signOut(auth));
 
+        async function loadAllUserData() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "users"));
+                userCache = {};
+                querySnapshot.forEach((docSnap) => {
+                    userCache[docSnap.id] = docSnap.data();
+                });
+            } catch(e) { console.error(e); }
+        }
+
         function initApp(user) {
             loadUserProfile(user);
             loadPosts();
@@ -417,18 +397,14 @@
 
         async function loadUserProfile(user) {
             try {
-                const userDocRef = doc(db, "users", user.uid);
-                const userDoc = await getDoc(userDocRef);
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    document.getElementById('profile-username-input').value = data.username || "";
-                    document.getElementById('profile-bio-input').value = data.bio || "";
-                    document.getElementById('profile-initial').textContent = (data.username || "U").charAt(0).toUpperCase();
-                    if (data.profilePic) {
-                        const imgPreview = document.getElementById('profile-img-preview');
-                        imgPreview.src = data.profilePic;
-                        imgPreview.classList.remove('hidden');
-                    }
+                const data = userCache[user.uid] || {};
+                document.getElementById('profile-username-input').value = data.username || "";
+                document.getElementById('profile-bio-input').value = data.bio || "";
+                document.getElementById('profile-initial').textContent = (data.username || "U").charAt(0).toUpperCase();
+                if (data.profilePic) {
+                    const imgPreview = document.getElementById('profile-img-preview');
+                    imgPreview.src = data.profilePic;
+                    imgPreview.classList.remove('hidden');
                 }
             } catch (e) { console.error(e); }
         }
@@ -446,6 +422,7 @@
                         try {
                             const userRef = doc(db, "users", auth.currentUser.uid);
                             await updateDoc(userRef, { profilePic: base64Img });
+                            if(userCache[auth.currentUser.uid]) userCache[auth.currentUser.uid].profilePic = base64Img;
                         } catch (err) { console.error(err); }
                     }
                 };
@@ -453,25 +430,31 @@
             }
         });
 
-        // Save Profile Button
         document.getElementById('save-profile-btn').addEventListener('click', async () => {
             if (!auth.currentUser) return;
             const saveBtn = document.getElementById('save-profile-btn');
-            const newUsername = document.getElementById('profile-username-input').value;
-            const newBio = document.getElementById('profile-bio-input').value;
+            const newUsername = document.getElementById('profile-username-input').value.trim();
+            const newBio = document.getElementById('profile-bio-input').value.trim();
             
+            if(!newUsername) { alert("Username cannot be empty"); return; }
+
             try {
                 const userRef = doc(db, "users", auth.currentUser.uid);
                 await updateDoc(userRef, { username: newUsername, bio: newBio });
                 
+                if(!userCache[auth.currentUser.uid]) userCache[auth.currentUser.uid] = {};
+                userCache[auth.currentUser.uid].username = newUsername;
+                userCache[auth.currentUser.uid].bio = newBio;
+
                 saveBtn.style.opacity = '0.5';
                 setTimeout(() => { saveBtn.style.opacity = '1'; }, 600);
 
                 document.getElementById('profile-initial').textContent = newUsername.charAt(0).toUpperCase();
+                loadPosts();
+                loadStories();
             } catch (err) { alert(err.message); }
         });
 
-        // Story Upload and Viewer Implementation with Instagram Gradient Ring
         const addStoryBtn = document.getElementById('add-story-btn');
         const storyFileInput = document.getElementById('story-file-input');
         const storyViewModal = document.getElementById('story-view-modal');
@@ -488,7 +471,6 @@
                 try {
                     await addDoc(collection(db, "stories"), {
                         uid: auth.currentUser.uid,
-                        email: auth.currentUser.email,
                         media: base64Media,
                         createdAt: serverTimestamp()
                     });
@@ -504,9 +486,20 @@
             try {
                 const q = query(collection(db, "stories"), orderBy("createdAt", "desc"));
                 const querySnapshot = await getDocs(q);
+                
+                let seenUsers = new Set();
+
                 querySnapshot.forEach((docSnap) => {
                     const story = docSnap.data();
-                    const userEmail = story.email || "User";
+                    const storyUid = story.uid;
+
+                    // Skip duplicate stories from the same user to mimic Instagram ring behavior cleanly
+                    if(seenUsers.has(storyUid)) return;
+                    seenUsers.add(storyUid);
+
+                    const userData = userCache[storyUid] || { username: "User" };
+                    const displayName = userData.username || "User";
+
                     const div = document.createElement('div');
                     div.className = "flex flex-col items-center space-y-1 flex-shrink-0 cursor-pointer";
                     div.innerHTML = `
@@ -515,7 +508,7 @@
                                 <img src="${story.media}" class="w-full h-full rounded-full object-cover">
                             </div>
                         </div>
-                        <span class="text-xs text-slate-300 truncate w-16 text-center">${userEmail.split('@')[0]}</span>
+                        <span class="text-xs text-slate-300 truncate w-16 text-center">${displayName}</span>
                     `;
                     div.addEventListener('click', () => {
                         storyDisplayImg.src = story.media;
@@ -530,7 +523,6 @@
             storyViewModal.classList.add('hidden');
         });
 
-        // Modal Creator Media Handling
         let currentModalMediaBase64 = null;
         document.getElementById('modal-media-input').addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -555,7 +547,6 @@
                 const isVideo = currentModalMediaBase64 && currentModalMediaBase64.startsWith('data:video');
                 await addDoc(collection(db, "posts"), {
                     uid: auth.currentUser.uid,
-                    email: auth.currentUser.email,
                     text,
                     media: currentModalMediaBase64 || null,
                     isReel: isVideo,
@@ -607,31 +598,37 @@
                 querySnapshot.forEach((docSnap) => {
                     const post = docSnap.data();
                     const postId = docSnap.id;
+                    const userData = userCache[post.uid] || { username: "User", profilePic: "" };
+                    const displayName = userData.username || "User";
+                    const avatarPic = userData.profilePic || "";
+
                     const likesCount = post.likes ? post.likes.length : 0;
                     const isLiked = post.likes && auth.currentUser && post.likes.includes(auth.currentUser.uid);
                     const comments = post.comments || [];
                     const timeString = timeAgo(post.createdAt);
-                    const userEmail = post.email || "User";
+
+                    const avatarHtml = avatarPic 
+                        ? `<img src="${avatarPic}" class="w-8 h-8 rounded-full object-cover border border-amber-500">`
+                        : `<div class="w-8 h-8 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs">${displayName.charAt(0).toUpperCase()}</div>`;
 
                     const div = document.createElement('div');
                     div.className = "bg-slate-800/40 border border-slate-800 rounded-2xl p-4 space-y-3";
                     div.innerHTML = `
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-2">
-                                <div class="w-8 h-8 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs">${userEmail.charAt(0).toUpperCase()}</div>
-                                <span class="text-xs font-semibold text-slate-300">${userEmail}</span>
+                                ${avatarHtml}
+                                <span class="text-xs font-semibold text-slate-300">${displayName}</span>
                             </div>
                             <span class="text-[10px] text-slate-500">${timeString}</span>
                         </div>
                         ${post.text ? `<p class="text-sm text-slate-200">${post.text}</p>` : ''}
                         ${post.media ? (post.media.startsWith('data:video') ? `<video src="${post.media}" controls class="w-full rounded-xl max-h-60 object-cover"></video>` : `<img src="${post.media}" class="w-full rounded-xl max-h-60 object-cover">`) : ''}
                         
-                        <!-- Instagram Style Interactive Counts and Buttons -->
                         <div class="flex items-center justify-between pt-2 border-t border-slate-700/40 text-slate-400">
                             <div class="flex items-center space-x-5">
-                                <button onclick="toggleLike('${postId}', ${isLiked})" class="flex items-center space-x-1.5 text-xs font-semibold ${isLiked ? 'text-rose-500' : 'hover:text-rose-500'} transition">
-                                    <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-xl"></i>
-                                    <span>${likesCount}</span>
+                                <button id="like-btn-${postId}" onclick="toggleLike('${postId}', ${isLiked})" class="flex items-center space-x-1.5 text-xs font-semibold ${isLiked ? 'text-rose-500' : 'hover:text-rose-500'} transition">
+                                    <i id="like-icon-${postId}" class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-xl"></i>
+                                    <span id="like-count-${postId}">${likesCount}</span>
                                 </button>
                                 <button onclick="toggleCommentsSection('${postId}')" class="flex items-center space-x-1.5 text-xs font-semibold hover:text-amber-400 transition">
                                     <i class="fa-regular fa-comment text-xl"></i>
@@ -663,8 +660,8 @@
                             <video src="${post.media}" controls autoplay loop muted class="w-full h-96 object-cover bg-black"></video>
                             <div class="p-3 bg-slate-900/90 flex items-center justify-between">
                                 <div class="flex items-center space-x-2">
-                                    <div class="w-7 h-7 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs">${userEmail.charAt(0).toUpperCase()}</div>
-                                    <span class="text-xs font-semibold text-slate-300">${userEmail}</span>
+                                    ${avatarHtml}
+                                    <span class="text-xs font-semibold text-slate-300">${displayName}</span>
                                 </div>
                                 <button onclick="toggleLike('${postId}', ${isLiked})" class="flex items-center space-x-1 text-xs font-semibold ${isLiked ? 'text-rose-500' : 'text-slate-400'}">
                                     <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-lg"></i>
@@ -735,19 +732,41 @@
 
         window.toggleLike = async function(postId, isLiked) {
             if (!auth.currentUser) return;
+
+            const btn = document.getElementById(`like-btn-${postId}`);
+            const icon = document.getElementById(`like-icon-${postId}`);
+            const countSpan = document.getElementById(`like-count-${postId}`);
+            
+            let currentCount = parseInt(countSpan.textContent) || 0;
+            let newIsLiked = !isLiked;
+
+            if (newIsLiked) {
+                icon.className = "fa-solid fa-heart text-xl text-rose-500";
+                btn.className = "flex items-center space-x-1.5 text-xs font-semibold text-rose-500 transition";
+                countSpan.textContent = currentCount + 1;
+                btn.setAttribute('onclick', `toggleLike('${postId}', true)`);
+                try {
+                    likeSound.currentTime = 0;
+                    likeSound.play();
+                } catch(e) {}
+            } else {
+                icon.className = "fa-regular fa-heart text-xl";
+                btn.className = "flex items-center space-x-1.5 text-xs font-semibold hover:text-rose-500 transition";
+                countSpan.textContent = Math.max(0, currentCount - 1);
+                btn.setAttribute('onclick', `toggleLike('${postId}', false)`);
+            }
+
             try {
                 const postRef = doc(db, "posts", postId);
                 if (isLiked) {
                     await updateDoc(postRef, { likes: arrayRemove(auth.currentUser.uid) });
                 } else {
                     await updateDoc(postRef, { likes: arrayUnion(auth.currentUser.uid) });
-                    try {
-                        likeSound.currentTime = 0;
-                        likeSound.play();
-                    } catch(e) {}
                 }
-                loadPosts();
-            } catch (err) { console.error(err); }
+            } catch (err) { 
+                console.error(err); 
+                loadPosts(); 
+            }
         }
 
         window.toggleCommentsSection = function(postId) {
@@ -773,7 +792,8 @@
             if (!text) return;
             try {
                 const postRef = doc(db, "posts", postId);
-                const commentObj = { user: auth.currentUser.email.split('@')[0], text, createdAt: new Date().toISOString() };
+                const currentName = userCache[auth.currentUser.uid]?.username || auth.currentUser.email.split('@')[0];
+                const commentObj = { user: currentName, text, createdAt: new Date().toISOString() };
                 await updateDoc(postRef, { comments: arrayUnion(commentObj) });
                 input.value = '';
                 loadPosts();
@@ -783,11 +803,10 @@
         async function loadExploreUsers() {
             const list = document.getElementById('users-list');
             try {
-                const querySnapshot = await getDocs(collection(db, "users"));
                 list.innerHTML = '';
-                querySnapshot.forEach((docSnap) => {
-                    const u = docSnap.data();
-                    if(u.uid === auth.currentUser?.uid) return;
+                Object.keys(userCache).forEach((uid) => {
+                    if(uid === auth.currentUser?.uid) return;
+                    const u = userCache[uid];
                     const div = document.createElement('div');
                     div.className = "flex items-center justify-between bg-slate-800/50 p-3 rounded-xl border border-slate-800";
                     div.innerHTML = `
@@ -795,10 +814,10 @@
                             <div class="w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-sm">${(u.username || "U").charAt(0).toUpperCase()}</div>
                             <div>
                                 <h4 class="text-sm font-semibold">${u.username || "User"}</h4>
-                                <p class="text-xs text-slate-400">${u.email || ""}</p>
+                                <p class="text-xs text-slate-400">${u.bio || "Roxchat User"}</p>
                             </div>
                         </div>
-                        <button onclick="startChat('${u.uid}', '${u.username || "User"}')" class="bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-amber-500 hover:text-slate-950 transition active:opacity-50">Chat</button>
+                        <button onclick="startChat('${uid}', '${u.username || "User"}')" class="bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-amber-500 hover:text-slate-950 transition active:opacity-50">Chat</button>
                     `;
                     list.appendChild(div);
                 });
