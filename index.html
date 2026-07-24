@@ -44,14 +44,18 @@
                 <p class="text-slate-400 text-sm">Connect, Share, and Chat with Friends</p>
             </div>
 
+            <!-- Login Form -->
             <form id="login-form" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Email Address</label>
                     <input type="email" id="login-email" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500">
                 </div>
-                <div>
+                <div class="relative">
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Password</label>
-                    <input type="password" id="login-password" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500">
+                    <input type="password" id="login-password" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 pr-12 text-sm focus:outline-none focus:border-amber-500">
+                    <button type="button" onclick="togglePasswordVisibility('login-password', 'login-eye-icon')" class="absolute right-4 top-8 text-slate-400 hover:text-amber-400">
+                        <i id="login-eye-icon" class="fa-solid fa-eye-slash text-sm"></i>
+                    </button>
                 </div>
                 <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-50">Sign In</button>
                 <p class="text-center text-sm text-slate-400 mt-4">
@@ -59,6 +63,7 @@
                 </p>
             </form>
 
+            <!-- Register Form -->
             <form id="register-form" class="space-y-4 hidden">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Username</label>
@@ -68,9 +73,12 @@
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Email Address</label>
                     <input type="email" id="reg-email" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500">
                 </div>
-                <div>
+                <div class="relative">
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Password</label>
-                    <input type="password" id="reg-password" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500">
+                    <input type="password" id="reg-password" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 pr-12 text-sm focus:outline-none focus:border-amber-500">
+                    <button type="button" onclick="togglePasswordVisibility('reg-password', 'reg-eye-icon')" class="absolute right-4 top-8 text-slate-400 hover:text-amber-400">
+                        <i id="reg-eye-icon" class="fa-solid fa-eye-slash text-sm"></i>
+                    </button>
                 </div>
                 <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-50">Create Account</button>
                 <p class="text-center text-sm text-slate-400 mt-4">
@@ -97,7 +105,6 @@
                 <!-- Feed Tab -->
                 <div id="tab-feed" class="space-y-4 p-4">
                     <div class="flex space-x-3 overflow-x-auto pb-2 scrollbar-none">
-                        <!-- Instagram Style My Story & Add Story Combined -->
                         <div class="flex flex-col items-center space-y-1 flex-shrink-0 cursor-pointer relative" id="my-story-bucket">
                             <div id="my-story-outer" class="w-16 h-16 rounded-full border-2 border-dashed border-amber-500 flex items-center justify-center bg-slate-800 text-amber-400 relative overflow-hidden">
                                 <i id="my-story-plus-icon" class="fa-solid fa-plus text-xl"></i>
@@ -175,7 +182,14 @@
                             <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Bio</label>
                             <textarea id="profile-bio-input" rows="2" placeholder="Roxchat..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 resize-none"></textarea>
                         </div>
-                        <button id="save-profile-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-40">Save</button>
+                        <div class="relative">
+                            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">New Password (Optional)</label>
+                            <input type="password" id="profile-new-password" placeholder="Leave blank to keep current" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 pr-12 text-sm focus:outline-none focus:border-amber-500">
+                            <button type="button" onclick="togglePasswordVisibility('profile-new-password', 'profile-eye-icon')" class="absolute right-4 top-7 text-slate-400 hover:text-amber-400">
+                                <i id="profile-eye-icon" class="fa-solid fa-eye-slash text-sm"></i>
+                            </button>
+                        </div>
+                        <button id="save-profile-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold py-3 rounded-xl transition shadow-lg shadow-amber-500/20 active:opacity-40">Save Changes</button>
                     </div>
 
                     <div class="space-y-3 pt-2">
@@ -271,7 +285,7 @@
         </div>
     </div>
 
-    <!-- Story Creator / Viewer Modal -->
+    <!-- Story Viewer Modal -->
     <input type="file" id="story-file-input" accept="image/*" class="hidden">
     <div id="story-view-modal" class="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 hidden">
         <button id="close-story-view" class="absolute top-4 right-4 text-white text-2xl p-2"><i class="fa-solid fa-xmark"></i></button>
@@ -282,8 +296,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, setDoc, getDoc, updateDoc, query, orderBy, serverTimestamp, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updatePassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, setDoc, updateDoc, query, orderBy, serverTimestamp, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAaqyhWJg8QmFzB4xKR5sJT8UetZEqZGrs",
@@ -313,6 +327,18 @@
 
         showRegisterBtn.addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); });
         showLoginBtn.addEventListener('click', () => { registerForm.classList.add('hidden'); loginForm.classList.remove('hidden'); });
+
+        window.togglePasswordVisibility = function(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.className = "fa-solid fa-eye text-sm text-amber-400";
+            } else {
+                input.type = "password";
+                icon.className = "fa-solid fa-eye-slash text-sm";
+            }
+        }
 
         const navBtns = document.querySelectorAll('.nav-btn');
         navBtns.forEach(btn => {
@@ -375,7 +401,9 @@
             const password = document.getElementById('login-password').value;
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-            } catch (err) { alert(err.message); }
+            } catch (err) { 
+                alert(err.message); 
+            }
         });
 
         logoutBtnProfile.addEventListener('click', () => signOut(auth));
@@ -402,6 +430,7 @@
                 const data = userCache[user.uid] || {};
                 document.getElementById('profile-username-input').value = data.username || "";
                 document.getElementById('profile-bio-input').value = data.bio || "";
+                document.getElementById('profile-new-password').value = "";
                 document.getElementById('profile-initial').textContent = (data.username || "U").charAt(0).toUpperCase();
                 if (data.profilePic) {
                     const imgPreview = document.getElementById('profile-img-preview');
@@ -437,12 +466,17 @@
             const saveBtn = document.getElementById('save-profile-btn');
             const newUsername = document.getElementById('profile-username-input').value.trim();
             const newBio = document.getElementById('profile-bio-input').value.trim();
+            const newPassword = document.getElementById('profile-new-password').value.trim();
             
             if(!newUsername) { alert("Username cannot be empty"); return; }
 
             try {
                 const userRef = doc(db, "users", auth.currentUser.uid);
-                await updateDoc(userRef, { username: newUsername, bio: newBio });
+                await setDoc(userRef, { username: newUsername, bio: newBio }, { merge: true });
+
+                if (newPassword) {
+                    await updatePassword(auth.currentUser, newPassword);
+                }
                 
                 if(!userCache[auth.currentUser.uid]) userCache[auth.currentUser.uid] = {};
                 userCache[auth.currentUser.uid].username = newUsername;
@@ -450,8 +484,10 @@
 
                 saveBtn.style.opacity = '0.5';
                 setTimeout(() => { saveBtn.style.opacity = '1'; }, 600);
+                alert("Profile updated successfully!");
 
                 document.getElementById('profile-initial').textContent = newUsername.charAt(0).toUpperCase();
+                document.getElementById('profile-new-password').value = "";
                 loadPosts();
                 loadStories();
             } catch (err) { alert(err.message); }
@@ -497,10 +533,7 @@
             myLatestStory = null;
             
             const myOuter = document.getElementById('my-story-outer');
-            const myPlusIcon = document.getElementById('my-story-plus-icon');
-            const myImgPreview = document.getElementById('my-story-img-preview');
             const myLabel = document.getElementById('my-story-label');
-
             myLabel.textContent = "Your Story";
 
             try {
@@ -713,7 +746,7 @@
                 });
 
                 if (!hasReels) {
-                    reelsContainer.innerHTML = '<p class="text-center text-xs text-slate-500">No reels available yet. Upload a video via the top (+) button!</p>';
+                    reelsContainer.innerHTML = '<p class="text-center text-xs text-slate-500">No reels available yet.</p>';
                 }
 
             } catch (err) { 
@@ -775,7 +808,6 @@
 
         window.toggleLike = async function(postId, isLiked) {
             if (!auth.currentUser) return;
-
             const btn = document.getElementById(`like-btn-${postId}`);
             const icon = document.getElementById(`like-icon-${postId}`);
             const countSpan = document.getElementById(`like-count-${postId}`);
