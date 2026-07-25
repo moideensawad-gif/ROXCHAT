@@ -663,7 +663,6 @@
             }
         });
 
-        // FIXED: Save Profile Button with reliable finally state reset
         document.getElementById('save-profile-btn').addEventListener('click', async () => {
             if (!auth.currentUser) return;
             const saveBtn = document.getElementById('save-profile-btn');
