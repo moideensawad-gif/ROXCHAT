@@ -450,7 +450,6 @@
                 document.querySelectorAll('#content-area > div').forEach(d => d.classList.add('hidden'));
                 document.getElementById(`tab-${tab}`).classList.remove('hidden');
                 
-                // Optimized lazy loading triggers for tabs
                 if (tab === 'messages') {
                     loadChatsList();
                 }
@@ -664,9 +663,12 @@
             }
         });
 
+        // FIXED: Save Profile Button with reliable finally state reset
         document.getElementById('save-profile-btn').addEventListener('click', async () => {
             if (!auth.currentUser) return;
             const saveBtn = document.getElementById('save-profile-btn');
+            
+            // Dim the button safely
             saveBtn.style.opacity = '0.4'; 
             saveBtn.style.pointerEvents = 'none';
 
@@ -702,6 +704,7 @@
             } catch (err) { 
                 alert(err.message); 
             } finally {
+                // ALWAYS restore button color and interactivity
                 saveBtn.style.opacity = '1';
                 saveBtn.style.pointerEvents = 'auto';
             }
