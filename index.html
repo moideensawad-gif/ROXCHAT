@@ -668,7 +668,6 @@
             if (!auth.currentUser) return;
             const saveBtn = document.getElementById('save-profile-btn');
             
-            // Dim the button safely
             saveBtn.style.opacity = '0.4'; 
             saveBtn.style.pointerEvents = 'none';
 
@@ -704,7 +703,6 @@
             } catch (err) { 
                 alert(err.message); 
             } finally {
-                // ALWAYS restore button color and interactivity
                 saveBtn.style.opacity = '1';
                 saveBtn.style.pointerEvents = 'auto';
             }
